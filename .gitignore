@@ -1,0 +1,19 @@
+# Ignore user-specific Xcode files
+*.xcuserdatad/
+*.xcscmblueprint
+*.xccheckout
+*.xcworkspace/
+
+# Ignore build artifacts
+DerivedData/
+*.xcdebugger/
+*.swiftpm/
+*.DS_Store
+*.plist
+
+# Ignore Xcode project metadata
+*.pbxproj
+
+# Ignore Swift Package Manager and Cocoapods (if used)
+.build/
+Pods/
