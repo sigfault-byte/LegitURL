@@ -40,7 +40,7 @@ struct DecodingTools {
     static func attemptToDecode(_ input: String) -> Result<DecodingResult, DecodingError> {
         let trimmedInput = input.trimmingCharacters(in: .whitespacesAndNewlines)
         //        debugLog("Attempting to decode: \(trimmedInput)")
-        
+//        Need to return what encoding was decoded
         let encodingType = detectEncodingType(trimmedInput)
         var decodedString: String? = nil
         var methodUsed = ""

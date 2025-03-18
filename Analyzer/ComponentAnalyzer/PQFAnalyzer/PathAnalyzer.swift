@@ -18,8 +18,6 @@ struct PathAnalyzer {
         
         let pathRegex = #"^\/(?:[A-Za-z0-9\-._~!$&'()*+,;=:@%]+\/?)*$"#
         
-        print("path: ",urlInfo.components.pathEncoded)
-        
         // Use percentEncodedPath to account for encoded characters like %2F, %40, %C3%A9
         guard let extractedPath = urlInfo.components.pathEncoded,
               extractedPath.matches(regex: pathRegex) else {

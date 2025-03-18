@@ -1,4 +1,3 @@
-//
 //  URLDataModels.swift
 //  LegitURL
 //
@@ -81,4 +80,3 @@ struct OnlineURLInfo: Identifiable {
         self.responseHeaders = headers
     }
 }
-

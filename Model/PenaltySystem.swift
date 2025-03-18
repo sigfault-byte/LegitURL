@@ -57,6 +57,9 @@ struct PenaltySystem {
         static let emptyFragment                       = -5
         static let highEntropyKeyOrValue               = -5
         static let longQuery                           = -5
+        
+        //RESPONSE HEADER ISSUE
+        static let hidden200Redirect                   = -20
 
        // 🔧 JAVASCRIPT & SECURITY ISSUES
         static let javascriptXSS                       = -30

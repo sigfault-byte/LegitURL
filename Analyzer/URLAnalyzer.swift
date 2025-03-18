@@ -11,6 +11,8 @@ struct URLAnalyzer {
         resetQueue()
         infoMessage = nil
         
+        
+        //NEED update to check wether there is at least a . and if the structure looks ok.
         let (cleanURL, message) = sanitizeAndValidate(urlString, &infoMessage)
         infoMessage = message
         
@@ -73,7 +75,7 @@ struct URLAnalyzer {
     
     private static var onlineQueueIterations = 0
     private static let maxOnlineIterations = 5 // ✅ Set a reasonable limit
-
+    
     private static func processOnlineQueue() {
         guard onlineQueueIterations < maxOnlineIterations else {
             print("⛔ Online queue recursion limit reached. Stopping further analysis.")
@@ -84,27 +86,38 @@ struct URLAnalyzer {
             print("✅ All online checks complete.")
             return
         }
-
+        
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
-
+        
         if !URLQueue.shared.onlineQueue.contains(where: { $0.id == currentURLInfo.id }) {
             URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
         }
-
+        
         onlineQueueIterations += 1 // ✅ Increment recursion counter
-
-        URLGetExtract.extract(urlInfo: currentURLInfo) { updatedOnlineInfo in
+        
+        URLGetExtract.extract(urlInfo: currentURLInfo, completion: { updatedOnlineInfo in
             DispatchQueue.main.async {
                 if let onlineIndex = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == updatedOnlineInfo.id }) {
                     URLQueue.shared.onlineQueue[onlineIndex] = updatedOnlineInfo
                 }
+                // ✅ Create a mutable copy
+                var mutableURLInfo = currentURLInfo
 
+                // ✅ Analyze and modify the copy
+                URLGetAnalyzer.analyze(urlInfo: &mutableURLInfo)
+
+                // ✅ Check if analysis found something critical
+                if shouldStopAnalysis(mutableURLInfo) { return }
+
+                // ✅ Save the modified copy back to the queue
+                URLQueue.shared.offlineQueue[currentIndex] = mutableURLInfo
+                
                 URLQueue.shared.offlineQueue[currentIndex].processedOnline = true
-
-                // ✅ Process the next URL only if the recursion limit isn't reached
+                
+                // ✅ Only process the next URL **after** this request completes
                 processOnlineQueue()
             }
-        }
+        })
     }
     
     //    //////////////////////////Utility functions/////////////////////

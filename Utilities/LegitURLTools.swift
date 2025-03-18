@@ -1,4 +1,3 @@
-
 //
 //  LegitURLTools.swift
 //  LegitURL

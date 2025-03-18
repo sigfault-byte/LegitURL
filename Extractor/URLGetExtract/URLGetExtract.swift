@@ -15,16 +15,30 @@ class URLGetExtract: NSObject, URLSessionDelegate {
             return
         }
         
-        let delegateInstance = URLGetExtract()
-        let session = URLSession(configuration: .default, delegate: delegateInstance, delegateQueue: nil)
-        let task = session.dataTask(with: url) { data, response, error in
+        let config = URLSessionConfiguration.default
+        config.httpCookieStorage = nil
+        config.httpShouldSetCookies = false
+        print("config: ", config)
+        let session = URLSession(configuration: config)
+        
+        // Prepare request with stripped tracking headers
+        // Prepare request with stripped tracking headers but keep iOS-like behavior
+        var request = URLRequest(url: url)
+        let defaultUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)"
+        request.httpMethod = "GET"
+        request.setValue("*/*", forHTTPHeaderField: "Accept")  // Accept all response types
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")  // Prevent caching
+        request.setValue(defaultUserAgent, forHTTPHeaderField: "User-Agent")  // Use a normal iOS User-Agent
+        request.setValue(nil, forHTTPHeaderField: "Authorization")  // Remove authentication tracking
+        request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
+        
+        
+        let task = session.dataTask(with: request) { data, response, error in
             var onlineInfo = OnlineURLInfo(from: urlInfo)
             if let httpResponse = response as? HTTPURLResponse {
-                print("✅ Fetched \(url) → Status:", httpResponse.statusCode)
-                
+            
                 // ✅ Extract headers
                 let headers = httpResponse.allHeaderFields as? [String: String] ?? [:]
-                print("📝 Response Headers:", headers)
                 
                 // ✅ Extract final redirect URL (if any)
                 let finalURL = httpResponse.url?.absoluteString
@@ -75,7 +89,7 @@ class URLGetExtract: NSObject, URLSessionDelegate {
         do {
             // ✅ Decode using X509Certificate
             let decodedCertificate = try X509Certificate(data: certData)
-            print("🔍 Decoded SSL Certificate:", decodedCertificate)
+//            print("🔍 Decoded SSL Certificate:", decodedCertificate)
             
             // ✅ Extract useful fields
             extractedDetails["Issuer"] = decodedCertificate.issuerDistinguishedName
@@ -86,7 +100,7 @@ class URLGetExtract: NSObject, URLSessionDelegate {
             ]
             extractedDetails["Public Key Info"] = decodedCertificate.publicKey
             
-            print("✅ Extracted Certificate Details:", extractedDetails)
+//            print("✅ Extracted Certificate Details:", extractedDetails)
             
         } catch {
             print("❌ Failed to decode X.509 Certificate:", error)
