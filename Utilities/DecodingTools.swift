@@ -39,7 +39,7 @@ struct DecodingTools {
     /// - Returns: A `Result` containing a `DecodingResult` on success, or a `DecodingError` on failure.
     static func attemptToDecode(_ input: String) -> Result<DecodingResult, DecodingError> {
         let trimmedInput = input.trimmingCharacters(in: .whitespacesAndNewlines)
-//        debugLog("Attempting to decode: \(trimmedInput)")
+        //        debugLog("Attempting to decode: \(trimmedInput)")
         
         let encodingType = detectEncodingType(trimmedInput)
         var decodedString: String? = nil
@@ -65,16 +65,16 @@ struct DecodingTools {
             decodedString = decodeBase64(trimmedInput)
             methodUsed = "Base64"
         case .unknown:
-//            debugLog("Unknown encoding type for input: \(trimmedInput)")
+            //            debugLog("Unknown encoding type for input: \(trimmedInput)")
             return .failure(.unknownEncoding)
         }
         
         if let decoded = decodedString {
-//            debugLog("Successfully decoded using \(methodUsed) method.")
+            //            debugLog("Successfully decoded using \(methodUsed) method.")
             let result = DecodingResult(decodedString: decoded, encodingUsed: encodingType)
             return .success(result)
         } else {
-//            debugLog("Decoding failed using \(methodUsed) method.")
+            //            debugLog("Decoding failed using \(methodUsed) method.")
             return .failure(.failedDecoding)
         }
     }
@@ -86,7 +86,7 @@ struct DecodingTools {
     /// - Returns: The detected `EncodingType`.
     static func detectEncodingType(_ input: String) -> EncodingType {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-//        debugLog("Checking encoding pattern for: \(trimmed)")
+        //        debugLog("Checking encoding pattern for: \(trimmed)")
         
         // Check for Hex encoding.
         if trimmed.hasPrefix("0x") || trimmed.range(of: #"^(0x)?[0-9A-Fa-f]+$"#, options: .regularExpression) != nil {
@@ -108,24 +108,24 @@ struct DecodingTools {
         // Check for URL percent encoding.
         if trimmed.contains("%") { return .url }
         
-//        debugLog("No known encoding detected for: \(trimmed)")
+        //        debugLog("No known encoding detected for: \(trimmed)")
         return .unknown
     }
     
     // MARK: - Debug Logging
     
-//    /// Logs a debug message.
-//    private static func debugLog(_ message: String) {
-////        print("DEBUG: \(message)")
-//    }
-//
+    //    /// Logs a debug message.
+    //    private static func debugLog(_ message: String) {
+    ////        print("DEBUG: \(message)")
+    //    }
+    //
     // MARK: - Decoding Functions
     
     /// Checks if a string looks like valid Base64.
     static func looksLikeBase64(_ input: String) -> Bool {
         let base64Regex = #"^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"#
         // Base64 strings are usually longer than 8 characters and must have a length that is a multiple of 4.
-//        print("checking: \(input)")
+        //        print("checking: \(input)")
         guard input.count >= 8, input.count % 4 == 0 else {
             return false
         }
@@ -135,7 +135,7 @@ struct DecodingTools {
     /// Decodes a Base64 encoded string.
     static func decodeBase64(_ input: String) -> String? {
         guard let data = Data(base64Encoded: input) else {
-//            debugLog("Base64 decoding failed for input: \(input)")
+            //            debugLog("Base64 decoding failed for input: \(input)")
             return nil
         }
         return String(data: data, encoding: .utf8)
@@ -155,7 +155,7 @@ struct DecodingTools {
         
         // Ensure an even number of characters.
         guard hexString.count % 2 == 0 else {
-//            debugLog("Hex decoding failed: uneven number of characters in \(hexString)")
+            //            debugLog("Hex decoding failed: uneven number of characters in \(hexString)")
             return nil
         }
         
@@ -167,7 +167,7 @@ struct DecodingTools {
             let hexPair = String(hexString[index..<nextIndex])
             
             guard let intValue = UInt8(hexPair, radix: 16) else {
-//                debugLog("Hex decoding failed: invalid hex pair \(hexPair)")
+                //                debugLog("Hex decoding failed: invalid hex pair \(hexPair)")
                 return nil
             }
             
@@ -183,7 +183,7 @@ struct DecodingTools {
         var decoded = input
         let pattern = #"\\u([0-9A-Fa-f]{4})"#
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-//            debugLog("Unicode decoding failed: regex creation failed.")
+            //            debugLog("Unicode decoding failed: regex creation failed.")
             return nil
         }
         let matches = regex.matches(in: input, options: [], range: NSRange(location: 0, length: input.utf16.count))
@@ -195,7 +195,7 @@ struct DecodingTools {
                 let fullMatchRange = Range(match.range(at: 0), in: input)!
                 decoded.replaceSubrange(fullMatchRange, with: String(Character(unicodeScalar)))
             } else {
-//                debugLog("Unicode decoding failed: invalid escape sequence in \(input)")
+                //                debugLog("Unicode decoding failed: invalid escape sequence in \(input)")
                 return nil
             }
         }
@@ -205,28 +205,28 @@ struct DecodingTools {
     /// Decodes HTML entities (both named and numerical) in a string.
     static func decodeHTMLEntities(_ input: String) -> String? {
         guard let data = input.data(using: .utf8) else {
-//            debugLog("HTML decoding failed: cannot convert input to data.")
+            //            debugLog("HTML decoding failed: cannot convert input to data.")
             return nil
         }
         
         // Use the appropriate options based on environment availability.
-        #if canImport(UIKit)
+#if canImport(UIKit)
         let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
             .documentType: NSAttributedString.DocumentType.html,
             .characterEncoding: String.Encoding.utf8.rawValue
         ]
-        #else
+#else
         let options: [String: Any] = [
             NSDocumentTypeDocumentAttribute: NSHTMLTextDocumentType,
             NSCharacterEncodingDocumentAttribute: String.Encoding.utf8.rawValue
         ]
-        #endif
+#endif
         
         if let attributedString = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
             return attributedString.string
         }
         
-//        debugLog("HTML decoding failed: could not create attributed string.")
+        //        debugLog("HTML decoding failed: could not create attributed string.")
         return nil
     }
     
@@ -235,7 +235,7 @@ struct DecodingTools {
         // Check for UTF-8 Base64 encoded pattern.
         if input.contains("=?UTF-8?B?") {
             guard let base64Part = input.components(separatedBy: "?B?").dropFirst().first?.components(separatedBy: "?=").first else {
-//                debugLog("MIME decoding failed: could not extract Base64 segment from \(input)")
+                //                debugLog("MIME decoding failed: could not extract Base64 segment from \(input)")
                 return nil
             }
             return decodeBase64(base64Part)
@@ -246,5 +246,79 @@ struct DecodingTools {
             return input.replacingOccurrences(of: "_", with: " ").replacingOccurrences(of: "=", with: "")
         }
         return nil
+    }
+    
+    // MARK: - UUID Analysis
+    
+    struct UUIDAnalysisResult {
+        let original: String
+        let formatted: String?
+        let version: Int?
+        let variant: String?
+        let classification: String
+    }
+    
+    static func analyzeUUID(_ input: String) -> UUIDAnalysisResult {
+        let normalized = input.lowercased()
+        var formattedUUID: String? = nil
+        
+        // Ensure it's hexadecimal
+        guard normalized.range(of: #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$|^[0-9a-f]{32}$"#, options: .regularExpression) != nil else {
+            return UUIDAnalysisResult(original: input, formatted: nil, version: nil, variant: nil, classification: "Not a UUID")
+        }
+        
+        // If 32 characters, add hyphens
+        if normalized.count == 32 {
+            formattedUUID = [
+                normalized.prefix(8),
+                normalized.dropFirst(8).prefix(4),
+                normalized.dropFirst(12).prefix(4),
+                normalized.dropFirst(16).prefix(4),
+                normalized.dropFirst(20)
+            ].joined(separator: "-")
+        } else {
+            formattedUUID = normalized
+        }
+        
+        // Extract Version and Variant
+        guard let formatted = formattedUUID else {
+            return UUIDAnalysisResult(original: input, formatted: nil, version: nil, variant: nil, classification: "Malformed UUID")
+        }
+        
+        let versionChar = formatted[formatted.index(formatted.startIndex, offsetBy: 14)]
+        let variantChar = formatted[formatted.index(formatted.startIndex, offsetBy: 19)]
+        
+        let version = Int(String(versionChar), radix: 16)
+        let variantBinary = Int(String(variantChar), radix: 16)
+        
+        let variant = {
+            switch variantBinary {
+            case 8, 9, 10, 11:
+                return "RFC 4122"
+            default:
+                return "Non-standard"
+            }
+        }()
+        
+        // Determine classification
+        let classification: String
+        if variant == "Non-standard" {
+            classification = "Malformed UUID (Possible Marketing ID)"
+        } else if let version = version {
+            switch version {
+            case 1:
+                classification = "Persistent UUID (MAC-based)"
+            case 4:
+                classification = "Tracking UUID (Random-based)"
+            case 5:
+                classification = "Marketing UUID (Deterministic)"
+            default:
+                classification = "Valid UUID (Other Version)"
+            }
+        } else {
+            classification = "Malformed UUID"
+        }
+        
+        return UUIDAnalysisResult(original: input, formatted: formatted, version: version, variant: variant, classification: classification)
     }
 }

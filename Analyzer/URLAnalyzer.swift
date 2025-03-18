@@ -68,11 +68,11 @@ struct URLAnalyzer {
         
         print("✅ Offline queue complete. Starting online analysis...")
         
-//        processOnlineQueue()
+        processOnlineQueue()
     }
     
     private static var onlineQueueIterations = 0
-    private static let maxOnlineIterations = 10 // ✅ Set a reasonable limit
+    private static let maxOnlineIterations = 5 // ✅ Set a reasonable limit
 
     private static func processOnlineQueue() {
         guard onlineQueueIterations < maxOnlineIterations else {
@@ -93,7 +93,7 @@ struct URLAnalyzer {
 
         onlineQueueIterations += 1 // ✅ Increment recursion counter
 
-        URLGetAnalyzer.analyze(urlInfo: currentURLInfo) { updatedOnlineInfo in
+        URLGetExtract.extract(urlInfo: currentURLInfo) { updatedOnlineInfo in
             DispatchQueue.main.async {
                 if let onlineIndex = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == updatedOnlineInfo.id }) {
                     URLQueue.shared.onlineQueue[onlineIndex] = updatedOnlineInfo

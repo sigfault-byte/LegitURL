@@ -1,5 +1,5 @@
 //
-//  URLGetAnalyzer.swift
+//  URLGetExtract.swift
 //  LegitURL
 //
 //  Created by Chief Hakka on 14/03/2025.
@@ -7,15 +7,15 @@
 import Foundation
 import ASN1Decoder
 
-class URLGetAnalyzer: NSObject, URLSessionDelegate {
+class URLGetExtract: NSObject, URLSessionDelegate {
     
-    static func analyze(urlInfo: URLInfo, completion: @escaping (OnlineURLInfo) -> Void) {
+    static func extract(urlInfo: URLInfo, completion: @escaping (OnlineURLInfo) -> Void) {
         guard let url = URL(string: urlInfo.components.fullURL ?? "") else {
             print("❌ Invalid URL for GET request:", urlInfo.components.fullURL ?? "nil")
             return
         }
         
-        let delegateInstance = URLGetAnalyzer()
+        let delegateInstance = URLGetExtract()
         let session = URLSession(configuration: .default, delegate: delegateInstance, delegateQueue: nil)
         let task = session.dataTask(with: url) { data, response, error in
             var onlineInfo = OnlineURLInfo(from: urlInfo)

@@ -17,10 +17,10 @@ struct QueryAnalyzer {
         var urlInfo = urlInfo
         
         // Get both the raw query and the cleaned (decoded) query.
-            guard let rawQuery = urlInfo.components.rawQuery,
-                  let cleanedQuery = urlInfo.components.query else {
-                return (urlInfo, nil)
-            }
+        guard let rawQuery = urlInfo.components.rawQuery,
+              let cleanedQuery = urlInfo.components.query else {
+            return (urlInfo, nil)
+        }
         
         if rawQuery.isEmpty || cleanedQuery.isEmpty {
             urlInfo.warnings.append(SecurityWarning(
@@ -53,11 +53,11 @@ struct QueryAnalyzer {
                     message: "Query is malformed and does not have a well-formed key value pair structure: \(explanation)",
                     severity: .critical
                 ))
-
+                
                 // Then, run DeepScamHellCheck as a fallback
                 let deepWarnings = DeepScamHellCheck.analyze(queryOrFragment: rawQuery, isFragment: false)
                 urlInfo.warnings.append(contentsOf: deepWarnings)
-
+                
                 // Always apply a critical penalty, as it failed all checks
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
                 return (urlInfo, nil)
@@ -137,7 +137,7 @@ struct QueryAnalyzer {
         return explainInvalidCharacters(in: query, allowedSet: allowedSet, allowPercentEncoding: true, componentName: "Query")
     }
     
-    private static func firstInvalidIndex(in component: String, allowedSet: CharacterSet, allowPercentEncoding: Bool) -> Int? {
+    public static func firstInvalidIndex(in component: String, allowedSet: CharacterSet, allowPercentEncoding: Bool) -> Int? {
         var index = component.startIndex
         var offset = 0
         while index < component.endIndex {
