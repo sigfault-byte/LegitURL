@@ -46,7 +46,7 @@ struct URLExtractComponents {
             punycodeHostDecoded: decodedHost,
             punycodeHostEncoded: encodedHost ?? preExtractedHost,
             port: components.port.map { "\($0)" },
-            path: components.path.isEmpty ? nil : components.path,
+            path: components.path.isEmpty ? "/" : components.path,
             pathEncoded: components.path.isEmpty ? nil : components.percentEncodedPath,
             query: components.query,
             rawQuery: components.percentEncodedQuery,

@@ -89,35 +89,61 @@ struct URLAnalyzer {
         
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
         
-        if !URLQueue.shared.onlineQueue.contains(where: { $0.id == currentURLInfo.id }) {
-            URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
-        }
+//        if !URLQueue.shared.onlineQueue.contains(where: { $0.id == currentURLInfo.id }) {
+//            URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
+//        }
+        
+        if currentURLInfo.onlineInfo == nil {
+              URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
+          }
         
         onlineQueueIterations += 1 // ✅ Increment recursion counter
         
-        URLGetExtract.extract(urlInfo: currentURLInfo, completion: { updatedOnlineInfo in
+        URLGetExtract.extract(urlInfo: currentURLInfo) { onlineInfo, error in
             DispatchQueue.main.async {
-                if let onlineIndex = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == updatedOnlineInfo.id }) {
-                    URLQueue.shared.onlineQueue[onlineIndex] = updatedOnlineInfo
+                if let error = error {
+                    let warning = SecurityWarning(message: error.localizedDescription, severity: .urlGetFail)
+                    URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
+                    print("❌ Error handled:", error.localizedDescription)
+
+                    // ✅ Ensure URLInfo is updated with the warning
+                    if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) {
+                        var failedURLInfo = URLQueue.shared.offlineQueue[index]
+                        failedURLInfo.processedOnline = true
+                        URLQueue.shared.offlineQueue[index] = failedURLInfo
+                    }
+
+                    return
                 }
-                // ✅ Create a mutable copy
-                var mutableURLInfo = currentURLInfo
 
-                // ✅ Analyze and modify the copy
-                URLGetAnalyzer.analyze(urlInfo: &mutableURLInfo)
+                guard let onlineInfo = onlineInfo else {
+                    print("❌ Unexpected state: no error, but also no OnlineURLInfo!")
 
-                // ✅ Check if analysis found something critical
-                if shouldStopAnalysis(mutableURLInfo) { return }
+                    // ✅ Handle missing OnlineURLInfo as an error
+                    let warning = SecurityWarning(message: "Failed to retrieve online information.", severity: .urlGetFail)
+                    URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning);
+                    
+                    if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) {
+                        var failedURLInfo = URLQueue.shared.offlineQueue[index]
+                        failedURLInfo.processedOnline = true
+                        URLQueue.shared.offlineQueue[index] = failedURLInfo
+                    }
 
-                // ✅ Save the modified copy back to the queue
-                URLQueue.shared.offlineQueue[currentIndex] = mutableURLInfo
-                
-                URLQueue.shared.offlineQueue[currentIndex].processedOnline = true
-                
-                // ✅ Only process the next URL **after** this request completes
+                    return
+                }
+
+                // ✅ Process onlineInfo normally
+                if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) {
+                    var updatedURLInfo = URLQueue.shared.offlineQueue[index]
+                    updatedURLInfo.onlineInfo = onlineInfo
+                    URLGetAnalyzer.analyze(urlInfo: &updatedURLInfo)
+                    URLQueue.shared.offlineQueue[index] = updatedURLInfo
+                    URLQueue.shared.offlineQueue[index].processedOnline = true
+                }
+
                 processOnlineQueue()
             }
-        })
+        }
     }
     
     //    //////////////////////////Utility functions/////////////////////
@@ -138,6 +164,10 @@ struct URLAnalyzer {
     private static func shouldStopAnalysis(_ urlInfo: URLInfo) -> Bool {
         if urlInfo.warnings.contains(where: { $0.severity == .critical }) {
             print("❌ Critical warning found. Stopping analysis.")
+            return true
+        }
+        else if urlInfo.warnings.contains(where: { $0.severity == .urlGetFail}){
+            print(" ⚠️ URL GET request failed. Stopping analysis.")
             return true
         }
         return false

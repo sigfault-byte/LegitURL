@@ -20,6 +20,20 @@ class URLQueue: ObservableObject {
     static let shared = URLQueue() // ✅ Singleton to use it globally
 }
 
+extension URLQueue {
+    func addWarning(to urlID: UUID, warning: SecurityWarning) {
+        DispatchQueue.main.async {
+            if let index = self.offlineQueue.firstIndex(where: { $0.id == urlID }) {
+                print("⚠️ Adding warning to URLInfo:", warning.message)
+                self.offlineQueue[index].warnings.append(warning)
+                print("✅ Current warnings:", self.offlineQueue[index].warnings)
+            } else {
+                print("❌ Could not find URLInfo with ID \(urlID) to add warning")
+            }
+        }
+    }
+}
+
 /// **Holds structured URL components + associated warnings**
 struct URLInfo: Identifiable {
     let id = UUID()
@@ -27,6 +41,25 @@ struct URLInfo: Identifiable {
     var warnings: [SecurityWarning]
     var processed: Bool = false
     var processedOnline = false
+    
+    public init(components: URLComponentsInfo, warnings: [SecurityWarning]) {
+            self.components = components
+            self.warnings = warnings
+        }
+    
+    /// ✅ No private var! We store everything in `URLQueue.shared.onlineQueue`
+    var onlineInfo: OnlineURLInfo? {
+        get { URLQueue.shared.onlineQueue.first { $0.id == self.id } }
+        set {
+            if let newValue = newValue {
+                if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == newValue.id }) {
+                    URLQueue.shared.onlineQueue[index] = newValue
+                } else {
+                    URLQueue.shared.onlineQueue.append(newValue)
+                }
+            }
+        }
+    }
 }
 
 /// **Holds extracted URL parts**
@@ -57,26 +90,45 @@ struct URLComponentsInfo {
     var extractedTLD: String?
     var punycodeEncodedExtractedTLD: String?
     var subdomain: String?
+    
 }
 
 struct OnlineURLInfo: Identifiable {
     let id: UUID
+    var httpVersion: String?  // ✅ Store HTTP/1.1, HTTP/2, etc.
     var serverResponseCode: Int?
+    var statusText: String?  // ✅ Store "OK", "Not Found", etc.
+    var responseHeaders: [String: String]?
+    var responseBody: Data?  // ✅ Store raw response body
     var certificateAuthority: String?
     var sslValidity: Bool = false
     var finalRedirectURL: String?
-    var responseHeaders: [String: String]?
-    
+
     var formattedHeaders: String {
         responseHeaders?.map { "\($0.key): \($0.value)" }.joined(separator: "\n") ?? "No headers available"
     }
 
-    init(from urlInfo: URLInfo, responseCode: Int? = nil, cert: String? = nil, sslValid: Bool = false, redirect: String? = nil, headers: [String: String]? = nil) {
+    var formattedBody: String {
+        guard let data = responseBody else { return "No body available" }
+        return String(data: data, encoding: .utf8) ?? "⚠️ Unable to decode body"
+    }
+
+    init(from urlInfo: URLInfo,
+         responseCode: Int? = nil,
+         statusText: String? = nil,
+         headers: [String: String]? = nil,
+         body: Data? = nil,
+         certificateAuthority: String? = nil,
+         sslValidity: Bool = false,
+         finalRedirectURL: String? = nil) 
+    {
         self.id = urlInfo.id
         self.serverResponseCode = responseCode
-        self.certificateAuthority = cert
-        self.sslValidity = sslValid
-        self.finalRedirectURL = redirect
+        self.statusText = statusText
         self.responseHeaders = headers
+        self.responseBody = body
+        self.certificateAuthority = certificateAuthority
+        self.sslValidity = sslValidity
+        self.finalRedirectURL = finalRedirectURL
     }
 }

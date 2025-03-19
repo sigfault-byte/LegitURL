@@ -113,14 +113,14 @@ struct SecurityWarningsDetailView: View {
 extension SecurityWarning.SeverityLevel: CaseIterable {
     var icon: String {
         switch self {
-        case .info: return "ℹ️"
-        case .suspicious: return "⚠️"
-        case .dangerous: return "🚨"
-        case .critical: return "❌"
+            case .info: return "ℹ️"
+            case .suspicious: return "⚠️"
+            case .dangerous: return "🚨"
+            case .critical: return "❌"
+            case .urlGetFail: return "‼️"
         }
     }
-
     static var allCases: [SecurityWarning.SeverityLevel] {
-        return [.critical, .dangerous, .suspicious, .info] // Sorting order (Critical first)
+        return [.critical, .dangerous, .suspicious, .info, .urlGetFail] // Sorting order (Critical first)
     }
 }
