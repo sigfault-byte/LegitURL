@@ -20,6 +20,7 @@ struct SecurityWarning: Identifiable{
         case suspicious = "SUSPICIOUS"
         case dangerous = "DANGEROUS"
         case critical = "CRITICAL"
+        case urlGetFail = "GETFAILED"
         
         /// Returns a color for UI representation
         var color: Color {
@@ -28,6 +29,7 @@ struct SecurityWarning: Identifiable{
             case .suspicious: return Color.orange
             case .dangerous: return Color.red
             case .critical: return Color.red.opacity(0.8)
+            case .urlGetFail: return Color.red
             }
         }
     }

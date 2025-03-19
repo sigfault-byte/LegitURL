@@ -23,11 +23,6 @@ struct URLGetAnalyzer {
         let finalURL = onlineInfo.finalRedirectURL ?? originalURL
         let headers = onlineInfo.responseHeaders ?? [:]
 
-        // ✅ Call HTTP response handler using stored response code
-        if let statusCode = onlineInfo.serverResponseCode {
-            HandleHTTPResponse.cases(responseCode: statusCode, urlInfo: &urlInfo)
-        }
-
         // ✅ Analyze headers for security
         analyzeHeaders(responseHeaders: headers, urlInfo: &urlInfo)
 

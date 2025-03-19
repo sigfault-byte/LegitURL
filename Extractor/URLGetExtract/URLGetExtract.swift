@@ -9,63 +9,62 @@ import ASN1Decoder
 
 class URLGetExtract: NSObject, URLSessionDelegate {
     
+    static var sharedSession: URLSession?
+
     static func extract(urlInfo: URLInfo, completion: @escaping (OnlineURLInfo) -> Void) {
         guard let url = URL(string: urlInfo.components.fullURL ?? "") else {
             print("❌ Invalid URL for GET request:", urlInfo.components.fullURL ?? "nil")
             return
         }
-        
+
+        print("🚀 Starting MINIMAL GET request for:", url)
+
+        // ✅ Minimal config
         let config = URLSessionConfiguration.default
-        config.httpCookieStorage = nil
         config.httpShouldSetCookies = false
-        print("config: ", config)
-        let session = URLSession(configuration: config)
-        
-        // Prepare request with stripped tracking headers
-        // Prepare request with stripped tracking headers but keep iOS-like behavior
+        config.httpShouldUsePipelining = false
+        config.httpMaximumConnectionsPerHost = 1
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 15
+        config.httpCookieAcceptPolicy = .never
+
+        // ✅ Keep a reference to the session so the delegate remains alive
+        let instance = URLGetExtract()
+        sharedSession = URLSession(configuration: config, delegate: instance, delegateQueue: nil)
+
         var request = URLRequest(url: url)
-        let defaultUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)"
+        request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/537.36", forHTTPHeaderField: "User-Agent")
         request.httpMethod = "GET"
-        request.setValue("*/*", forHTTPHeaderField: "Accept")  // Accept all response types
-        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")  // Prevent caching
-        request.setValue(defaultUserAgent, forHTTPHeaderField: "User-Agent")  // Use a normal iOS User-Agent
-        request.setValue(nil, forHTTPHeaderField: "Authorization")  // Remove authentication tracking
-        request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
-        
-        
-        let task = session.dataTask(with: request) { data, response, error in
-            var onlineInfo = OnlineURLInfo(from: urlInfo)
-            if let httpResponse = response as? HTTPURLResponse {
-            
-                // ✅ Extract headers
-                let headers = httpResponse.allHeaderFields as? [String: String] ?? [:]
-                
-                // ✅ Extract final redirect URL (if any)
-                let finalURL = httpResponse.url?.absoluteString
-                
-                // ✅ Update OnlineURLInfo
-                onlineInfo.serverResponseCode = httpResponse.statusCode
-                onlineInfo.responseHeaders = headers
-                onlineInfo.finalRedirectURL = finalURL
-            } else {
-                print("⚠️ Failed to fetch \(url)")
+
+        print("🔍 Sending raw request to:", url)
+
+        let task = sharedSession!.dataTask(with: request) { data, response, error in
+            if let error = error {
+                print("❌ Request failed:", error.localizedDescription)
+                return
             }
-            DispatchQueue.main.async {
-                completion(onlineInfo)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("⚠️ No valid response received.")
+                return
             }
+
+            print("✅ Response Received: \(httpResponse.statusCode)")
+            print("📡 Response Headers:", httpResponse.allHeaderFields)
         }
+
         task.resume()
     }
-
+    
     /// ✅ Handle SSL challenges & extract certificate details
     func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        
+        print("✅ Created URLSession with delegate:", session)
         if let serverTrust = challenge.protectionSpace.serverTrust {
             print("🔍 SSL Challenge received for:", challenge.protectionSpace.host)
-
+            
             // ✅ Extract SSL certificate details
             let certDetails = SSLExtract(trust: serverTrust)
-
+            
             print("🔐 SSL Certificate Details:", certDetails)
             
             // ✅ Allow the request if SSL is valid
@@ -76,36 +75,70 @@ class URLGetExtract: NSObject, URLSessionDelegate {
         }
     }
     
-    /// ✅ Extract SSL certificate details
+    /// ✅ Extract SSL certificate details even if handshake fails
     func SSLExtract(trust: SecTrust) -> [String: Any] {
         var extractedDetails: [String: Any] = [:]
-        
-        guard let certs = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
-              let certData = SecCertificateCopyData(certs.first!) as Data? else {
-            print("❌ Failed to retrieve certificate data.")
+
+        // ✅ Get certificate chain
+        var certChain: [SecCertificate] = []
+        if #available(iOS 15.0, *) {
+            if let certs = SecTrustCopyCertificateChain(trust) as? [SecCertificate] {
+                certChain = certs
+            }
+        } else {
+            let certCount = SecTrustGetCertificateCount(trust)
+            for i in 0..<certCount {
+                if let cert = SecTrustGetCertificateAtIndex(trust, i) {
+                    certChain.append(cert)
+                }
+            }
+        }
+
+        if certChain.isEmpty {
+            print("❌ No certificates found in trust chain.")
+            extractedDetails["Error"] = "No SSL certificate found."
             return extractedDetails
         }
-        
+
+        // ✅ Process first certificate (leaf certificate)
+        guard let cert = certChain.first else {
+            print("❌ Failed to retrieve leaf certificate.")
+            extractedDetails["Error"] = "Certificate retrieval failed."
+            return extractedDetails
+        }
+
+        // ✅ Convert to Data
+        guard let certData = SecCertificateCopyData(cert) as Data? else {
+            print("❌ Failed to extract certificate data.")
+            extractedDetails["Error"] = "Could not convert certificate."
+            return extractedDetails
+        }
+
         do {
-            // ✅ Decode using X509Certificate
+            // ✅ Use `X509Certificate` to decode everything at once
             let decodedCertificate = try X509Certificate(data: certData)
-//            print("🔍 Decoded SSL Certificate:", decodedCertificate)
             
-            // ✅ Extract useful fields
-            extractedDetails["Issuer"] = decodedCertificate.issuerDistinguishedName
             extractedDetails["Subject"] = decodedCertificate.subjectDistinguishedName
+            extractedDetails["Issuer"] = decodedCertificate.issuerDistinguishedName
+            extractedDetails["Serial Number"] = decodedCertificate.serialNumber
+            extractedDetails["Public Key Algorithm"] = decodedCertificate.publicKey
             extractedDetails["Validity"] = [
                 "Not Before": decodedCertificate.notBefore,
                 "Not After": decodedCertificate.notAfter
             ]
-            extractedDetails["Public Key Info"] = decodedCertificate.publicKey
-            
-//            print("✅ Extracted Certificate Details:", extractedDetails)
-            
+
+            // ✅ Check if certificate is expired
+            if let expirationDate = decodedCertificate.notAfter, expirationDate < Date() {
+                extractedDetails["Warning"] = "⚠️ Certificate is expired!"
+            }
+
+            print("🔐 Parsed Certificate Details:", extractedDetails)
+
         } catch {
-            print("❌ Failed to decode X.509 Certificate:", error)
+            print("❌ Failed to decode certificate:", error.localizedDescription)
+            extractedDetails["Error"] = "X509 parsing failed."
         }
-        
+
         return extractedDetails
     }
 }

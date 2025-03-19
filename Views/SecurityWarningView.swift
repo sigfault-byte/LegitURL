@@ -39,28 +39,60 @@ struct SecurityWarningsView: View {
 
 struct SecurityWarningsDetailView: View {
     @ObservedObject var urlQueue: URLQueue
+    @State private var expandedSections: Set<SecurityWarning.SeverityLevel> = []
+
+    var groupedWarnings: [SecurityWarning.SeverityLevel: [SecurityWarning]] {
+        Dictionary(grouping: urlQueue.allWarnings, by: { $0.severity })
+    }
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
-                    ForEach(urlQueue.allWarnings, id: \.id) { warning in
-                        HStack(alignment: .top, spacing: 5) {
-                            Circle()
-                                .fill(warning.severity.color)
-                                .frame(width: 10, height: 10)
-                                .padding(.top, 4)
+                    ForEach(SecurityWarning.SeverityLevel.allCases, id: \.self) { severity in
+                        if let warnings = groupedWarnings[severity], !warnings.isEmpty {
+                            Section {
+                                Button(action: {
+                                    if expandedSections.contains(severity) {
+                                        expandedSections.remove(severity)
+                                    } else {
+                                        expandedSections.insert(severity)
+                                    }
+                                }) {
+                                    HStack {
+                                        Text("\(severity.icon) \(severity.rawValue.capitalized) Warnings (\(warnings.count))")
+                                            .font(.headline)
+                                            .foregroundColor(severity.color)
+                                        Spacer()
+                                        Image(systemName: expandedSections.contains(severity) ? "chevron.down" : "chevron.right")
+                                            .foregroundColor(severity.color)
+                                    }
+                                    .padding()
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemGray6)))
+                                }
 
-                            Text("\(warning.message)")
-                                .font(.footnote)
-                                .foregroundColor(.gray)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                if expandedSections.contains(severity) {
+                                    ForEach(warnings, id: \.id) { warning in
+                                        HStack(alignment: .top, spacing: 5) {
+                                            Circle()
+                                                .fill(warning.severity.color)
+                                                .frame(width: 10, height: 10)
+                                                .padding(.top, 4)
+
+                                            Text("\(warning.message)")
+                                                .font(.footnote)
+                                                .foregroundColor(.gray)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                                .multilineTextAlignment(.leading)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding()
+                                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemGray6)))
+                                    }
+                                }
+                            }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemGray6)))
                     }
                 }
                 .padding()
@@ -77,39 +109,18 @@ struct SecurityWarningsDetailView: View {
     }
 }
 
+// ✅ Update SeverityLevel to support sorting & icons
+extension SecurityWarning.SeverityLevel: CaseIterable {
+    var icon: String {
+        switch self {
+        case .info: return "ℹ️"
+        case .suspicious: return "⚠️"
+        case .dangerous: return "🚨"
+        case .critical: return "❌"
+        }
+    }
 
-
-
-
-//struct SecurityWarningsView: View {
-//    @ObservedObject var urlQueue: URLQueue
-//
-//    var body: some View {
-//        VStack(alignment: .leading, spacing: 10) {
-//            if urlQueue.allWarnings.count >= 1{
-//                Text("⚠️ Security Warnings:")
-//                    .font(.headline)
-//                    .foregroundColor(.red)
-//            }
-//
-//            ForEach(urlQueue.allWarnings, id: \.id) { warning in
-//                HStack(alignment: .top, spacing: 5) {
-//                    Circle()
-//                        .fill(warning.severity.color)
-//                        .frame(width: 10, height: 10)
-//                        .padding(.top, 4)
-//
-//                    Text("\(warning.message)")
-//                        .font(.footnote)
-//                        .foregroundColor(.gray)
-//                        .fixedSize(horizontal: false, vertical: true)
-//                        .multilineTextAlignment(.leading)
-//                        .frame(maxWidth: .infinity, alignment: .leading)
-//                }
-//                .frame(maxWidth: .infinity, alignment: .leading)
-//            }
-//        }
-//        .frame(maxWidth: .infinity, alignment: .leading) // ✅ Ensures entire VStack is aligned
-//        .padding(.horizontal, 0) // ✅ Remove any unexpected extra padding
-//    }
-//}
+    static var allCases: [SecurityWarning.SeverityLevel] {
+        return [.critical, .dangerous, .suspicious, .info] // Sorting order (Critical first)
+    }
+}

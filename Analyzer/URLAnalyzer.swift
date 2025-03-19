@@ -143,5 +143,3 @@ struct URLAnalyzer {
         return false
     }
 }
-
-
