@@ -112,7 +112,6 @@ struct URLAnalyzer {
                         failedURLInfo.processedOnline = true
                         URLQueue.shared.offlineQueue[index] = failedURLInfo
                     }
-
                     return
                 }
 
@@ -128,7 +127,6 @@ struct URLAnalyzer {
                         failedURLInfo.processedOnline = true
                         URLQueue.shared.offlineQueue[index] = failedURLInfo
                     }
-
                     return
                 }
 

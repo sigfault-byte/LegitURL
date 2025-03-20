@@ -20,8 +20,6 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
     
     // It takes a URLInfo object and a completion handler, then returns an OnlineURLInfo and an updated URLInfo.
     static func extract(urlInfo: URLInfo, completion: @escaping (OnlineURLInfo?, Error?) -> Void) {
-        // Copy the original URLInfo to update it if needed.
-        var updatedURLInfo = urlInfo
         
         // Construct the URL from the URLInfo components.
         // Ensure that both scheme (e.g., "https") and host (e.g., "example.com") are available.
@@ -33,8 +31,8 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         
         // Use the path provided in URLInfo if available; otherwise, default to "/".
         let path = urlInfo.components.path ?? "/"
-        // Construct a sanitized URL string.
-        let sanitizedURLString = "\(scheme)://\(host)\(path)"
+        // Construct a sanitized URL string. Lowercased for weird reasons
+        let sanitizedURLString = "\(scheme.lowercased())://\(host.lowercased())\(path)"
         // Convert the sanitized URL string into a URL object.
         guard let url = URL(string: sanitizedURLString) else {
             print("❌ Failed to construct valid URL:", sanitizedURLString)
@@ -93,7 +91,22 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             // Extract relevant response details: status code, status text, and headers.
             let statusCode = httpResponse.statusCode
             let statusText = HTTPURLResponse.localizedString(forStatusCode: statusCode)
-            let headers = httpResponse.allHeaderFields as? [String: String] ?? [:]
+            var normalizedHeaders: [String: String] = [:]
+//            let normalizedHeaders = Dictionary(uniqueKeysWithValues: httpResponse.allHeaderFields.compactMap {
+//                guard let key = $0.key as? String, let value = $0.value as? String else { return nil }
+//                return (key.lowercased(), value)
+//            })
+            // One liner is horrible this is more readable
+            for (key, value) in httpResponse.allHeaderFields {
+                if let keyString = key as? String, let valueString = value as? String {
+                    normalizedHeaders[keyString.lowercased()] = valueString
+                }
+            }
+            print(normalizedHeaders)
+            let parsedHeaders = parseHeaders(httpResponse.allHeaderFields)
+            let redirectLocation = parsedHeaders.otherHeaders["location"] ?? nil
+            let detectedRedirect = httpResponse.url?.absoluteString != sanitizedURLString.lowercased() ? httpResponse.url?.absoluteString : nil
+            
             
             let sslCertificateDetails = URLGetExtract.sslCertificateDetails
             
@@ -102,11 +115,12 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                 from: urlInfo,
                 responseCode: statusCode,
                 statusText: statusText,
-                headers: headers,
+                normalizedHeaders: normalizedHeaders, // Keep raw headers
+                parsedHeaders: parsedHeaders,
                 body: data,
                 certificateAuthority: sslCertificateDetails["Issuer"] as? String,
                 sslValidity: !(sslCertificateDetails["Warning"] != nil),
-                finalRedirectURL: httpResponse.url?.absoluteString
+                finalRedirectURL: detectedRedirect ?? redirectLocation
             )
             
             // Pass the response and updated URLInfo to the completion handler.
@@ -174,5 +188,33 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         
         // Accept the SSL certificate
         completionHandler(.useCredential, URLCredential(trust: serverTrust))
+    }
+    
+    private static func parseHeaders(_ responseHeaders: [AnyHashable: Any]) -> ParsedHeaders {
+        var normalizedHeaders: [String: String] = [:]
+        
+        // ✅ Convert headers to lowercase for case-insensitivity
+        for (key, value) in responseHeaders {
+            if let keyString = key as? String, let valueString = value as? String {
+                normalizedHeaders[keyString.lowercased()] = valueString
+            }
+        }
+        
+        // ✅ Categorize headers
+        var parsedHeaders = ParsedHeaders()
+        
+        for (key, value) in normalizedHeaders {
+            if ["strict-transport-security", "content-security-policy", "x-frame-options", "x-content-type-options", "referrer-policy"].contains(key) {
+                parsedHeaders.securityHeaders[key] = value
+            } else if ["set-cookie", "etag", "permissions-policy"].contains(key) {
+                parsedHeaders.trackingHeaders[key] = value
+            } else if ["server", "x-powered-by", "x-aspnet-version", "x-aspnetmvc-version"].contains(key) {
+                parsedHeaders.serverHeaders[key] = value
+            } else {
+                parsedHeaders.otherHeaders[key] = value
+            }
+        }
+        
+        return parsedHeaders
     }
 }

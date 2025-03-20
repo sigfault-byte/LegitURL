@@ -219,9 +219,10 @@ struct HostAnalyzer {
                 } else if !LegitURLTools.isRealWord(lowerToken){
                     urlInfo.warnings.append(SecurityWarning(
                         message: "The domain token '\(lowerToken)' in '\(domain)' appears to be gibberish. This could be a typo, or a deliberate attempt to deceive users.",
-                        severity: .suspicious
+                        severity: .info
                     ))
-                    URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInHost
+//                    TEST
+//                    URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInHost
                 }
             }
         }
@@ -251,9 +252,10 @@ struct HostAnalyzer {
         if !LegitURLTools.isRealWord(lowerDomain){
             urlInfo.warnings.append(SecurityWarning(
                 message: "The domain '\(lowerDomain)' appears to be gibberish. This could be a typo, or a deliberate attempt to deceive users.",
-                severity: .suspicious
+                severity: .info
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInHost
+//            TEST
+//            URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInHost
         }
     }
     

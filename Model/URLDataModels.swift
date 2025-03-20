@@ -43,9 +43,9 @@ struct URLInfo: Identifiable {
     var processedOnline = false
     
     public init(components: URLComponentsInfo, warnings: [SecurityWarning]) {
-            self.components = components
-            self.warnings = warnings
-        }
+        self.components = components
+        self.warnings = warnings
+    }
     
     /// ✅ No private var! We store everything in `URLQueue.shared.onlineQueue`
     var onlineInfo: OnlineURLInfo? {
@@ -98,37 +98,44 @@ struct OnlineURLInfo: Identifiable {
     var httpVersion: String?  // ✅ Store HTTP/1.1, HTTP/2, etc.
     var serverResponseCode: Int?
     var statusText: String?  // ✅ Store "OK", "Not Found", etc.
-    var responseHeaders: [String: String]?
+    var normalizedHeaders: [String: String]?
+    var parsedHeaders: ParsedHeaders?  // ✅ Store structured headers
     var responseBody: Data?  // ✅ Store raw response body
     var certificateAuthority: String?
     var sslValidity: Bool = false
     var finalRedirectURL: String?
-
-    var formattedHeaders: String {
-        responseHeaders?.map { "\($0.key): \($0.value)" }.joined(separator: "\n") ?? "No headers available"
-    }
-
+    
+    //    Need to be either analysed, or cleaned because it can be way too big!
     var formattedBody: String {
         guard let data = responseBody else { return "No body available" }
         return String(data: data, encoding: .utf8) ?? "⚠️ Unable to decode body"
     }
-
+    
     init(from urlInfo: URLInfo,
          responseCode: Int? = nil,
          statusText: String? = nil,
-         headers: [String: String]? = nil,
+         normalizedHeaders: [String: String]? = nil,
+         parsedHeaders: ParsedHeaders? = nil,  // ✅ New structured headers
          body: Data? = nil,
          certificateAuthority: String? = nil,
          sslValidity: Bool = false,
-         finalRedirectURL: String? = nil) 
+         finalRedirectURL: String? = nil)
     {
         self.id = urlInfo.id
         self.serverResponseCode = responseCode
         self.statusText = statusText
-        self.responseHeaders = headers
+        self.normalizedHeaders = normalizedHeaders
+        self.parsedHeaders = parsedHeaders
         self.responseBody = body
         self.certificateAuthority = certificateAuthority
         self.sslValidity = sslValidity
         self.finalRedirectURL = finalRedirectURL
     }
+}
+
+struct ParsedHeaders {
+    var securityHeaders: [String: String] = [:]
+    var trackingHeaders: [String: String] = [:]
+    var serverHeaders: [String: String] = [:]
+    var otherHeaders: [String: String] = [:]
 }

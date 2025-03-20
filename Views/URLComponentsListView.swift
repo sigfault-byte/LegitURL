@@ -108,9 +108,13 @@ struct URLComponentsListView: View {
                         if let responseCode = onlineInfo.serverResponseCode {
                             URLDetailRow(label: "Server Response Code", value: "\(responseCode)")
                         }
-                        
+
                         if let statusText = onlineInfo.statusText {
                             URLDetailRow(label: "Status Text", value: statusText)
+                        }
+                        
+                        if let finalRedirectURL = onlineInfo.finalRedirectURL {
+                            URLDetailRow(label: "Server redirects to:", value: finalRedirectURL)
                         }
                         
                         if let certAuth = onlineInfo.certificateAuthority {
@@ -119,8 +123,8 @@ struct URLComponentsListView: View {
                         
                         URLDetailRow(label: "SSL Validity", value: onlineInfo.sslValidity ? "✅ Valid" : "❌ Invalid", color: onlineInfo.sslValidity ? .green : .red)
                         
-                        if !onlineInfo.formattedHeaders.isEmpty {
-                            NavigationLink(destination: URLFormattedView(title: "Response Headers", content: onlineInfo.formattedHeaders)) {
+                        if let parsedHeaders = onlineInfo.parsedHeaders {
+                            NavigationLink(destination: URLFormattedView(title: "Response Headers", content: formatParsedHeaders(parsedHeaders))) {
                                 Text("🔍 View Response Headers")
                                     .foregroundColor(.blue)
                                     .padding(6)
@@ -151,7 +155,7 @@ struct URLComponentsListView: View {
     struct URLFormattedView: View {
         var title: String
         var content: String
-
+        
         var body: some View {
             ScrollView {
                 Text(content)
@@ -165,23 +169,44 @@ struct URLComponentsListView: View {
             .padding()
         }
     }
+}
+
+private func formatParsedHeaders(_ headers: ParsedHeaders) -> String {
+    var output = ""
     
-    struct URLHeaderView: View {
-        var headers: String
-        
-        var body: some View {
-            ScrollView {
-                Text(headers)
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.systemGray5))
-                    .cornerRadius(6)
-            }
-            .navigationTitle("Response Headers")
-            .padding()
+    if !headers.securityHeaders.isEmpty {
+        output += "🔒 **Security Headers**\n"
+        for (key, value) in headers.securityHeaders {
+            output += "- \(key): \(value)\n"
         }
+        output += "\n"
     }
+    
+    if !headers.trackingHeaders.isEmpty {
+        output += "👁️ **Tracking Indicators**\n"
+        for (key, value) in headers.trackingHeaders {
+            output += "- \(key): \(value)\n"
+        }
+        output += "\n"
+    }
+    
+    if !headers.serverHeaders.isEmpty {
+        output += "🖥 **Server Information**\n"
+        for (key, value) in headers.serverHeaders {
+            output += "- \(key): \(value)\n"
+        }
+        output += "\n"
+    }
+    
+    if !headers.otherHeaders.isEmpty {
+        output += "📦 **Other Headers**\n"
+        for (key, value) in headers.otherHeaders {
+            output += "- \(key): \(value)\n"
+        }
+        output += "\n"
+    }
+    
+    return output.isEmpty ? "No Headers Available" : output
 }
 
 /// **Reusable Row for URL Components**

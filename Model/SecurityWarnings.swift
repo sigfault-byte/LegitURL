@@ -22,6 +22,15 @@ struct SecurityWarning: Identifiable{
         case critical = "CRITICAL"
         case urlGetFail = "GETFAILED"
         
+//        TODO REFACTOR:
+//        enum SeverityLevel: String {
+//            case info = "INFO"               // ✅ Stays the same
+//            case tracking = "TRACKING"       // 🔍 NEW: For tracking/fingerprinting
+//            case phishingScam = "SCAM"       // 🔍 NEW: For phishing & scam detection
+//            case dangerous = "DANGEROUS"      // ✅ Stays the same
+//            case critical = "CRITICAL"        // ✅ Stays the same, includes failed GETs
+//        }
+        
         /// Returns a color for UI representation
         var color: Color {
             switch self {
