@@ -31,46 +31,45 @@ struct URLAnalyzer {
     }
     
     private static func processQueue() {
-        var iterations = 0
-        var newURL: String?
-        
-        while iterations < 5 {
-            // ✅ Find the first unprocessed URL
-            guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processed }) else {
-                print("✅ All URLs processed or queue is empty.")
-                break
-            }
-            
-            var currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
-            URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
-            if shouldStopAnalysis(currentURLInfo) { return }
-            
-            // ✅ Run offline analysis
-            currentURLInfo = HostAnalyzer.analyze(urlInfo: currentURLInfo)
-            URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
-            if shouldStopAnalysis(currentURLInfo) { return }
-            
-            (currentURLInfo, newURL) = PQFAnalyzer.analyze(urlInfo: currentURLInfo)
-            URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
-            if shouldStopAnalysis(currentURLInfo) { return }
-            
-            // ✅ Handle loopback URLs
-            if let newURL = newURL {
-                var infoMessage: String? = ""
-                let (cleanURL, _) = sanitizeAndValidate(newURL, &infoMessage)
-                guard let cleanedURL = cleanURL else { return }
-                let newExtractedInfo = extractComponents(from: cleanedURL)
-                URLQueue.shared.offlineQueue.append(newExtractedInfo)
-            }
-            
-            // ✅ Mark this URL as processed
-            URLQueue.shared.offlineQueue[currentIndex].processed = true
-            iterations += 1
+        if URLQueue.shared.offlineQueue.count >= 5 {
+            print("⛔ Offline queue limit reached. Stopping further analysis.")
+            return
         }
-        
-        print("✅ Offline queue complete. Starting online analysis...")
-        
-        processOnlineQueue()
+
+        guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processed }) else {
+            print("✅ All URLs processed in OfflineQueue. Now processing OnlineQueue...")
+            processOnlineQueue()
+            return
+        }
+
+        var currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
+        URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
+        if shouldStopAnalysis(currentURLInfo) { return }
+
+        // ✅ Run offline analysis
+        currentURLInfo = HostAnalyzer.analyze(urlInfo: currentURLInfo)
+        URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
+        if shouldStopAnalysis(currentURLInfo) { return }
+
+        var newURL: String?
+        (currentURLInfo, newURL) = PQFAnalyzer.analyze(urlInfo: currentURLInfo)
+        URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
+        if shouldStopAnalysis(currentURLInfo) { return }
+
+        // ✅ Handle loopback URLs
+        if let newURL = newURL {
+            var infoMessage: String? = ""
+            let (cleanURL, _) = sanitizeAndValidate(newURL, &infoMessage)
+            guard let cleanedURL = cleanURL else { return }
+            let newExtractedInfo = extractComponents(from: cleanedURL)
+            URLQueue.shared.offlineQueue.append(newExtractedInfo)
+        }
+
+        // ✅ Mark this URL as processed
+        URLQueue.shared.offlineQueue[currentIndex].processed = true
+
+        // ✅ Recursively process next item
+        processQueue()
     }
     
     private static var onlineQueueIterations = 0
@@ -137,6 +136,31 @@ struct URLAnalyzer {
                     URLGetAnalyzer.analyze(urlInfo: &updatedURLInfo)
                     URLQueue.shared.offlineQueue[index] = updatedURLInfo
                     URLQueue.shared.offlineQueue[index].processedOnline = true
+                    
+                    // ✅ Check for a redirect and enqueue it
+                    if let finalRedirect = onlineInfo.finalRedirectURL,
+                       let originalURL = currentURLInfo.components.fullURL,
+                       finalRedirect.lowercased() != originalURL.lowercased() {
+                        
+                        let alreadyQueued = URLQueue.shared.offlineQueue.contains {
+                            $0.components.fullURL?.lowercased() == finalRedirect.lowercased()
+                        }
+                        
+                        if !alreadyQueued && URLQueue.shared.offlineQueue.count < 5 {
+                            var dummy: String? = ""
+                            let (cleanedRedirectURL, _) = sanitizeAndValidate(finalRedirect, &dummy)
+                            
+                            if let cleanedRedirectURL = cleanedRedirectURL {
+                                let newComponents = extractComponents(from: cleanedRedirectURL)
+//                                let newURLInfo = URLInfo(components: newComponents, warnings: [])
+                                print("🔁 Adding redirect URL to offline queue:", cleanedRedirectURL)
+                                URLQueue.shared.offlineQueue.append(newComponents)
+                                DispatchQueue.main.async {
+                                    processQueue()
+                                }
+                            }
+                        }
+                    }
                 }
 
                 processOnlineQueue()

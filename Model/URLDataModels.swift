@@ -101,6 +101,8 @@ struct OnlineURLInfo: Identifiable {
     var normalizedHeaders: [String: String]?
     var parsedHeaders: ParsedHeaders?  // ✅ Store structured headers
     var responseBody: Data?  // ✅ Store raw response body
+    var normalizedCertificate: [String:String] = [:]
+    var parsedCertificate: ParsedCertificate?
     var certificateAuthority: String?
     var sslValidity: Bool = false
     var finalRedirectURL: String?
@@ -139,3 +141,18 @@ struct ParsedHeaders {
     var serverHeaders: [String: String] = [:]
     var otherHeaders: [String: String] = [:]
 }
+
+struct ParsedCertificate {
+    var commonName: String?
+    var organization: String?
+    var issuerCommonName: String?
+    var issuerOrganization: String?
+    var notBefore: Date?
+    var notAfter: Date?
+    var publicKeyAlgorithm: String?
+    var keyUsage: String?
+    var publicKeyBits: Int?
+    var extendedKeyUsage: String?
+    var isSelfSigned: Bool = false
+}
+

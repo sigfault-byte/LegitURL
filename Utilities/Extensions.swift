@@ -10,7 +10,6 @@
 import Foundation
 import SwiftUI
 
-
 extension String {
     /// Transliterates the string by converting non-Latin characters into their Latin approximations
     /// and stripping any diacritical marks. This helps detect confusable characters in domains.

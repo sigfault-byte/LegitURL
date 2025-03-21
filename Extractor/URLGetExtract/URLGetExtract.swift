@@ -6,6 +6,7 @@
 //
 import Foundation
 import ASN1Decoder
+import ObjectiveC
 
 // This class is responsible for making a GET request to a URL constructed from URLInfo.
 // It cancels any HTTP redirection, so you receive the original response (e.g., a 301) instead of following the redirect.
@@ -47,11 +48,18 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         var request = URLRequest(url: url)
         request.httpMethod = "GET" // Specify the HTTP method.
         // Set the User-Agent header to mimic a browser.
-        request.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
-        // Accept any content type.
-        request.setValue("*/*", forHTTPHeaderField: "Accept")
-        // Set the Connection header to "close" to prevent persistent connections.
-        request.setValue("close", forHTTPHeaderField: "Connection")
+        request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+                         forHTTPHeaderField: "User-Agent")
+        request.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
+        request.setValue("gzip, deflate, br", forHTTPHeaderField: "Accept-Encoding")
+        request.timeoutInterval = 10
+        
+        print("URL: \(request.url?.absoluteString ?? "none")")
+        print("Method: \(request.httpMethod ?? "none")")
+        print("Headers:")
+        request.allHTTPHeaderFields?.forEach { key, value in
+            print("  \(key): \(value)")
+        }
         
         // Configure a dedicated URLSession for this request.
         let config = URLSessionConfiguration.default
@@ -102,7 +110,6 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                     normalizedHeaders[keyString.lowercased()] = valueString
                 }
             }
-            print(normalizedHeaders)
             let parsedHeaders = parseHeaders(httpResponse.allHeaderFields)
             let redirectLocation = parsedHeaders.otherHeaders["location"] ?? nil
             let detectedRedirect = httpResponse.url?.absoluteString != sanitizedURLString.lowercased() ? httpResponse.url?.absoluteString : nil
@@ -111,7 +118,7 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             let sslCertificateDetails = URLGetExtract.sslCertificateDetails
             
             // Create an OnlineURLInfo object that encapsulates the response details.
-            let onlineInfo = OnlineURLInfo(
+            var onlineInfo = OnlineURLInfo(
                 from: urlInfo,
                 responseCode: statusCode,
                 statusText: statusText,
@@ -122,6 +129,8 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                 sslValidity: !(sslCertificateDetails["Warning"] != nil),
                 finalRedirectURL: detectedRedirect ?? redirectLocation
             )
+            let parsedCert = sslCertificateDetails["ParsedCertificate"] as? ParsedCertificate
+            onlineInfo.parsedCertificate = parsedCert
             
             // Pass the response and updated URLInfo to the completion handler.
             if let error = error {
@@ -168,16 +177,42 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             // ✅ Convert SecCertificate to raw Data
             let certificateData = SecCertificateCopyData(firstCertificate) as Data
             
+//            // 🔍 Dump raw certificate before decoding
+//            let hexPreview = certificateData.prefix(32).map { String(format: "%02hhx", $0) }.joined(separator: " ")
+//            print("🔍 RAW CERTIFICATE DATA (hex preview): \(hexPreview)")
+//
+//            let base64EncodedCert = certificateData.base64EncodedString(options: .lineLength64Characters)
+//            let pemFormattedCert = "-----BEGIN CERTIFICATE-----\n" + base64EncodedCert + "\n-----END CERTIFICATE-----"
+//            print("🔍 RAW CERTIFICATE PEM FORMAT:\n\(pemFormattedCert)")
+//            --------------------------------------------------------------------------------
             // ✅ Decode the certificate using ASN1Decoder
-            if let decodedCertificate = try? X509Certificate(data: certificateData) {
-                print("✅ Successfully decoded certificate", decodedCertificate)
-                
+            if let decodedCertificate = try? X509Certificate(data: certificateData){
+//                print("✅ Successfully decoded certificate", decodedCertificate)
                 sslCertificateDetails["Issuer"] = decodedCertificate.issuerDistinguishedName
                 sslCertificateDetails["Issuer Organization"] = decodedCertificate.issuer(oid: .organizationName)
                 sslCertificateDetails["Validity"] = [
                     "Not Before": decodedCertificate.notBefore,
                     "Not After": decodedCertificate.notAfter
                 ]
+
+                let parsedCert = ParsedCertificate(
+                    commonName: decodedCertificate.subject(oid: .commonName)?.first,
+                    organization: decodedCertificate.subject(oid: .organizationName)?.first,
+                    issuerCommonName: decodedCertificate.issuer(oid: .commonName),
+                    issuerOrganization: decodedCertificate.issuer(oid: .organizationName),
+                    notBefore: decodedCertificate.notBefore,
+                    notAfter: decodedCertificate.notAfter,
+                    publicKeyAlgorithm: decodedCertificate.sigAlgName, // Fix: Use sigAlgName
+                    keyUsage: decodedCertificate.keyUsage.enumerated().compactMap { index, isSet in
+                        isSet ? ["Digital Signature", "Non-Repudiation", "Key Encipherment", "Data Encipherment", "Key Agreement", "Cert Sign", "CRL Sign", "Encipher Only", "Decipher Only"][index] : nil
+                    }.joined(separator: ", "),  // Convert Key Usage Bits
+//                    publicKeyBits: (decodedCertificate.publicKey?.asn1?.sub(0)?.value as? Data)?.count ?? 0 * 8,
+                    publicKeyBits: 0,
+                    extendedKeyUsage: decodedCertificate.extendedKeyUsage.joined(separator: ", "), // Extract extended key usage
+                    isSelfSigned: decodedCertificate.subjectDistinguishedName == decodedCertificate.issuerDistinguishedName
+                )
+                
+                sslCertificateDetails["ParsedCertificate"] = parsedCert
             } else {
                 print("❌ Failed to decode certificate using ASN1Decoder")
             }
@@ -186,7 +221,7 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         // ✅ Store extracted details globally
         URLGetExtract.sslCertificateDetails = sslCertificateDetails
         
-        // Accept the SSL certificate
+        // Accept the SSL certificate, this is terrible but necessary
         completionHandler(.useCredential, URLCredential(trust: serverTrust))
     }
     

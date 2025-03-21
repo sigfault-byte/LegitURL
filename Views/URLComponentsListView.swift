@@ -117,11 +117,31 @@ struct URLComponentsListView: View {
                             URLDetailRow(label: "Server redirects to:", value: finalRedirectURL)
                         }
                         
-                        if let certAuth = onlineInfo.certificateAuthority {
-                            URLDetailRow(label: "Certificate Authority", value: certAuth)
+                        URLDetailRow(label: "SSL Validity", value: onlineInfo.sslValidity ? "✅ Valid" : "❌ Invalid", color: onlineInfo.sslValidity ? .green : .red)
+                        
+                        DisclosureGroup("🔐 View Certificate Details") {
+                            if let cert = onlineInfo.parsedCertificate {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("🔹 Common Name: \(cert.commonName ?? "N/A")")
+                                    Text("🏢 Organization: \(cert.organization ?? "N/A")")
+                                    Text("📜 Issuer CN: \(cert.issuerCommonName ?? "N/A")")
+                                    Text("🏢 Issuer Org: \(cert.issuerOrganization ?? "N/A")")
+                                    Text("🔐 Public Key: \(cert.publicKeyAlgorithm ?? "N/A") (\(cert.publicKeyBits ?? 0) bits)")
+                                    Text("🔑 Key Usage: \(cert.keyUsage ?? "N/A")")
+                                    Text("🌐 Extended Key Usage: \(cert.extendedKeyUsage ?? "N/A")")
+                                    Text("📅 Valid From: \(cert.notBefore?.formatted() ?? "N/A")")
+                                    Text("📅 Valid Until: \(cert.notAfter?.formatted() ?? "N/A")")
+                                    Text("🧾 Self-Signed: \(cert.isSelfSigned ? "Yes" : "No")")
+                                }
+                                .font(.system(size: 14, weight: .regular, design: .monospaced))
+                                .padding(.vertical, 4)
+                            } else {
+                                Text("No certificate info available.")
+                                    .foregroundColor(.secondary)
+                            }
                         }
                         
-                        URLDetailRow(label: "SSL Validity", value: onlineInfo.sslValidity ? "✅ Valid" : "❌ Invalid", color: onlineInfo.sslValidity ? .green : .red)
+                        
                         
                         if let parsedHeaders = onlineInfo.parsedHeaders {
                             NavigationLink(destination: URLFormattedView(title: "Response Headers", content: formatParsedHeaders(parsedHeaders))) {
