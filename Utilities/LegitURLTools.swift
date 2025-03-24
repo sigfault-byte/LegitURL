@@ -281,7 +281,6 @@ struct LegitURLTools {
     static func isRealWord(_ word: String) -> Bool {
         // ✅ Step 1: Try Apple's dictionary (fast and accurate)
         if UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: word) {
-            print("✅ DEBUG: '\(word)' found in Apple dictionary.")
             return true
         }
         
@@ -323,4 +322,34 @@ struct LegitURLTools {
             return (entropy >= threshold, entropy)
         }
     
+    static func levenshtein(_ aStr: String, _ bStr: String) -> Int {
+        let a = Array(aStr)
+        let b = Array(bStr)
+        let aCount = a.count
+        let bCount = b.count
+
+        guard aCount != 0 else { return bCount }
+        guard bCount != 0 else { return aCount }
+
+        var matrix = Array(repeating: Array(repeating: 0, count: bCount + 1), count: aCount + 1)
+
+        for i in 0...aCount { matrix[i][0] = i }
+        for j in 0...bCount { matrix[0][j] = j }
+
+        for i in 1...aCount {
+            for j in 1...bCount {
+                if a[i - 1] == b[j - 1] {
+                    matrix[i][j] = matrix[i - 1][j - 1]
+                } else {
+                    matrix[i][j] = min(
+                        matrix[i - 1][j] + 1,    // Deletion
+                        matrix[i][j - 1] + 1,    // Insertion
+                        matrix[i - 1][j - 1] + 1 // Substitution
+                    )
+                }
+            }
+        }
+
+        return matrix[aCount][bCount]
+    }
 }

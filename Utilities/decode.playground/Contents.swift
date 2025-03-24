@@ -1,0 +1,13 @@
+@testable import URLChecker
+
+import Foundation
+
+
+
+
+let encoded = "MDV8MDJ8YWRpdHlhLnZhcmdoZXNlQHNpc2QuYWV8N2FiYzkxYjFmY2E0NDg0YTVhMWMwOGRkM2FjODJjMjh8N2ZjOTcwN2I5ZDhmNGY2YTg1NmJhZWI4NDhmZWYxMDN8MHwwfDYzODczMTM1MzYwMzc4MjQxN3xVbmtub3dufFRXRnBiR1pzYjNkOGV5SkZiWEIwZVUxaGNHa2lPblJ5ZFdVc0lsWWlPaUl3TGpBdU1EQXdNQ0lzSWxBaU9pSlhhVzR6TWlJc0lrRk9Jam9pVFdGcGJDSXNJbGRVSWpveWZRPT18MHx8fA%3d%3d&sdata=R0R1UW9YRG14M1pHM3VKaHNzUis1WmlTZTVRMVpGMU9xUTUxcnIySnpxcz0%3d"
+
+let decoded = LamaiDecoding.decode(input: encoded)
+
+decoded.printTree()
+

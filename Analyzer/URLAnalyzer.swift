@@ -23,7 +23,7 @@ struct URLAnalyzer {
         
         URLQueue.shared.offlineQueue.append(extractedInfo)
         
-        if shouldStopAnalysis(extractedInfo) { return }
+        if shouldStopAnalysis(extractedInfo, atIndex: 0) { return }
         
         processQueue()
         
@@ -42,21 +42,22 @@ struct URLAnalyzer {
             return
         }
 
-        var currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
+        let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
         URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
-        if shouldStopAnalysis(currentURLInfo) { return }
+        if shouldStopAnalysis(currentURLInfo, atIndex: currentIndex) { return }
 
         // ✅ Run offline analysis
-        currentURLInfo = HostAnalyzer.analyze(urlInfo: currentURLInfo)
-        URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
-        if shouldStopAnalysis(currentURLInfo) { return }
+        var urlToAnalyze = currentURLInfo
+        HostAnalysis.analyze(urlObject: &urlToAnalyze)
+        URLQueue.shared.offlineQueue[currentIndex] = urlToAnalyze
+        if shouldStopAnalysis(currentURLInfo, atIndex: currentIndex) { return }
 
         var newURL: String?
-        (currentURLInfo, newURL) = PQFAnalyzer.analyze(urlInfo: currentURLInfo)
-        URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
-        if shouldStopAnalysis(currentURLInfo) { return }
+        newURL = PQFAnalyzer2.analyze(urlInfo: &urlToAnalyze)
+        URLQueue.shared.offlineQueue[currentIndex] = urlToAnalyze
+        if shouldStopAnalysis(currentURLInfo, atIndex: currentIndex) { return }
 
-        // ✅ Handle loopback URLs
+//         ✅ Handle loopback URLs
         if let newURL = newURL {
             var infoMessage: String? = ""
             let (cleanURL, _) = sanitizeAndValidate(newURL, &infoMessage)
@@ -183,12 +184,14 @@ struct URLAnalyzer {
         return URLExtractComponents.extract(url: url)
     }
     
-    private static func shouldStopAnalysis(_ urlInfo: URLInfo) -> Bool {
+    private static func shouldStopAnalysis(_ urlInfo: URLInfo, atIndex: Int) -> Bool {
         if urlInfo.warnings.contains(where: { $0.severity == .critical }) {
+            URLQueue.shared.offlineQueue[atIndex].processed = true
             print("❌ Critical warning found. Stopping analysis.")
             return true
         }
         else if urlInfo.warnings.contains(where: { $0.severity == .urlGetFail}){
+            URLQueue.shared.offlineQueue[atIndex].processed = true
             print(" ⚠️ URL GET request failed. Stopping analysis.")
             return true
         }

@@ -13,53 +13,64 @@ struct FragmentAnalyzer {
         var newURL: String? = nil
         
         if let fragment = urlInfo.components.fragment {
-            // First, check if the fragment is a “normal” UI fragment.
-            if fragment.matches(regex: Regex.normalFragmentRegex) {
+            let allowedChars = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~=%:/")
+            let isNormalString = fragment.matches(regex: Regex.normalFragmentRegex)
+
+            if isNormalString {
                 urlInfo.components.fragmentKeys = []
                 urlInfo.components.fragmentValues = [fragment]
-            }
-            else if fragment.matches(regex: Regex.wideQueryRegex) {
-                // The fragment isn't "normal" but it matches our wide query regex,
-                // so we treat it as a query-like fragment.
+            } else {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "Fragment is 'query-like.' and uses key=value pairs",
+                    message: "Fragment is not a normal UI string fragment.",
                     severity: .info
                 ))
-                // Extract key-value pairs from the fragment.
+
+                let pairs = fragment.split(separator: "&", omittingEmptySubsequences: false)
+                var malformedPairFound = false
+
+                for pair in pairs {
+                    let components = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+                    if components.count != 2 || components[0].isEmpty || components[1].isEmpty {
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "Fragment pair '\(pair)' is malformed. Must follow key=value format.",
+                            severity: .suspicious
+                        ))
+                        malformedPairFound = true
+                        continue
+                    }
+
+                    if pair.rangeOfCharacter(from: allowedChars.inverted) != nil {
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "Fragment pair '\(pair)' contains forbidden characters.",
+                            severity: .suspicious
+                        ))
+                        malformedPairFound = true
+                    }
+                }
+
+                if malformedPairFound {
+                    urlInfo.warnings.append(SecurityWarning(
+                        message: "Fragment does not fully conform to expected format or character set.",
+                        severity: .critical
+                    ))
+                    let deepWarnings = DeepScamHellCheck.analyze(queryOrFragment: fragment, isFragment: true)
+                    urlInfo.warnings.append(contentsOf: deepWarnings)
+                    URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
+                    return (urlInfo, nil)
+                }
+
+                // If it's a valid query-like fragment, extract key-value pairs and analyze further.
+                urlInfo.warnings.append(SecurityWarning(
+                    message: "Fragment is 'query-like' and uses key=value pairs.",
+                    severity: .info
+                ))
                 let (keys, values) = KeyValuePairExtract.extractAsArray(from: fragment)
                 urlInfo.components.fragmentKeys = keys
                 urlInfo.components.fragmentValues = values
-                
-                // Optionally, check for forbidden characters.
-                let forbiddenWarnings = KeyValuePairExtract.checkForbiddenCharacters(keys: keys, values: values, comp: "fragment")
-                for warning in forbiddenWarnings {
-                    urlInfo.warnings.append(SecurityWarning(
-                        message: warning,
-                        severity: .info
-                    ))
-                    URLQueue.shared.LegitScore += PenaltySystem.Penalty.malformedFragment
-                }
-                
-                // Run additional analysis on key-value pairs.
+
                 var foundURL: String?
-                (urlInfo, foundURL) = KeyValuePairAnalyzer.analyze(urlInfo: urlInfo, comp: "fragment")
+                (urlInfo, foundURL) = KeyValuePairAnalyzer.analyze(urlInfo: &urlInfo, comp: "fragment")
                 newURL = foundURL
-            }
-            else {
-                // First, explain why it failed normal checks
-                let explanation = QueryAnalyzer.explainMalformedQuery(query: fragment, regexType: .wide, comp: "fragment")
-                urlInfo.warnings.append(SecurityWarning(
-                    message: "Fragment is neither a valid UI fragment nor a structured query-like fragment: \(explanation)",
-                    severity: .critical
-                ))
-
-                // Then, run DeepScamHellCheck as a fallback
-                let deepWarnings = DeepScamHellCheck.analyze(queryOrFragment: fragment, isFragment: true)
-                urlInfo.warnings.append(contentsOf: deepWarnings)
-
-                // Always apply a critical penalty, as it failed all checks
-                URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
-                return (urlInfo, nil)
             }
         }
         

@@ -74,7 +74,7 @@ struct URLExtractComponents {
         }
         
         // Validate host with a regex (per RFC 1035 & RFC 1123) using the ASCII punycode representation.
-        let hostnameRegex = #"^(?!-)(?!.*\.\.)([A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*)$"#
+        let hostnameRegex = #"^(?:\[(?:[0-9A-Fa-f:]+)\]|(?:[0-9A-Fa-f:]+)|(?:\d{1,3}\.){3}\d{1,3}|(?:(?!-)[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*))$"#
         let hostToValidate = compInfo.punycodeHostEncoded ?? host
         if hostToValidate.range(of: hostnameRegex, options: .regularExpression) == nil {
             warnings.append(SecurityWarning(
@@ -103,8 +103,8 @@ struct URLExtractComponents {
 
         // Update compInfo with the extracted values (they remain optional as defined in compInfo)
         compInfo.extractedDomain = extractedDomain
-        compInfo.punyCodeEncodedExtractedDomain = extractedDomain?.idnaEncoded
-        compInfo.punyCodeDecodedExtractedDomain = extractedDomain?.idnaDecoded
+        compInfo.idnaEncodedExtractedDomain = extractedDomain?.idnaEncoded
+        compInfo.idnaDecodedExtractedDomain = extractedDomain?.idnaDecoded
         compInfo.extractedTLD = extractedTLD
         compInfo.punycodeEncodedExtractedTLD = extractedTLD?.idnaEncoded
 
@@ -130,4 +130,3 @@ struct URLExtractComponents {
         return (rawHost, decoded, encoded)
     }
 }
-

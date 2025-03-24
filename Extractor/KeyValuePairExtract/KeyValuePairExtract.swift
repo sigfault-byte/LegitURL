@@ -46,21 +46,5 @@ struct KeyValuePairExtract {
         
         return (keys, values)
     }
-    
-    /// Checks arrays for forbidden substrings (like raw "://" or "=") and returns warnings.
-    static func checkForbiddenCharacters(keys: [String], values: [String], comp: String = "query") -> [String] {
-        var warnings = [String]()
-        
-        for key in keys {
-            if key.contains("://") || key.contains("=") {
-                warnings.append("\(comp) contains key: '\(key)' characters.")
-            }
-        }
-        for value in values {
-            if value.contains("://") || value.contains("=") {
-                warnings.append("\(comp) contains value: '\(value)' 'forbidden characters.")
-            }
-        }
-        return warnings
-    }
+
 }

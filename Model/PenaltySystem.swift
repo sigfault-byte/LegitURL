@@ -5,15 +5,21 @@ struct PenaltySystem {
 
        // 🌍 HOST-RELATED PENALTIES
         static let unrecognizedTLD                     = -70
+        static let brandImpersonation                  = -70
         static let hostIsIpAddress                     = -50
         static let homoGraphAttack                     = -50
         static let malformedURL                        = -50
         static let passwordInHost                      = -30
+        static let highEntropyDomain                   = -30
         static let unusualPort                         = -30
         static let phishingWordsInHost                 = -20
         static let scamWordsInHost                     = -20
+        static let userInfoInHost                      = -20
+        static let brandLookaLike                      = -20
         static let tooManyHyphensInDomain              = -20
         static let suspiciousTLD                       = -20
+        static let subdomainUnderscore                 = -20
+        static let highEntropySubDomain                = -20
         static let shortSubdomain                      = -10
         static let tooManySubdomain                    = -15
         static let hostNonASCII                        = -10

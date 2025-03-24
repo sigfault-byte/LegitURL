@@ -85,8 +85,8 @@ struct URLComponentsInfo {
     var fragmentValues: [String?] = []
     
     var extractedDomain: String?
-    var punyCodeEncodedExtractedDomain: String?
-    var punyCodeDecodedExtractedDomain: String?
+    var idnaEncodedExtractedDomain: String?
+    var idnaDecodedExtractedDomain: String?
     var extractedTLD: String?
     var punycodeEncodedExtractedTLD: String?
     var subdomain: String?

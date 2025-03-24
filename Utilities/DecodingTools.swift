@@ -259,8 +259,9 @@ struct DecodingTools {
     }
     
     static func analyzeUUID(_ input: String) -> UUIDAnalysisResult {
-        let normalized = input.lowercased()
+        let normalized = input.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         var formattedUUID: String? = nil
+        print("🧪 UUID Regex test: '\(normalized)' (length: \(normalized.count))")
         
         // Ensure it's hexadecimal
         guard normalized.range(of: #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$|^[0-9a-f]{32}$"#, options: .regularExpression) != nil else {
