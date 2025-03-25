@@ -24,9 +24,7 @@ extension URLQueue {
     func addWarning(to urlID: UUID, warning: SecurityWarning) {
         DispatchQueue.main.async {
             if let index = self.offlineQueue.firstIndex(where: { $0.id == urlID }) {
-                print("⚠️ Adding warning to URLInfo:", warning.message)
                 self.offlineQueue[index].warnings.append(warning)
-                print("✅ Current warnings:", self.offlineQueue[index].warnings)
             } else {
                 print("❌ Could not find URLInfo with ID \(urlID) to add warning")
             }
@@ -62,6 +60,12 @@ struct URLInfo: Identifiable {
     }
 }
 
+extension URLInfo {
+    var domain: String? { components.extractedDomain }
+    var tld: String? { components.extractedTLD }
+    var host: String? { components.host }
+}
+
 /// **Holds extracted URL parts**
 
 struct URLComponentsInfo {
@@ -75,6 +79,7 @@ struct URLComponentsInfo {
     var port: String?
     var path: String?
     var pathEncoded: String? // True path with proper encoding, handled by urlcomponent
+    var isPathEndpointLike: Bool = false
     var query: String?
     var rawQuery: String?
     var queryKeys: [String?] = []
@@ -91,6 +96,17 @@ struct URLComponentsInfo {
     var punycodeEncodedExtractedTLD: String?
     var subdomain: String?
     
+    var lamaiTrees: [LamaiComponent: DecodedNode] = [:]
+    
+    
+    enum LamaiComponent: String {
+        case queryKey
+        case queryValue
+        case fragmentKey
+        case fragmentValue
+        case malformedQuery
+        case malformedFragment
+    }
 }
 
 struct OnlineURLInfo: Identifiable {
@@ -155,4 +171,3 @@ struct ParsedCertificate {
     var extendedKeyUsage: String?
     var isSelfSigned: Bool = false
 }
-

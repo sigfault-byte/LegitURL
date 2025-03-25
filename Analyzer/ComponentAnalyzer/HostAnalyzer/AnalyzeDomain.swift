@@ -152,7 +152,6 @@ private func checkScriptMismatch(domain: String, tld: String, urlInfo: inout URL
         ))
         URLQueue.shared.LegitScore += PenaltySystem.Penalty.domainNonASCII
     } else if scriptSet.contains(.ascii) && (scriptSet.contains(.cyrillic) || scriptSet.contains(.greek)) {
-        print("hello")
         urlInfo.warnings.append(SecurityWarning(
             message: "🚨 Domain '\(domain)' mixes Latin and non-Latin characters, which strongly indicates a homograph attack.",
             severity: .critical

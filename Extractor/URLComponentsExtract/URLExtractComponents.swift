@@ -95,7 +95,7 @@ struct URLExtractComponents {
         } else {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to identify Domain and TLD from the PSL",
-                severity: .dangerous
+                severity: .critical
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.unrecognizedTLD
             return URLInfo(components: compInfo, warnings: warnings)

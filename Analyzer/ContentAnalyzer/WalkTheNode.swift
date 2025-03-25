@@ -1,43 +1,83 @@
 struct WalkTheNode {
     
-    static func walkAndAnalyze(node: DecodedNode, urlInfo: inout URLInfo, comp: String = "query", label: String) -> String? {
-        var newURL: [String?] = []
-        let isLeaf = node.children.isEmpty
-        let isFullyDecoded = node.decoded != nil && isLeaf
-        let isRawLeaf = node.decoded == nil && isLeaf
-        node.printTree()
-        
-        let contentToAnalyze = node.decoded ?? node.value
-        let wasEncoded = node.decoded != nil
-        let url = ContentAnalyzer.analyze(
-            value: contentToAnalyze,
-            wasEncoded: wasEncoded,
-            comp: comp,
-            urlInfo: &urlInfo,
-            label: label
-        )
-        if url != nil {
-            newURL.append(url)
-        }
-        
-        for child in node.children {
-            let childResult = walkAndAnalyze(node: child, urlInfo: &urlInfo, comp: comp, label: label)
-            if let childURL = childResult {
-                newURL.append(childURL)
+    static func analyze(node: DecodedNode, urlInfo: inout URLInfo, comp: String = "query", label: String) -> String? {
+        var foundURLs: [String] = []
+        var didWarnForDepth = false
+
+        func walk(_ node: DecodedNode) {
+            if !didWarnForDepth && node.depth > 1 {
+                urlInfo.warnings.append(SecurityWarning(
+                    message: "👁️ Decoded value detected by Lamai in \(comp) \(label). This was found through recursive decoding. Check the URLComponent tree for decoding layers.",
+                    severity: .info
+                ))
+                didWarnForDepth = true
+            }
+            if node.wasRelevant {
+                for finding in node.findings {
+                    switch finding {
+                    case .url(let url):
+                        foundURLs.append(url)
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "🔗 Found URL in \(comp) \(label): \(url)",
+                            severity: .suspicious
+                        ))
+                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.urlInQueryValue
+
+                    case .uuid(let result):
+                        let uuidText = result.formatted ?? result.original
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "🧬 UUID in \(comp) \(label): \(uuidText) (\(result.classification))",
+                            severity: .suspicious
+                        ))
+                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.uuidInQuery
+
+                    case .scamWord(let word):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "⚠️ Scam keyword in \(comp) \(label): \(word)",
+                            severity: .suspicious
+                        ))
+                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInValue
+
+                    case .phishingWord(let word):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "⚠️ Phishing keyword in \(comp) \(label): \(word)",
+                            severity: .suspicious
+                        ))
+                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInValue
+
+                    case .entropy(let score, let value):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "🧪 High entropy in \(comp) \(label): '\(value)' (≈ \(String(format: "%.2f", score)))",
+                            severity: .suspicious
+                        ))
+                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.highEntropyKeyOrValue
+                        
+                    
+                    case .longEntropyLike(let value):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "🧪 Suspicious long query value in \(comp) \(label): '\(value)'",
+                            severity: .info
+                        ))
+                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.longUnrecognisedValue
+                    }
+                }
+            }
+            for child in node.children {
+                walk(child)
             }
         }
-        
-        if newURL.count > 1 {
-            // message append that there are to omany url found, this is critical, and not normal but i do not know what to do
-            if checkMultipleURLs(newURL, urlInfo: &urlInfo, comp: comp) {
-                return nil
-            }
+
+        walk(node)
+
+        if checkMultipleURLs(foundURLs, urlInfo: &urlInfo, comp: comp) {
+            return nil
         }
-        if newURL.count == 1, let singleURL = newURL.first ?? nil {
-            return singleURL
+
+        if foundURLs.count == 1 {
+            return foundURLs.first
         }
+
         return nil
-        
     }
     
 }

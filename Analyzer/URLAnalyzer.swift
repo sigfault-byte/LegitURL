@@ -53,7 +53,7 @@ struct URLAnalyzer {
         if shouldStopAnalysis(currentURLInfo, atIndex: currentIndex) { return }
 
         var newURL: String?
-        newURL = PQFAnalyzer2.analyze(urlInfo: &urlToAnalyze)
+        newURL = PQFAnalyzer.analyze(urlInfo: &urlToAnalyze)
         URLQueue.shared.offlineQueue[currentIndex] = urlToAnalyze
         if shouldStopAnalysis(currentURLInfo, atIndex: currentIndex) { return }
 
@@ -73,15 +73,11 @@ struct URLAnalyzer {
         processQueue()
     }
     
-    private static var onlineQueueIterations = 0
-    private static let maxOnlineIterations = 5 // ✅ Set a reasonable limit
-    
     private static func processOnlineQueue() {
-        guard onlineQueueIterations < maxOnlineIterations else {
-            print("⛔ Online queue recursion limit reached. Stopping further analysis.")
+        if URLQueue.shared.onlineQueue.count >= 5 {
+            print("⛔ Online queue limit reached. Stopping further analysis.")
             return
         }
-        
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline }) else {
             print("✅ All online checks complete.")
             return
@@ -89,15 +85,9 @@ struct URLAnalyzer {
         
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
         
-//        if !URLQueue.shared.onlineQueue.contains(where: { $0.id == currentURLInfo.id }) {
-//            URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
-//        }
-        
         if currentURLInfo.onlineInfo == nil {
               URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
           }
-        
-        onlineQueueIterations += 1 // ✅ Increment recursion counter
         
         URLGetExtract.extract(urlInfo: currentURLInfo) { onlineInfo, error in
             DispatchQueue.main.async {
@@ -139,28 +129,8 @@ struct URLAnalyzer {
                     URLQueue.shared.offlineQueue[index].processedOnline = true
                     
                     // ✅ Check for a redirect and enqueue it
-                    if let finalRedirect = onlineInfo.finalRedirectURL,
-                       let originalURL = currentURLInfo.components.fullURL,
-                       finalRedirect.lowercased() != originalURL.lowercased() {
-                        
-                        let alreadyQueued = URLQueue.shared.offlineQueue.contains {
-                            $0.components.fullURL?.lowercased() == finalRedirect.lowercased()
-                        }
-                        
-                        if !alreadyQueued && URLQueue.shared.offlineQueue.count < 5 {
-                            var dummy: String? = ""
-                            let (cleanedRedirectURL, _) = sanitizeAndValidate(finalRedirect, &dummy)
-                            
-                            if let cleanedRedirectURL = cleanedRedirectURL {
-                                let newComponents = extractComponents(from: cleanedRedirectURL)
-//                                let newURLInfo = URLInfo(components: newComponents, warnings: [])
-                                print("🔁 Adding redirect URL to offline queue:", cleanedRedirectURL)
-                                URLQueue.shared.offlineQueue.append(newComponents)
-                                DispatchQueue.main.async {
-                                    processQueue()
-                                }
-                            }
-                        }
+                    if let finalRedirect = onlineInfo.finalRedirectURL {
+                        handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect)
                     }
                 }
 
@@ -173,6 +143,7 @@ struct URLAnalyzer {
     
     public static func resetQueue() {
         URLQueue.shared.offlineQueue.removeAll()
+        URLQueue.shared.onlineQueue.removeAll()
         URLQueue.shared.LegitScore = 100
     }
     
@@ -196,5 +167,33 @@ struct URLAnalyzer {
             return true
         }
         return false
+    }
+
+    private static func handleFinalRedirect(from currentURLInfo: URLInfo, finalRedirect: String) {
+        guard let originalURL = currentURLInfo.components.fullURL else { return }
+
+        if finalRedirect.lowercased() == originalURL.lowercased() { return }
+
+        let alreadyQueued = URLQueue.shared.offlineQueue.contains {
+            $0.components.fullURL?.lowercased() == finalRedirect.lowercased()
+        }
+
+        guard !alreadyQueued, URLQueue.shared.offlineQueue.count < 5 else { return }
+
+        var dummy: String? = ""
+        let (cleanedRedirectURL, _) = sanitizeAndValidate(finalRedirect, &dummy)
+
+        guard let cleanedRedirectURL = cleanedRedirectURL else { return }
+
+        var newURLInfo = extractComponents(from: cleanedRedirectURL)
+
+        RedirectAnalyzer.analyzeRedirect(fromInfo: currentURLInfo, toInfo: &newURLInfo)
+
+        print("🔁 Adding redirect URL to offline queue:", cleanedRedirectURL)
+        URLQueue.shared.offlineQueue.append(newURLInfo)
+
+        DispatchQueue.main.async {
+            processQueue()
+        }
     }
 }

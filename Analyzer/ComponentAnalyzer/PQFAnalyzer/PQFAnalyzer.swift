@@ -1,4 +1,4 @@
-struct PQFAnalyzer2 {
+struct PQFAnalyzer {
     
     static func analyze(urlInfo: inout URLInfo) -> String? {
         var newURL: String?
@@ -24,7 +24,7 @@ struct PQFAnalyzer2 {
         
 //         Analyze path: if the path is not just "/", process it.
         if urlInfo.components.path != "/" {
-            urlInfo = PathAnalyzer.analyze(urlInfo: urlInfo)
+            PathAnalyzer.analyze(urlInfo: &urlInfo)
         }
         
         // Analyze Query:
@@ -50,7 +50,6 @@ struct PQFAnalyzer2 {
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.emptyFragment
         }
-        
         
         return newURL
     }

@@ -28,6 +28,10 @@ struct LegitURLTools {
         guard !trimmed.isEmpty else {
             return (nil, "❌ Input is empty.")
         }
+        // 2️⃣b Try parsing it directly as a URL (basic structure check)
+        if URL(string: trimmed) == nil && !trimmed.contains(".") {
+            return (nil, "❌ Not a valid URL structure.")
+        }
         
         // 3️⃣ Check if input has a valid scheme in the first 10 characters; if not, prepend "https://"
         var urlString = trimmed
@@ -291,8 +295,6 @@ struct LegitURLTools {
         let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
         
         let isLikelyAWord = misspelledRange.location == NSNotFound
-        print(isLikelyAWord ? "✅ DEBUG: '\(word)' is a valid word (UITextChecker fallback)."
-                            : "❌ DEBUG: '\(word)' is not recognized.")
 
         return isLikelyAWord
     }

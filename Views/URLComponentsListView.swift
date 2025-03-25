@@ -5,6 +5,7 @@
 //  Created by Chief Hakka on 07/03/2025.
 //
 import SwiftUI
+import Foundation
 
 struct URLComponentsListView: View {
     @ObservedObject var urlQueue: URLQueue
@@ -102,13 +103,23 @@ struct URLComponentsListView: View {
                         URLDetailRow(label: "Fragment", value: fragment, color: .purple)
                     }
                     
+                    if !urlInfo.components.lamaiTrees.isEmpty {
+                        NavigationLink(destination: LamaiTreeViewComponent(lamaiTrees: urlInfo.components.lamaiTrees)) {
+                            Text("🧠 View Lamai Tree")
+                                .foregroundColor(.blue)
+                                .padding(6)
+                                .background(Color(.systemGray5))
+                                .cornerRadius(6)
+                        }
+                    }
+                    
                     if let onlineInfo = onlineInfo {
                         Divider()
                         
                         if let responseCode = onlineInfo.serverResponseCode {
                             URLDetailRow(label: "Server Response Code", value: "\(responseCode)")
                         }
-
+                        
                         if let statusText = onlineInfo.statusText {
                             URLDetailRow(label: "Status Text", value: statusText)
                         }

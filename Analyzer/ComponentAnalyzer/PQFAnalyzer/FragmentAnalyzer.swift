@@ -10,7 +10,6 @@ import Foundation
 struct FragmentAnalyzer {
     static func analyze(urlInfo: URLInfo) -> (URLInfo, String?) {
         var urlInfo = urlInfo
-        var newURL: String? = nil
         
         if let fragment = urlInfo.components.fragment {
             let allowedChars = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~=%:/")
@@ -70,7 +69,7 @@ struct FragmentAnalyzer {
 
                 var foundURL: String?
                 (urlInfo, foundURL) = KeyValuePairAnalyzer.analyze(urlInfo: &urlInfo, comp: "fragment")
-                newURL = foundURL
+                return (urlInfo, foundURL)
             }
         }
         

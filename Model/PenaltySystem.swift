@@ -4,7 +4,7 @@ struct PenaltySystem {
         static let critical                            = -100
 
        // 🌍 HOST-RELATED PENALTIES
-        static let unrecognizedTLD                     = -70
+        static let unrecognizedTLD                     = -100
         static let brandImpersonation                  = -70
         static let hostIsIpAddress                     = -50
         static let homoGraphAttack                     = -50
@@ -33,6 +33,7 @@ struct PenaltySystem {
 
        // 🛤 PATH-RELATED PENALTIES
         static let highEntropyPathComponent            = -10
+        static let pathIsEndpointLike                  = -10
         static let scamWordsInPath                     = -10
         static let phishingWordsInPath                 = -5
         static let suspiciousPathSegment               = -5
@@ -41,6 +42,7 @@ struct PenaltySystem {
         static let hiddenUUIDKey                       = -30
         static let uuidInKey                           = -25
         static let hiddenUUIDInFragment                = -25
+        static let longUnrecognisedValue               = -25
         static let uuidInFragment                      = -20
         static let urlInQueryValue                     = -20
         static let urlInQueryKey                       = -20
@@ -72,6 +74,11 @@ struct PenaltySystem {
         static let deepObfuscation                     = -20
         static let suspiciousPattern                   = -15
         static let base64Url                           = -10
+        
+        // Redirect
+        static let malformedRedirect                  = -20
+        static let redirectToDifferentTLD             = -20
+        static let redirectToDifferentDomain          = -10
 
        // 🆗 INFORMATIVE (No penalty)
         static let informational                       = 0
