@@ -97,8 +97,7 @@ struct NodeAnalyzer {
     // Check if its a word in the dictionnary, if not, check its entropy
     static func checkIfRealWordAndEntropy(_ value: String, skip: Bool = false) -> DecodedNode.NodeFinding? {
         if skip { return nil }
-        
-        if !LegitURLTools.isRealWord(value) {
+//        if !LegitURLTools.isRealWord(value) {
             let (isHighEntropy, entropyValue) = LegitURLTools.isHighEntropy(value)
             
             if isHighEntropy, let entropy = entropyValue {
@@ -108,8 +107,7 @@ struct NodeAnalyzer {
             if value.count >= 50 {
                 return .longEntropyLike(value: value)
             }
-        }
-        
+//        }
         return nil
     }
 }

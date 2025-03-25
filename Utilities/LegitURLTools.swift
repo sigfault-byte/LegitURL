@@ -148,8 +148,10 @@ struct LegitURLTools {
     ///   - input: The string to analyze.
     ///   - threshold: The entropy threshold for flagging high entropy.
     /// - Returns: (Bool, Float?) → `true` if entropy exceeds threshold, otherwise `false`, and the entropy value.
-    static func isHighEntropy(_ input: String,_ threshold: Float = 3.5) -> (Bool, Float?) {
-        guard !input.isEmpty else { return (false, nil) }
+    static func isHighEntropy(_ input: String, _ threshold: Float = 3.5) -> (Bool, Float?) {
+        guard !input.isEmpty else {
+            return (false, nil)
+        }
         
         let length = Float(input.count)
         var frequency: [Character: Float] = [:]

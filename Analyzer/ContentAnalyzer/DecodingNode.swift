@@ -96,8 +96,8 @@ class DecodedNode {
         if let phishing = NodeAnalyzer.detectPhishingWords(target) {
             findingsList.append(.phishingWord(phishing))
         }
-        print("findings: ", findingsList)
-        let skipEntropy = !findingsList.isEmpty || !children.isEmpty
+
+        let skipEntropy = !findingsList.isEmpty
         if let entropyFinding = NodeAnalyzer.checkIfRealWordAndEntropy(target, skip: skipEntropy) {
             findingsList.append(entropyFinding)
         }

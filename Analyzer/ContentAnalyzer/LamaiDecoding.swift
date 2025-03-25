@@ -12,7 +12,7 @@ struct LamaiDecoding {
     static func decode(input: String, maxDepth: Int = 4) -> DecodedNode {
         let root = DecodedNode(value: input, depth: 0)
         decodeNode(root, maxDepth: maxDepth)
-        if !root.hasDeepDescendant() {
+        if root.children.isEmpty {
             root.runAllAnalyses()
         }
         root.printTree()
