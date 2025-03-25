@@ -28,6 +28,9 @@ class DecodedNode {
         case phishingWord(String)
         case entropy(score: Double, value: String)
         case longEntropyLike(value: String)
+        case isIPv4(String)
+        case isIPv6(String)
+        case email([String])
         
         var shortLabel: String {
             switch self {
@@ -37,6 +40,9 @@ class DecodedNode {
             case .phishingWord: return "PhishingWord"
             case .entropy: return "HighEntropy"
             case .longEntropyLike: return "LongEntropyLike"
+            case .isIPv4: return "IPv4"
+            case .isIPv6: return "IPv6"
+            case .email: return "email"
             }
         }
     }
@@ -57,8 +63,25 @@ class DecodedNode {
         let target = decoded ?? value
         var findingsList: [DecodedNode.NodeFinding] = []
         
-        if let url = NodeAnalyzer.detectURL(target) {
-            findingsList.append(.url(url))
+        
+        let ipv4 = NodeAnalyzer.checkIfIp4(target)
+        if let ipv4 = ipv4 {
+            findingsList.append(.isIPv4(ipv4))
+        }
+        
+        let ipv6 = NodeAnalyzer.checkIfIPv6(target)
+        if let ipv6 = ipv6 {
+            findingsList.append(.isIPv6(ipv6))
+        }
+        
+        if let emailMatches = NodeAnalyzer.detectEmail(target), !emailMatches.isEmpty {
+            findingsList.append(.email(emailMatches))
+
+        // Don't run URL detection if we already have email
+        } else if ipv4 == nil, ipv6 == nil {
+            if let url = NodeAnalyzer.detectURL(target) {
+                findingsList.append(.url(url))
+            }
         }
         
         let uuids = NodeAnalyzer.detectUUIDs(from: target)
@@ -73,8 +96,8 @@ class DecodedNode {
         if let phishing = NodeAnalyzer.detectPhishingWords(target) {
             findingsList.append(.phishingWord(phishing))
         }
-        
-        let skipEntropy = !findingsList.isEmpty
+        print("findings: ", findingsList)
+        let skipEntropy = !findingsList.isEmpty || !children.isEmpty
         if let entropyFinding = NodeAnalyzer.checkIfRealWordAndEntropy(target, skip: skipEntropy) {
             findingsList.append(entropyFinding)
         }
@@ -112,9 +135,15 @@ extension DecodedNode {
                 print("\(indent)  🧪 High Entropy: \(value) ≈ \(String(format: "%.2f", score))")
             case .longEntropyLike(let value):
                 print("\(indent)  🧪 Long suspicious blob: \(value)")
+            case .isIPv4(let value):
+                print("\(indent)  IPv4 Found: \(value)")
+            case .isIPv6(let value):
+                print("\(indent)  IPv6 Found: \(value)")
+            case .email(let value):
+                print("\(indent)  Email Found: \(value)")
             }
         }
-
+        
         for child in children {
             child.printTree(indent: indent + "  ")
         }

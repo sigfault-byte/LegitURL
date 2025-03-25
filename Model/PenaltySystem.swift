@@ -40,6 +40,8 @@ struct PenaltySystem {
 
        // ❓ QUERY-RELATED PENALTIES
         static let hiddenUUIDKey                       = -30
+        static let hiddenIP                            = -30 
+        static let hiddenEmail                         = -30
         static let uuidInKey                           = -25
         static let hiddenUUIDInFragment                = -25
         static let longUnrecognisedValue               = -25

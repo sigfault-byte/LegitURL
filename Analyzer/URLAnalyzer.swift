@@ -4,80 +4,93 @@
 //
 //  Created by Chief Hakka on 07/03/2025.
 //
+
 import Foundation
 
 struct URLAnalyzer {
-    static func analyze(urlString: String, infoMessage: inout String?) {
+    
+    // MARK: - Public Entry Point
+    
+    public static func analyze(urlString: String, infoMessage: inout String?) {
         resetQueue()
         infoMessage = nil
         
-        
-        //NEED update to check wether there is at least a . and if the structure looks ok.
         let (cleanURL, message) = sanitizeAndValidate(urlString, &infoMessage)
         infoMessage = message
-        
         
         guard let cleanedURL = cleanURL else { return }
         
         let extractedInfo = extractComponents(from: cleanedURL)
-        
         URLQueue.shared.offlineQueue.append(extractedInfo)
         
         if shouldStopAnalysis(extractedInfo, atIndex: 0) { return }
         
         processQueue()
-        
-        return
     }
     
+    // MARK: - Offline Queue Processing
+    
     private static func processQueue() {
-        if URLQueue.shared.offlineQueue.count >= 5 {
+        // Check if the offline queue limit is reached
+        guard URLQueue.shared.offlineQueue.count < 5 else {
             print("⛔ Offline queue limit reached. Stopping further analysis.")
             return
         }
-
+        
+        // Find the first unprocessed URLInfo
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processed }) else {
             print("✅ All URLs processed in OfflineQueue. Now processing OnlineQueue...")
             processOnlineQueue()
             return
         }
-
-        let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
-        URLQueue.shared.offlineQueue[currentIndex] = currentURLInfo
-        if shouldStopAnalysis(currentURLInfo, atIndex: currentIndex) { return }
-
-        // ✅ Run offline analysis
-        var urlToAnalyze = currentURLInfo
-        HostAnalysis.analyze(urlObject: &urlToAnalyze)
-        URLQueue.shared.offlineQueue[currentIndex] = urlToAnalyze
-        if shouldStopAnalysis(currentURLInfo, atIndex: currentIndex) { return }
-
-        var newURL: String?
-        newURL = PQFAnalyzer.analyze(urlInfo: &urlToAnalyze)
-        URLQueue.shared.offlineQueue[currentIndex] = urlToAnalyze
-        if shouldStopAnalysis(currentURLInfo, atIndex: currentIndex) { return }
-
-//         ✅ Handle loopback URLs
+        
+        // Process the current URLInfo and then recursively process the next one
+        if processOfflineURL(at: currentIndex) {
+            processQueue()
+        }
+    }
+    
+    private static func processOfflineURL(at index: Int) -> Bool {
+        var urlInfo = URLQueue.shared.offlineQueue[index]
+        
+        // Check for early exit conditions before processing
+        if shouldStopAnalysis(urlInfo, atIndex: index) { return false }
+        
+        // Run offline analysis: Host analysis
+        HostAnalysis.analyze(urlObject: &urlInfo)
+        URLQueue.shared.offlineQueue[index] = urlInfo
+        if shouldStopAnalysis(urlInfo, atIndex: index) { return false }
+        
+        // Run PQF analysis and capture any new URL generated
+        let newURL = PQFAnalyzer.analyze(urlInfo: &urlInfo)
+        URLQueue.shared.offlineQueue[index] = urlInfo
+        if shouldStopAnalysis(urlInfo, atIndex: index) { return false }
+        
+        // Handle loopback/redirect URLs
         if let newURL = newURL {
             var infoMessage: String? = ""
             let (cleanURL, _) = sanitizeAndValidate(newURL, &infoMessage)
-            guard let cleanedURL = cleanURL else { return }
-            let newExtractedInfo = extractComponents(from: cleanedURL)
-            URLQueue.shared.offlineQueue.append(newExtractedInfo)
+            if let cleanedURL = cleanURL {
+                let newExtractedInfo = extractComponents(from: cleanedURL)
+                URLQueue.shared.offlineQueue.append(newExtractedInfo)
+            }
         }
-
-        // ✅ Mark this URL as processed
-        URLQueue.shared.offlineQueue[currentIndex].processed = true
-
-        // ✅ Recursively process next item
-        processQueue()
+        
+        // Mark this URLInfo as processed
+        URLQueue.shared.offlineQueue[index].processed = true
+        return true
     }
     
+    // MARK: - Online Queue Processing
+    
     private static func processOnlineQueue() {
-        if URLQueue.shared.onlineQueue.count >= 5 {
+        // Check if the online queue limit is reached
+        guard URLQueue.shared.onlineQueue.count < 5 else {
             print("⛔ Online queue limit reached. Stopping further analysis.")
             return
         }
+        
+        // Find the first URLInfo that hasn't been processed online
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline }) else {
             print("✅ All online checks complete.")
             return
@@ -85,42 +98,33 @@ struct URLAnalyzer {
         
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
         
+        // If there's no online info, add a placeholder to the online queue
         if currentURLInfo.onlineInfo == nil {
-              URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
-          }
+            URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
+        }
         
+        // Asynchronously extract online information
         URLGetExtract.extract(urlInfo: currentURLInfo) { onlineInfo, error in
             DispatchQueue.main.async {
+                // Handle error if present
                 if let error = error {
                     let warning = SecurityWarning(message: error.localizedDescription, severity: .urlGetFail)
                     URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
                     print("❌ Error handled:", error.localizedDescription)
-
-                    // ✅ Ensure URLInfo is updated with the warning
-                    if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) {
-                        var failedURLInfo = URLQueue.shared.offlineQueue[index]
-                        failedURLInfo.processedOnline = true
-                        URLQueue.shared.offlineQueue[index] = failedURLInfo
-                    }
+                    markURLInfoOnlineProcessed(for: currentURLInfo)
                     return
                 }
-
+                
+                // Handle unexpected nil onlineInfo
                 guard let onlineInfo = onlineInfo else {
                     print("❌ Unexpected state: no error, but also no OnlineURLInfo!")
-
-                    // ✅ Handle missing OnlineURLInfo as an error
                     let warning = SecurityWarning(message: "Failed to retrieve online information.", severity: .urlGetFail)
-                    URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning);
-                    
-                    if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) {
-                        var failedURLInfo = URLQueue.shared.offlineQueue[index]
-                        failedURLInfo.processedOnline = true
-                        URLQueue.shared.offlineQueue[index] = failedURLInfo
-                    }
+                    URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
+                    markURLInfoOnlineProcessed(for: currentURLInfo)
                     return
                 }
-
-                // ✅ Process onlineInfo normally
+                
+                // Process online info normally
                 if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) {
                     var updatedURLInfo = URLQueue.shared.offlineQueue[index]
                     updatedURLInfo.onlineInfo = onlineInfo
@@ -128,18 +132,26 @@ struct URLAnalyzer {
                     URLQueue.shared.offlineQueue[index] = updatedURLInfo
                     URLQueue.shared.offlineQueue[index].processedOnline = true
                     
-                    // ✅ Check for a redirect and enqueue it
+                    // Check for a redirect and enqueue it if present
                     if let finalRedirect = onlineInfo.finalRedirectURL {
                         handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect)
                     }
                 }
-
+                
                 processOnlineQueue()
             }
         }
     }
     
-    //    //////////////////////////Utility functions/////////////////////
+    private static func markURLInfoOnlineProcessed(for urlInfo: URLInfo) {
+        if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == urlInfo.id }) {
+            var updated = URLQueue.shared.offlineQueue[index]
+            updated.processedOnline = true
+            URLQueue.shared.offlineQueue[index] = updated
+        }
+    }
+    
+    // MARK: - Utility Functions
     
     public static func resetQueue() {
         URLQueue.shared.offlineQueue.removeAll()
@@ -160,38 +172,33 @@ struct URLAnalyzer {
             URLQueue.shared.offlineQueue[atIndex].processed = true
             print("❌ Critical warning found. Stopping analysis.")
             return true
-        }
-        else if urlInfo.warnings.contains(where: { $0.severity == .urlGetFail}){
+        } else if urlInfo.warnings.contains(where: { $0.severity == .urlGetFail }) {
             URLQueue.shared.offlineQueue[atIndex].processed = true
-            print(" ⚠️ URL GET request failed. Stopping analysis.")
+            print("⚠️ URL GET request failed. Stopping analysis.")
             return true
         }
         return false
     }
-
+    
     private static func handleFinalRedirect(from currentURLInfo: URLInfo, finalRedirect: String) {
         guard let originalURL = currentURLInfo.components.fullURL else { return }
-
         if finalRedirect.lowercased() == originalURL.lowercased() { return }
-
+        
         let alreadyQueued = URLQueue.shared.offlineQueue.contains {
             $0.components.fullURL?.lowercased() == finalRedirect.lowercased()
         }
-
         guard !alreadyQueued, URLQueue.shared.offlineQueue.count < 5 else { return }
-
+        
         var dummy: String? = ""
         let (cleanedRedirectURL, _) = sanitizeAndValidate(finalRedirect, &dummy)
-
         guard let cleanedRedirectURL = cleanedRedirectURL else { return }
-
+        
         var newURLInfo = extractComponents(from: cleanedRedirectURL)
-
         RedirectAnalyzer.analyzeRedirect(fromInfo: currentURLInfo, toInfo: &newURLInfo)
-
+        
         print("🔁 Adding redirect URL to offline queue:", cleanedRedirectURL)
         URLQueue.shared.offlineQueue.append(newURLInfo)
-
+        
         DispatchQueue.main.async {
             processQueue()
         }

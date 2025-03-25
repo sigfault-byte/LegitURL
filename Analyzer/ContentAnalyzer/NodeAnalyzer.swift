@@ -8,6 +8,27 @@ import Foundation
 
 struct NodeAnalyzer {
     
+    /// Detect email addresses in a string.
+    /// - Returns: `[String]?` — `nil` if no emails were found, otherwise an array of found emails.
+    static func detectEmail(_ value: String) -> [String]? {
+        let emails = LegitURLTools.detectEmailAddresses(in: value)
+        return emails.isEmpty ? nil : emails
+    }
+    
+    /// Check if an IP is detected (IPv4 or IPv6)
+    static func checkIfIp4(_ value: String) -> String? {
+        if LegitURLTools.isIPv4(value) {
+            return value
+        }
+        return nil
+    }
+    static func checkIfIPv6(_ value: String) -> String? {
+        if LegitURLTools.isIPv6(value) {
+            return value
+        }
+        return nil
+    }
+    
     // Look if the value is a url
     static func detectURL(_ value: String) -> String? {
         if LegitURLTools.isValueURL(value) {
@@ -45,7 +66,7 @@ struct NodeAnalyzer {
         }
         let unique = Dictionary(grouping: results, by: { $0.formatted ?? $0.original })
             .compactMap { $0.value.first }
-
+        
         return unique
     }
     

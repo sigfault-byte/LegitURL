@@ -43,7 +43,7 @@ struct LegitURLTools {
             message = "https:// was automatically added as the scheme"
         }
         
-//        print("urlStringCleaned: \(urlString)")
+        //        print("urlStringCleaned: \(urlString)")
         // ✅ If all checks pass, return the sanitized URL
         return (urlString, message)
     }
@@ -52,15 +52,6 @@ struct LegitURLTools {
     public static func explodeURL(host: String) -> [String] {
         // Using split returns non-empty substrings by default
         return host.split(separator: ".").map(String.init)
-    }
-    
-    static func findMatchingKeywords(in input: String, keywords: Set<String>) -> [String]? {
-        let lowercasedInput = input.lowercased()
-        // Precompute lowercased version of each keyword alongside the original
-        let lowercasedKeywords = keywords.map { ($0.lowercased(), $0) }
-        // Filter keywords if the lowercased input contains the lowercased keyword
-        let matches = lowercasedKeywords.compactMap { lowercasedInput.contains($0.0) ? $0.1 : nil }
-        return matches.isEmpty ? nil : matches
     }
     
     /// Checks whether a query value appears to be a URL.
@@ -75,18 +66,22 @@ struct LegitURLTools {
         if lowerValue.hasPrefix("http://") || lowerValue.hasPrefix("https://") {
             return true
         }
-
+        
+        if URL(string: value) == nil && !value.contains(".") {
+            return (false)
+        }
+        
         // ✅ Step 2: Check for IP addresses (IPv4 or IPv6).
         if LegitURLTools.isIPv4(value) || LegitURLTools.isIPv6(value) {
             return true
         }
-
+        
         // ✅ Step 3: Extract potential TLD and validate it.
         let components = value.split(separator: ".")
         
         // Reject if there are no dots or only one component (e.g., "localhost" or "example")
         guard components.count > 1 else { return false }
-
+        
         if let possibleTLD = components.last?.lowercased(), !possibleTLD.isEmpty {
             if let encodedTLD = possibleTLD.idnaEncoded { // ✅ Unwrap safely
                 if !isValidTLD(encodedTLD) {
@@ -98,12 +93,12 @@ struct LegitURLTools {
         } else {
             return false
         }
-
+        
         // ✅ Step 5: Validate it as a properly formatted URL
         if let _ = URL(string: "https://\(value)") {
             return true
         }
-
+        
         return false
     }
     
@@ -131,157 +126,6 @@ struct LegitURLTools {
         }
     }
     
-    
-    /// **Generates spelling correction suggestions using Apple's `UITextChecker`.**
-    ///
-    /// This function is designed to detect **typosquatting**, **misspellings**, and **obfuscated phishing attempts**
-    /// by leveraging Apple's built-in spell checker. It processes the given word and returns a refined list of
-    /// alternative spellings based on strict similarity rules.
-    ///
-    /// **Processing Steps:**
-    ///  If the word contains numbers, it is first **"unleeted"** (e.g., `g00gle` → `google`).
-    ///  The word is **split** into sub-words based on hyphens (`-`), and each part is processed individually.
-    ///  **Spell-checking is performed** on each variation:
-    ///     - The original word.
-    ///     - A capitalized version (e.g., `paypall` → `PayPal`).
-    ///  All suggestions are collected and **filtered to keep only valid matches**:
-    ///     - **Only words with the same length as the original** are considered.
-    ///     - **Only words with a Damerau-Levenshtein distance ≤ 1** are accepted.
-    ///
-    /// **Example Use Cases:**
-    /// ```
-    /// getAllSpellCheckSuggestions("paypl")   // Returns: ["PayPal"]
-    /// getAllSpellCheckSuggestions("stean")   // Returns: ["steam", "steal"]
-    /// getAllSpellCheckSuggestions("g0ogle")  // Returns: ["google"]
-    /// ```
-    ///
-    /// **- Parameter word:** The input string (typically a domain or subdomain).
-    /// **- Returns:** A `Set<String>` containing valid alternative spellings (or an empty set if none exist).
-    ///
-    /// 🔹 **Note:** This function is optimized for **domain name analysis**, meaning it prioritizes words
-    /// that closely resemble the original input, rather than broad corrections.
-    static func getAllSpellCheckSuggestions(_ word: String) -> Set<String> {
-        let checker = UITextChecker()
-        var allSuggestions: Set<String> = []
-        
-        // Step 1: Unleet the word if it contains numbers.
-        let cleanedWord = word.rangeOfCharacter(from: CharacterSet.decimalDigits) != nil ? un1337(word) : word
-        // Log for debugging.
-//        print("Original cleaned word: ", cleanedWord, "Normalized: ", cleanedWord.normalizedConfusable())
-        
-        // Step 2: Split the word on hyphens and process each token separately.
-        let subWords = cleanedWord.split(separator: "-").map(String.init)
-        
-        for token in subWords {
-            // New: Filter out non-Latin characters from the token.
-            guard let filteredToken = filterForSpellChecker(token) else {
-                    // If `nil`, skip this token entirely
-                    continue
-                }
-            // 2. Check if it’s empty
-                guard !filteredToken.isEmpty else {
-                    // If empty, skip this token
-                    continue
-                }
-            
-            // Process original (filtered) token.
-            let range = NSRange(location: 0, length: filteredToken.utf16.count)
-            if let suggestions = checker.guesses(forWordRange: range, in: filteredToken, language: "en") {
-                // Filter suggestions based on length difference and Damerau-Levenshtein distance.
-                let filteredSuggestions = suggestions.filter { suggestion in
-                    return abs(suggestion.count - filteredToken.count) <= 1 &&
-                           damerauLevenshtein(suggestion.lowercased(), filteredToken.lowercased()) <= 2
-                }
-                allSuggestions.formUnion(filteredSuggestions)
-            }
-            
-            // Process the capitalized variant.
-            let capitalizedToken = filteredToken.capitalized
-            if capitalizedToken != filteredToken {
-                let rangeCap = NSRange(location: 0, length: capitalizedToken.utf16.count)
-                if let capSuggestions = checker.guesses(forWordRange: rangeCap, in: capitalizedToken, language: "en") {
-                    let filteredCapSuggestions = capSuggestions.filter { suggestion in
-                        return abs(suggestion.count - capitalizedToken.count) <= 1 &&
-                               damerauLevenshtein(suggestion.lowercased(), capitalizedToken.lowercased()) <= 2
-                    }
-                    allSuggestions.formUnion(filteredCapSuggestions)
-                }
-            }
-        }
-//        print("suggestions: ", allSuggestions)
-        return allSuggestions
-    }
-    
-    static func un1337(_ word: String) -> String {
-        let leetReplacements: [String: String] = [
-            "0": "o", "1": "l", "3": "e", "4": "a", "5": "s", "7": "t"
-        ]
-        var cleanedWord = word
-        for (leet, normal) in leetReplacements {
-            cleanedWord = cleanedWord.replacingOccurrences(of: leet, with: normal)
-        }
-        return cleanedWord
-    }
-    
-    static func damerauLevenshtein(_ s1: String, _ s2: String) -> Int {
-        let s1 = Array(s1)
-        let s2 = Array(s2)
-        let len1 = s1.count
-        let len2 = s2.count
-        
-        var d = Array(repeating: Array(repeating: 0, count: len2 + 1), count: len1 + 1)
-        
-        for i in 0...len1 { d[i][0] = i }
-        for j in 0...len2 { d[0][j] = j }
-        
-        for i in 1...len1 {
-            for j in 1...len2 {
-                let cost = s1[i-1] == s2[j-1] ? 0 : 1
-                d[i][j] = min(
-                    d[i-1][j] + 1,     // Deletion
-                    d[i][j-1] + 1,     // Insertion
-                    d[i-1][j-1] + cost // Substitution
-                )
-                
-                // **Swap Detection (Transposition)**
-                if i > 1, j > 1, s1[i-1] == s2[j-2], s1[i-2] == s2[j-1] {
-                    d[i][j] = min(d[i][j], d[i-2][j-2] + 1) // Swap detected!
-                }
-            }
-        }
-        
-        return d[len1][len2]
-    }
-    
-    static func filterForSpellChecker(_ word: String) -> String? {
-        var result = ""
-        // Iterate through each character with its index.
-        for (index, char) in word.enumerated() {
-            // Allowed characters: ASCII letters.
-            if char.isASCII && char.isLetter {
-                result.append(char)
-            } else {
-                // The character is not allowed.
-                // First, try to use the previous allowed letter, if any.
-                if !result.isEmpty {
-                    // Append the last allowed letter from result.
-                    result.append(result.last!)
-                } else {
-                    // No previous allowed letter; look ahead in the word.
-                    let start = word.index(word.startIndex, offsetBy: index + 1)
-                    let remainder = word[start...]
-                    if let nextAllowed = remainder.first(where: { $0.isASCII && $0.isLetter }) {
-                        result.append(nextAllowed)
-                    } else {
-                        // No allowed character found in the remainder—return nil.
-                        return nil
-                    }
-                }
-            }
-        }
-        return result
-    }
-    
     static func isRealWord(_ word: String) -> Bool {
         // ✅ Step 1: Try Apple's dictionary (fast and accurate)
         if UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: word) {
@@ -295,49 +139,49 @@ struct LegitURLTools {
         let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
         
         let isLikelyAWord = misspelledRange.location == NSNotFound
-
+        
         return isLikelyAWord
     }
     
     /// Calculates Shannon entropy of a given string.
-        /// - Parameters:
-        ///   - input: The string to analyze.
-        ///   - threshold: The entropy threshold for flagging high entropy.
-        /// - Returns: (Bool, Float?) → `true` if entropy exceeds threshold, otherwise `false`, and the entropy value.
-        static func isHighEntropy(_ input: String,_ threshold: Float = 3.5) -> (Bool, Float?) {
-            guard !input.isEmpty else { return (false, nil) }
-
-            let length = Float(input.count)
-            var frequency: [Character: Float] = [:]
-
-            // Count character frequencies
-            for char in input {
-                frequency[char, default: 0] += 1
-            }
-
-            // Calculate entropy
-            let entropy: Float = frequency.values.reduce(0) { result, count in
-                let probability = count / length
-                return result - (probability * log2(probability))
-            }
-
-            return (entropy >= threshold, entropy)
+    /// - Parameters:
+    ///   - input: The string to analyze.
+    ///   - threshold: The entropy threshold for flagging high entropy.
+    /// - Returns: (Bool, Float?) → `true` if entropy exceeds threshold, otherwise `false`, and the entropy value.
+    static func isHighEntropy(_ input: String,_ threshold: Float = 3.5) -> (Bool, Float?) {
+        guard !input.isEmpty else { return (false, nil) }
+        
+        let length = Float(input.count)
+        var frequency: [Character: Float] = [:]
+        
+        // Count character frequencies
+        for char in input {
+            frequency[char, default: 0] += 1
         }
+        
+        // Calculate entropy
+        let entropy: Float = frequency.values.reduce(0) { result, count in
+            let probability = count / length
+            return result - (probability * log2(probability))
+        }
+        
+        return (entropy >= threshold, entropy)
+    }
     
     static func levenshtein(_ aStr: String, _ bStr: String) -> Int {
         let a = Array(aStr)
         let b = Array(bStr)
         let aCount = a.count
         let bCount = b.count
-
+        
         guard aCount != 0 else { return bCount }
         guard bCount != 0 else { return aCount }
-
+        
         var matrix = Array(repeating: Array(repeating: 0, count: bCount + 1), count: aCount + 1)
-
+        
         for i in 0...aCount { matrix[i][0] = i }
         for j in 0...bCount { matrix[0][j] = j }
-
+        
         for i in 1...aCount {
             for j in 1...bCount {
                 if a[i - 1] == b[j - 1] {
@@ -351,7 +195,37 @@ struct LegitURLTools {
                 }
             }
         }
-
+        
         return matrix[aCount][bCount]
+    }
+    
+    static func detectEmailAddresses(in input: String) -> [String] {
+        do {
+            let detector = try NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+            let range = NSRange(input.startIndex..<input.endIndex, in: input)
+            let matches = detector.matches(in: input, options: [], range: range)
+
+            var emails: [String] = []
+            for match in matches {
+                if match.resultType == .link,
+                   let url = match.url,
+                   url.scheme?.lowercased() == "mailto" {
+                    
+                    // Get the exact substring from the original text
+                    let emailRange = match.range
+                    let rawEmail = (input as NSString).substring(with: emailRange)
+                    
+                    // Remove the "mailto:" prefix if present
+                    let cleanedEmail = rawEmail
+                        .replacingOccurrences(of: "mailto:", with: "", options: .caseInsensitive)
+
+                    emails.append(cleanedEmail)
+                }
+            }
+            return emails
+        } catch {
+            print("Error detecting email addresses: \(error)")
+            return []
+        }
     }
 }

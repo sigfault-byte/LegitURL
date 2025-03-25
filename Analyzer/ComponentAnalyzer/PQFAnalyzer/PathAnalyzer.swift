@@ -72,7 +72,7 @@ struct PathAnalyzer {
             if parts.count == 1 {
                 let part = parts[0]
 
-                if LegitURLTools.findMatchingKeywords(in: part, keywords: SuspiciousKeywords.scamTerms) != nil {
+                if SuspiciousKeywords.scamTerms.contains(part.lowercased()) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "🚩 Scam-related word detected in path segment: '\(part)'",
                         severity: .suspicious
@@ -80,7 +80,7 @@ struct PathAnalyzer {
                     URLQueue.shared.LegitScore += PenaltySystem.Penalty.scamWordsInPath
                 }
 
-                if LegitURLTools.findMatchingKeywords(in: part, keywords: SuspiciousKeywords.phishingWords) != nil {
+                if SuspiciousKeywords.phishingWords.contains(part.lowercased()) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "🚩 Phishing-related word detected in path segment: '\(part)'",
                         severity: .suspicious
@@ -88,7 +88,7 @@ struct PathAnalyzer {
                     URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInPath
                 }
 
-                if LegitURLTools.findMatchingKeywords(in: part, keywords: KnownBrands.names) != nil {
+                if KnownBrands.names.contains(part.lowercased()) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "ℹ️ Brand reference found in path segment: '\(part)'",
                         severity: .info

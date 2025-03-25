@@ -22,7 +22,7 @@ struct WalkTheNode {
                             severity: .suspicious
                         ))
                         URLQueue.shared.LegitScore += PenaltySystem.Penalty.urlInQueryValue
-
+                        
                     case .uuid(let result):
                         let uuidText = result.formatted ?? result.original
                         urlInfo.warnings.append(SecurityWarning(
@@ -30,21 +30,21 @@ struct WalkTheNode {
                             severity: .suspicious
                         ))
                         URLQueue.shared.LegitScore += PenaltySystem.Penalty.uuidInQuery
-
+                        
                     case .scamWord(let word):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "⚠️ Scam keyword in \(comp) \(label): \(word)",
                             severity: .suspicious
                         ))
                         URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInValue
-
+                        
                     case .phishingWord(let word):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "⚠️ Phishing keyword in \(comp) \(label): \(word)",
                             severity: .suspicious
                         ))
                         URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInValue
-
+                        
                     case .entropy(let score, let value):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "🧪 High entropy in \(comp) \(label): '\(value)' (≈ \(String(format: "%.2f", score)))",
@@ -52,13 +52,34 @@ struct WalkTheNode {
                         ))
                         URLQueue.shared.LegitScore += PenaltySystem.Penalty.highEntropyKeyOrValue
                         
-                    
+                        
                     case .longEntropyLike(let value):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "🧪 Suspicious long query value in \(comp) \(label): '\(value)'",
                             severity: .info
                         ))
                         URLQueue.shared.LegitScore += PenaltySystem.Penalty.longUnrecognisedValue
+                        
+                    case .isIPv4(let value):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "📡 IPv4 address in \(comp) \(label): '\(value)'",
+                            severity: .suspicious
+                        ))
+                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.hiddenIP
+                        
+                    case .isIPv6(let value):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "📡 IPv6 address in \(comp) \(label): '\(value)'",
+                            severity: .suspicious
+                        ))
+                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.hiddenIP
+                        
+                    case .email(let value):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "📧 Email address in \(comp) \(label): '\(value)'",
+                            severity: .suspicious
+                            ))
+                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.hiddenIP
                     }
                 }
             }
