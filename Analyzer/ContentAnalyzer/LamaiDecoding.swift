@@ -12,49 +12,38 @@ struct LamaiDecoding {
     static func decode(input: String, maxDepth: Int = 4) -> DecodedNode {
         let root = DecodedNode(value: input, depth: 0)
         decodeNode(root, maxDepth: maxDepth)
-        if root.children.isEmpty {
+        if !root.hasDeepDescendant() {
             root.runAllAnalyses()
         }
-        root.printTree()
+        print(root.printTree())
         return root
     }
-    
-    // MARK: - Decoding Helper
-    
-    /// This helper centralizes the repeated steps for processing a decoded candidate.
-    private static func processDecodingStep(for node: DecodedNode, candidate decoded: String, method: String, maxDepth: Int) {
-        // Ensure we only proceed if the candidate is different and mostly printable.
-        guard decoded != node.value, decoded.isMostlyPrintable else { return }
-        
-        // Create and configure the child node.
-        let child = DecodedNode(value: decoded, depth: node.depth + 1, parent: node)
-        child.method = method
-        child.decoded = decoded
-        child.runAllAnalyses()
-        if child.wasRelevant {
-            child.shouldStop = true
-        }
-        node.children.append(child)
-        
-        // Extract any delimited parts or query parameters before recursing further.
-        extractDelimitedParts(from: decoded, under: child, maxDepth: maxDepth)
-        extractQueryParams(from: decoded, under: child, maxDepth: maxDepth)
-        decodeNode(child, maxDepth: maxDepth)
-    }
-    
-    // MARK: - Recursive Decoding
     
     private static func decodeNode(_ node: DecodedNode, maxDepth: Int) {
         guard !node.shouldStop, node.depth < maxDepth else { return }
         
         let current = node.value
+        let depth = node.depth
         
         // Step 1: Single step percent decoding
-        if let decoded = current.removingPercentEncoding, decoded != current, decoded.isMostlyPrintable {
-            processDecodingStep(for: node, candidate: decoded, method: "percent", maxDepth: maxDepth)
+        if let decoded = current.removingPercentEncoding,
+           decoded != current,
+           decoded.isMostlyPrintable {
+            let child = DecodedNode(value: decoded, depth: depth + 1, parent: node)
+            child.method = "percent"
+            child.decoded = decoded
+            child.runAllAnalyses()
+            if child.wasRelevant {
+                child.shouldStop = true
+            }
+            node.children.append(child)
+            // First try to extract query parameters before splitting on delimiters
+            extractQueryParams(from: decoded, under: child, maxDepth: maxDepth)
+            extractDelimitedParts(from: decoded, under: child, maxDepth: maxDepth)
+            decodeNode(child, maxDepth: maxDepth)
         }
         
-        // Step 2: Try base64 decoding
+        // Step 2: Try base64
         let currentBase64: String
         if let andIndex = current.firstIndex(of: "&") {
             let afterAnd = current[andIndex...]
@@ -72,7 +61,18 @@ struct LamaiDecoding {
            let b64Str = String(data: data, encoding: .utf8),
            b64Str.count >= 6,
            b64Str.isMostlyPrintable {
-            processDecodingStep(for: node, candidate: b64Str, method: "base64", maxDepth: maxDepth)
+            let child = DecodedNode(value: b64Str, depth: depth + 1, parent: node)
+            child.method = "base64"
+            child.decoded = b64Str
+            child.runAllAnalyses()
+            if child.wasRelevant {
+                child.shouldStop = true
+            }
+            node.children.append(child)
+            // First try to extract query parameters before splitting on delimiters
+            extractQueryParams(from: b64Str, under: child, maxDepth: maxDepth)
+            extractDelimitedParts(from: b64Str, under: child, maxDepth: maxDepth)
+            decodeNode(child, maxDepth: maxDepth)
         }
         
         // Step 3: Try hex decoding
@@ -80,15 +80,37 @@ struct LamaiDecoding {
            let hexData = Data(hexString: current),
            let hexStr = String(data: hexData, encoding: .utf8),
            hexStr.isMostlyPrintable {
-            processDecodingStep(for: node, candidate: hexStr, method: "hex", maxDepth: maxDepth)
+            let child = DecodedNode(value: hexStr, depth: depth + 1, parent: node)
+            child.method = "hex"
+            child.decoded = hexStr
+            child.runAllAnalyses()
+            if child.wasRelevant {
+                child.shouldStop = true
+            }
+            node.children.append(child)
+            // First try to extract query parameters before splitting on delimiters
+            extractQueryParams(from: hexStr, under: child, maxDepth: maxDepth)
+            extractDelimitedParts(from: hexStr, under: child, maxDepth: maxDepth)
+            decodeNode(child, maxDepth: maxDepth)
         }
         
-        // Step 4: Try MIME (quoted-printable) decoding
+        // Step 4: Try MIME (quoted-printable)
         if looksLikeMime(current),
            let mimeStr = try? current.mimeDecoded(),
            mimeStr != current,
            mimeStr.isMostlyPrintable {
-            processDecodingStep(for: node, candidate: mimeStr, method: "mime", maxDepth: maxDepth)
+            let child = DecodedNode(value: mimeStr, depth: depth + 1, parent: node)
+            child.method = "mime"
+            child.decoded = mimeStr
+            child.runAllAnalyses()
+            if child.wasRelevant {
+                child.shouldStop = true
+            }
+            node.children.append(child)
+            // First try to extract query parameters before splitting on delimiters
+            extractQueryParams(from: mimeStr, under: child, maxDepth: maxDepth)
+            extractDelimitedParts(from: mimeStr, under: child, maxDepth: maxDepth)
+            decodeNode(child, maxDepth: maxDepth)
         }
         
         // Step 5: Unicode escape decoding (e.g. \\u003d)
@@ -96,13 +118,22 @@ struct LamaiDecoding {
            let unicodeStr = current.decodedUnicodeEscapes(),
            unicodeStr != current,
            unicodeStr.isMostlyPrintable {
-            processDecodingStep(for: node, candidate: unicodeStr, method: "unicode", maxDepth: maxDepth)
+            let child = DecodedNode(value: unicodeStr, depth: depth + 1, parent: node)
+            child.method = "unicode"
+            child.decoded = unicodeStr
+            child.runAllAnalyses()
+            if child.wasRelevant {
+                child.shouldStop = true
+            }
+            node.children.append(child)
+            // First try to extract query parameters before splitting on delimiters
+            extractQueryParams(from: unicodeStr, under: child, maxDepth: maxDepth)
+            extractDelimitedParts(from: unicodeStr, under: child, maxDepth: maxDepth)
+            decodeNode(child, maxDepth: maxDepth)
         }
         
         // Step 6: Future steps — Add more decoding strategies as needed
     }
-    
-    // MARK: - Helpers for Extracting Subcomponents
     
     private static func extractDelimitedParts(from string: String, under parent: DecodedNode, maxDepth: Int) {
         let delimiters = ["|", ".", "_", "~", ":"]
@@ -160,8 +191,6 @@ struct LamaiDecoding {
             decodeNode(child, maxDepth: maxDepth)
         }
     }
-    
-    // MARK: - Other Utility Methods
     
     private static func normalizeBase64(_ str: String) -> String {
         let clean = str.replacingOccurrences(of: "-", with: "+")

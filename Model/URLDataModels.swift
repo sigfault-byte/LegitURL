@@ -96,10 +96,10 @@ struct URLComponentsInfo {
     var punycodeEncodedExtractedTLD: String?
     var subdomain: String?
     
-    var lamaiTrees: [LamaiComponent: DecodedNode] = [:]
+    var lamaiTrees: [TreeType: [DecodedNode]] = [:]
     
     
-    enum LamaiComponent: String {
+    enum TreeType: String {
         case queryKey
         case queryValue
         case fragmentKey

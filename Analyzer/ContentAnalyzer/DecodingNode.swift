@@ -96,8 +96,7 @@ class DecodedNode {
         if let phishing = NodeAnalyzer.detectPhishingWords(target) {
             findingsList.append(.phishingWord(phishing))
         }
-
-        let skipEntropy = !findingsList.isEmpty
+        let skipEntropy = !findingsList.isEmpty || !children.isEmpty
         if let entropyFinding = NodeAnalyzer.checkIfRealWordAndEntropy(target, skip: skipEntropy) {
             findingsList.append(entropyFinding)
         }
@@ -143,7 +142,7 @@ extension DecodedNode {
                 print("\(indent)  Email Found: \(value)")
             }
         }
-        
+        print("-----EndOfNode--------------------")
         for child in children {
             child.printTree(indent: indent + "  ")
         }

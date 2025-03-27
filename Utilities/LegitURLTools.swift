@@ -127,20 +127,13 @@ struct LegitURLTools {
     }
     
     static func isRealWord(_ word: String) -> Bool {
-        // ✅ Step 1: Try Apple's dictionary (fast and accurate)
-        if UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: word) {
-            return true
+        // Skip check for very long words or strings with symbols (likely gibberish)
+        guard word.count <= 24,
+              word.range(of: #"[^a-zA-Z\-']"#, options: .regularExpression) == nil else {
+            return false
         }
-        
-        // ✅ Step 2: Fallback to UITextChecker if dictionary is unavailable
-        let checker = UITextChecker()
-        let range = NSRange(location: 0, length: word.utf16.count)
-        
-        let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
-        
-        let isLikelyAWord = misspelledRange.location == NSNotFound
-        
-        return isLikelyAWord
+
+        return UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: word)
     }
     
     /// Calculates Shannon entropy of a given string.

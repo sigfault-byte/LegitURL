@@ -8,13 +8,15 @@ import SwiftUI
 import Foundation
 
 struct LamaiTreeViewComponent: View {
-    let lamaiTrees: [URLComponentsInfo.LamaiComponent: DecodedNode]
+    let lamaiTrees: [URLComponentsInfo.TreeType: [DecodedNode]]
     
     var body: some View {
         List {
-            ForEach(lamaiTrees.sorted(by: { $0.key.rawValue < $1.key.rawValue }), id: \.key) { key, node in
+            ForEach(lamaiTrees.sorted(by: { $0.key.rawValue < $1.key.rawValue }), id: \.key) { key, nodes in
                 Section(header: Text("🔍 \(key.rawValue.capitalized)")) {
-                    LamaiNodeRow(node: node, indent: 0)
+                    ForEach(nodes, id: \.id) { node in
+                        LamaiNodeRow(node: node, indent: 0)
+                    }
                 }
             }
         }
@@ -26,23 +28,26 @@ struct LamaiTreeViewComponent: View {
 struct LamaiNodeRow: View {
     let node: DecodedNode
     let indent: Int
+    @State private var isExpanded: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        DisclosureGroup(isExpanded: $isExpanded) {
+            VStack(alignment: .leading, spacing: 2) {
+                ForEach(node.findings, id: \.self) { finding in
+                    Text("🔸 \(finding.shortLabel): \(node.value)")
+                        .font(.system(size: 11, weight: .regular, design: .monospaced))
+                        .foregroundColor(.orange)
+                }
+
+                ForEach(node.children, id: \.id) { child in
+                    LamaiNodeRow(node: child, indent: indent + 1)
+                }
+            }
+            .padding(.vertical, 4)
+        } label: {
             Text("\(String(repeating: "  ", count: indent))↳ [\(node.method ?? "raw")] \(node.value)")
                 .font(.system(size: 12, weight: .medium, design: .monospaced))
-                .foregroundColor(.primary)
-
-            ForEach(node.findings, id: \.self) { finding in
-                Text("🔸 \(finding.shortLabel): \(node.value)")
-                    .font(.system(size: 11, weight: .regular, design: .monospaced))
-                    .foregroundColor(.secondary)
-            }
-
-            ForEach(node.children, id: \.id) { child in
-                LamaiNodeRow(node: child, indent: indent + 1)
-            }
+                .foregroundColor(node.method != "raw" ? .blue : .primary)
         }
-        .padding(.vertical, 4)
     }
 }

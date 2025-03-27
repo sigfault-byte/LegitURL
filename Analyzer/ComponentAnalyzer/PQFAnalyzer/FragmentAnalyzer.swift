@@ -3,7 +3,7 @@
 //  LegitURL
 //
 //  Created by Chief Hakka on 12/03/2025.
-//
+//TODO NORMAL FRAGMENT
 
 import Foundation
 

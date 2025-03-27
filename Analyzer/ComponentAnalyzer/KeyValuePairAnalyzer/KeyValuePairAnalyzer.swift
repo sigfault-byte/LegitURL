@@ -24,13 +24,13 @@ struct KeyValuePairAnalyzer {
             // Process the key.
             if let key = keys[index], !key.isEmpty {
                 let keyNode = LamaiDecoding.decode(input: key, maxDepth: 6)
-                if keyNode.hasDeepDescendant() {
+//                if keyNode.hasDeepDescendant() {
                     if comp == "query" {
-                        urlInfo.components.lamaiTrees[.queryKey] = keyNode
+                        urlInfo.components.lamaiTrees[.queryKey, default: []].append(keyNode)
                     } else {
-                        urlInfo.components.lamaiTrees[.fragmentKey] = keyNode
+                        urlInfo.components.lamaiTrees[.fragmentKey, default: []].append(keyNode)
                     }
-                }
+//                }
                 
                 if let url = WalkTheNode.analyze(node: keyNode, urlInfo: &urlInfo, comp: "comp", label: "key"), !url.isEmpty{
                     foundURL.append(url)
@@ -41,19 +41,18 @@ struct KeyValuePairAnalyzer {
             // Process the value if available.
             if let value = values[index] {
                 let valueNode = LamaiDecoding.decode(input: value, maxDepth: 6)
-                if valueNode.hasDeepDescendant() {
+//                if valueNode.hasDeepDescendant() {
                     if comp == "query" {
-                        urlInfo.components.lamaiTrees[.queryValue] = valueNode
+                        urlInfo.components.lamaiTrees[.queryValue, default: []].append(valueNode)
                     } else {
-                        urlInfo.components.lamaiTrees[.fragmentValue] = valueNode
+                        urlInfo.components.lamaiTrees[.fragmentValue, default: []].append(valueNode)
                     }
-                }
+//                }
                 if let url = WalkTheNode.analyze(node: valueNode, urlInfo: &urlInfo, comp: comp, label: "value"), !url.isEmpty{
                     foundURL.append(url)
                 }
             }
         }
-        
         if checkMultipleURLs(foundURL, urlInfo: &urlInfo, comp: comp) {
             return (urlInfo, nil)  // Halt analysis, do not return any URLs for further processing
         }
