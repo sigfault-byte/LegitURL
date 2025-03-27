@@ -79,6 +79,12 @@ struct WalkTheNode {
                             severity: .suspicious
                             ))
                         URLQueue.shared.LegitScore += PenaltySystem.Penalty.hiddenIP
+                        
+                    case .json(let keys):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "📦 JSON structure in \(comp) \(label) with keys: \(keys.joined(separator: ", "))",
+                            severity: .info
+                        ))
                     }
                 }
             }

@@ -31,6 +31,7 @@ class DecodedNode {
         case isIPv4(String)
         case isIPv6(String)
         case email([String])
+        case json(keys: [String]) // New case for JSON
         
         var shortLabel: String {
             switch self {
@@ -43,6 +44,7 @@ class DecodedNode {
             case .isIPv4: return "IPv4"
             case .isIPv6: return "IPv6"
             case .email: return "email"
+            case .json: return "JSON" // Updated shortLabel for JSON
             }
         }
     }
@@ -94,6 +96,11 @@ class DecodedNode {
             findingsList.append(.phishingWord(phishing))
         }
         
+        // New check for JSON keys
+        if let keys = NodeAnalyzer.detectJSONKeys(target), !keys.isEmpty {
+            findingsList.append(.json(keys: keys))
+        }
+        
         findings.append(contentsOf: findingsList)
         wasRelevant = !findingsList.isEmpty
     }
@@ -138,6 +145,8 @@ extension DecodedNode {
                 print("\(indent)  IPv6 Found: \(value)")
             case .email(let value):
                 print("\(indent)  Email Found: \(value)")
+            case .json(let keys): // Display JSON findings
+                print("\(indent)  📦 JSON Found with keys: \(keys.joined(separator: ", "))")
             }
         }
         print("-----EndOfNode--------------------")

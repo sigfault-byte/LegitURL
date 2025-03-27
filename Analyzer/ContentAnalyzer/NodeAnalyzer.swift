@@ -94,6 +94,30 @@ struct NodeAnalyzer {
         return nil
     }
     
+    // Detect JSON keys in a string
+    static func detectJSONKeys(_ value: String) -> [String]? {
+        // Try full string first
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let data = trimmed.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data),
+           let dict = json as? [String: Any] {
+            return Array(dict.keys)
+        }
+
+        // 🧪 Now scan for embedded JSON (e.g., after label)
+        if let start = value.firstIndex(of: "{"),
+           let end = value.lastIndex(of: "}") {
+            let jsonSubstring = value[start...end]
+            if let jsonData = String(jsonSubstring).data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: jsonData),
+               let dict = json as? [String: Any] {
+                return Array(dict.keys)
+            }
+        }
+
+        return nil
+    }
+    
     // Check if its a word in the dictionnary, if not, check its entropy
     static func checkIfRealWordAndEntropy(_ value: String) -> DecodedNode.NodeFinding? {
         if !LegitURLTools.isRealWord(value) {
