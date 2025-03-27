@@ -128,6 +128,7 @@ struct LegitURLTools {
     
     static func isRealWord(_ word: String) -> Bool {
         // Skip check for very long words or strings with symbols (likely gibberish)
+        let word = word.lowercased()
         guard word.count <= 24,
               word.range(of: #"[^a-zA-Z\-']"#, options: .regularExpression) == nil else {
             return false
@@ -159,7 +160,7 @@ struct LegitURLTools {
             let probability = count / length
             return result - (probability * log2(probability))
         }
-        
+
         return (entropy >= threshold, entropy)
     }
     
@@ -195,6 +196,12 @@ struct LegitURLTools {
     }
     
     static func detectEmailAddresses(in input: String) -> [String] {
+        // Fast fail: skip processing if string doesn't even resemble an email
+        let strictEmailRegex = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$"#
+        guard input.range(of: strictEmailRegex, options: [.regularExpression, .caseInsensitive]) != nil else {
+            return []
+        }
+
         do {
             let detector = try NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
             let range = NSRange(input.startIndex..<input.endIndex, in: input)

@@ -40,10 +40,6 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             return
         }
         
-        // Log the URL we are probing and starting a GET request for.
-        print("🚀 Probing:", sanitizedURLString)
-        print("🚀 Starting GET request for:", url)
-        
         // Create a URLRequest for the URL.
         var request = URLRequest(url: url)
         request.httpMethod = "GET" // Specify the HTTP method.
@@ -53,13 +49,6 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         request.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
         request.setValue("gzip, deflate, br", forHTTPHeaderField: "Accept-Encoding")
         request.timeoutInterval = 10
-        
-        print("URL: \(request.url?.absoluteString ?? "none")")
-        print("Method: \(request.httpMethod ?? "none")")
-        print("Headers:")
-        request.allHTTPHeaderFields?.forEach { key, value in
-            print("  \(key): \(value)")
-        }
         
         // Configure a dedicated URLSession for this request.
         let config = URLSessionConfiguration.default
@@ -166,7 +155,7 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             return
         }
         
-        print("🔍 SSL Challenge received for:", challenge.protectionSpace.host)
+//        print("🔍 SSL Challenge received for:", challenge.protectionSpace.host)
         
         var sslCertificateDetails: [String: Any] = [:]
         

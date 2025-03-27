@@ -52,7 +52,6 @@ struct WalkTheNode {
                         ))
                         URLQueue.shared.LegitScore += PenaltySystem.Penalty.highEntropyKeyOrValue
                         
-                        
                     case .longEntropyLike(let value):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "🧪 Suspicious long query value in \(comp) \(label): '\(value)'",

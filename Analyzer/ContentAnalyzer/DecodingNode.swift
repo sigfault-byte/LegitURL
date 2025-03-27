@@ -58,11 +58,10 @@ class DecodedNode {
         self.shouldStop = false
     }
     
-    
+    // Need new one : Is this a "normal word" correct text ect !!!!
     func runAllAnalyses() {
         let target = decoded ?? value
         var findingsList: [DecodedNode.NodeFinding] = []
-        
         
         let ipv4 = NodeAnalyzer.checkIfIp4(target)
         if let ipv4 = ipv4 {
@@ -76,8 +75,6 @@ class DecodedNode {
         
         if let emailMatches = NodeAnalyzer.detectEmail(target), !emailMatches.isEmpty {
             findingsList.append(.email(emailMatches))
-
-        // Don't run URL detection if we already have email
         } else if ipv4 == nil, ipv6 == nil {
             if let url = NodeAnalyzer.detectURL(target) {
                 findingsList.append(.url(url))
@@ -96,16 +93,17 @@ class DecodedNode {
         if let phishing = NodeAnalyzer.detectPhishingWords(target) {
             findingsList.append(.phishingWord(phishing))
         }
-        let skipEntropy = !findingsList.isEmpty || !children.isEmpty
-        if let entropyFinding = NodeAnalyzer.checkIfRealWordAndEntropy(target, skip: skipEntropy) {
-            findingsList.append(entropyFinding)
-        }
         
-        for finding in findingsList {
-            findings.append(finding)  // simple map for now
-        }
-        
+        findings.append(contentsOf: findingsList)
         wasRelevant = !findingsList.isEmpty
+    }
+    
+    func checkEntropy() {
+        let target = decoded ?? value
+        if let entropyFinding = NodeAnalyzer.checkIfRealWordAndEntropy(target) {
+            findings.append(entropyFinding)
+            wasRelevant = true
+        }
     }
     
     func hasDeepDescendant(minDepth: Int = 2) -> Bool {
