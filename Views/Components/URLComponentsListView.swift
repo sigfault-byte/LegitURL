@@ -7,25 +7,6 @@
 import SwiftUI
 import Foundation
 
-struct URLListView: View {
-    @ObservedObject var urlQueue: URLQueue
-    
-    var body: some View {
-        List {
-            ForEach(urlQueue.offlineQueue) { urlInfo in
-                NavigationLink(destination: URLDetailView(urlInfo: urlInfo, onlineInfo: urlQueue.onlineQueue.first(where: { $0.id == urlInfo.id }))) {
-                    Text(urlInfo.components.fullURL ?? "Unknown URL")
-                        .font(.footnote)
-                        .foregroundColor(.blue)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-            }
-        }
-        .navigationTitle("URL List")
-    }
-}
-
 struct URLDetailView: View {
     var urlInfo: URLInfo
     var onlineInfo: OnlineURLInfo?
@@ -35,20 +16,22 @@ struct URLDetailView: View {
     @State private var isFragmentExpanded = false
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+        List {
+            Section(header: Text("FULL URL")) {
                 URLDetailHeaderView(isExpanded: $isExpanded, fullURL: urlInfo.components.fullURL)
+            }
+            Section(header: Text("OFFLINE INFORMATION")) {
                 URLComponentSection(urlInfo: urlInfo, isPathExpanded: $isPathExpanded, isQueryExpanded: $isQueryExpanded, isFragmentExpanded: $isFragmentExpanded)
-                
-                if let onlineInfo = onlineInfo {
+            }
+            if let onlineInfo = onlineInfo {
+                Section(header: Text("ONLINE INFORMATION")) {
                     URLSSLSection(onlineInfo: onlineInfo)
-                        .padding(.top, 12)
                 }
             }
-            .padding(.horizontal)
         }
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .listStyle(InsetGroupedListStyle())
         .navigationTitle("URL Details")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -57,18 +40,25 @@ private struct URLDetailHeaderView: View {
     var fullURL: String?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(isExpanded ? (fullURL ?? "Unknown URL") : (fullURL?.prefix(60) ?? "Unknown URL") + "…")
-                .font(.callout)
-                .foregroundColor(.secondary)
-                .lineLimit(isExpanded ? nil : 1)
-                .truncationMode(.tail)
-                .onTapGesture {
-                    withAnimation {
-                        isExpanded.toggle()
-                    }
+        Text(isExpanded ? (fullURL ?? "Unknown URL") : truncatedURL)
+            .font(.callout)
+            .foregroundColor(.secondary)
+            .lineLimit(isExpanded ? nil : 1)
+            .truncationMode(.tail)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation {
+                    isExpanded.toggle()
                 }
+            }
+    }
+    
+    private var truncatedURL: String {
+        guard let fullURL = fullURL else { return "Unknown URL" }
+        if fullURL.count > 60 {
+            return fullURL.prefix(60) + "…"
         }
+        return fullURL
     }
 }
 
@@ -79,7 +69,21 @@ private struct URLComponentSection: View {
     @Binding var isFragmentExpanded: Bool
     
     var body: some View {
-        let rows: [AnyView] = [
+        Group {
+            ForEach(componentRows.indices, id: \.self) { index in
+                componentRows[index]
+            }
+            if !urlInfo.components.lamaiTrees.isEmpty,
+               urlInfo.components.lamaiTrees.flatMap(\.value).contains(where: { !$0.children.isEmpty }) {
+                NavigationLink(destination: LamaiTreeViewComponent(lamaiTrees: urlInfo.components.lamaiTrees)) {
+                    Text("View Lamai Decoded Tree")
+                }
+            }
+        }
+    }
+    
+    private var componentRows: [AnyView] {
+        [
             urlInfo.components.scheme.map { AnyView(URLDetailRow(label: "Scheme", value: $0)) },
             urlInfo.components.userinfo.map { AnyView(URLDetailRow(label: "User Info", value: $0)) },
             urlInfo.components.userPassword.map { AnyView(URLDetailRow(label: "Password", value: $0)) },
@@ -106,39 +110,6 @@ private struct URLComponentSection: View {
                 )
             }
         ].compactMap { $0 }
-        
-        return VStack(alignment: .leading, spacing: 8) {
-            ForEach(0..<rows.count, id: \.self) { index in
-                rows[index]
-                if index < rows.count - 1 {
-                    iOSStyleDivider()
-                }
-            }
-            
-            if !urlInfo.components.lamaiTrees.isEmpty,
-               urlInfo.components.lamaiTrees.flatMap(\.value).contains(where: { !$0.children.isEmpty }) {
-                iOSStyleDivider()
-                NavigationLink(destination: LamaiTreeViewComponent(lamaiTrees: urlInfo.components.lamaiTrees)) {
-                    HStack {
-                        Text("View Lamai Decoded Tree")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                    }
-                    .foregroundColor(.primary)
-                    .padding(.vertical, 8)
-                }
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(.separator), lineWidth: 0.5)
-        )
-        .padding(.vertical, 8)
     }
 }
 
@@ -146,75 +117,33 @@ private struct URLSSLSection: View {
     var onlineInfo: OnlineURLInfo
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        Group {
             if let responseCode = onlineInfo.serverResponseCode {
                 URLDetailRow(label: "Server Response Code", value: "\(responseCode)")
-                iOSStyleDivider()
             }
-            
             if let statusText = onlineInfo.statusText {
                 URLDetailRow(label: "Status Text", value: statusText)
-                iOSStyleDivider()
             }
-            
             if let finalRedirectURL = onlineInfo.finalRedirectURL {
                 URLDetailRow(label: "Server redirects to:", value: finalRedirectURL)
-                iOSStyleDivider()
             }
-            
             URLDetailRow(label: "SSL Validity", value: onlineInfo.sslValidity ? "✅ Valid" : "❌ Invalid")
-            iOSStyleDivider()
-            
             if let cert = onlineInfo.parsedCertificate {
                 NavigationLink(destination: URLCertificateDetailView(cert: cert)) {
-                    HStack {
-                        Text("View Certificate Details")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                    }
-                    .foregroundColor(.primary)
-                    .padding(.vertical, 8)
+                Text("View Certificate Details")
                 }
-                iOSStyleDivider()
             }
-            
             if let parsedHeaders = onlineInfo.parsedHeaders {
                 NavigationLink(destination: URLFormattedView(title: "Response Headers", content: formatParsedHeaders(parsedHeaders))) {
-                    HStack {
-                        Text("View Response Headers")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                    }
-                    .foregroundColor(.primary)
-                    .padding(.vertical, 8)
+                    Text("View Response Headers")
                 }
-                iOSStyleDivider()
             }
-            
             if !onlineInfo.formattedBody.isEmpty {
                 NavigationLink(destination: URLFormattedView(title: "Response Body", content: onlineInfo.formattedBody)) {
-                    HStack {
-                        Text("View Response Body")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                    }
-                    .foregroundColor(.primary)
-                    .padding(.vertical, 8)
+                    Text("View Response Body")
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(.separator), lineWidth: 0.5)
-        )
-        .padding(.vertical, 8)
     }
 }
 
@@ -223,16 +152,16 @@ struct URLFormattedView: View {
     var content: String
     
     var body: some View {
-        ScrollView {
-            Text(content)
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(.systemGray5))
-                .cornerRadius(6)
+        List {
+            Section {
+                Text(content)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(.primary)
+                    .padding(.vertical, 8)
+            }
         }
+        .listStyle(InsetGroupedListStyle())
         .navigationTitle(title)
-        .padding()
     }
 }
 

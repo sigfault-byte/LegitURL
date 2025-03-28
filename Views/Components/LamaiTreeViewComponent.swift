@@ -13,7 +13,7 @@ struct LamaiTreeViewComponent: View {
     var body: some View {
         List {
             ForEach(lamaiTrees.sorted(by: { $0.key.rawValue < $1.key.rawValue }), id: \.key) { key, nodes in
-                Section(header: Text("🔍 \(key.rawValue.capitalized)")) {
+                Section(header: Text("\(key.rawValue.capitalized)")) {
                     ForEach(nodes, id: \.id) { node in
                         LamaiNodeRow(node: node, indent: 0)
                     }
@@ -28,26 +28,41 @@ struct LamaiTreeViewComponent: View {
 struct LamaiNodeRow: View {
     let node: DecodedNode
     let indent: Int
-    @State private var isExpanded: Bool = false
+    @State private var isExpanded: Bool = true
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            VStack(alignment: .leading, spacing: 2) {
-                ForEach(node.findings, id: \.self) { finding in
-                    Text("🔸 \(finding.shortLabel): \(node.value)")
-                        .font(.system(size: 11, weight: .regular, design: .monospaced))
-                        .foregroundColor(.orange)
+            VStack(alignment: .leading, spacing: 6) {
+                if !node.findings.isEmpty {
+                    ForEach(node.findings, id: \.self) { finding in
+                        HStack(alignment: .center) {
+                            Text("\(finding.shortLabel): \(node.value)")
+                                .font(.footnote.bold())
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .foregroundColor(.red)
+                        }
+                    }
                 }
 
                 ForEach(node.children, id: \.id) { child in
                     LamaiNodeRow(node: child, indent: indent + 1)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.leading, 8)
+            .padding(.vertical, 2)
         } label: {
-            Text("\(String(repeating: "  ", count: indent))↳ [\(node.method ?? "raw")] \(node.value)")
-                .font(.system(size: 12, weight: .medium, design: .monospaced))
-                .foregroundColor(node.method != "raw" ? .blue : .primary)
+            (
+                Text("[")
+                + Text(node.method ?? "raw")
+                    .foregroundColor((node.method ?? "raw") == "raw" ? .gray : .primary)
+                + Text("] \(node.value)")
+            )
+            .font(.system(size: 12, weight: .medium, design: .monospaced))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .padding(.leading, CGFloat(indent * 12))
         }
     }
 }

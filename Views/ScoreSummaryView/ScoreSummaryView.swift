@@ -21,6 +21,7 @@ struct ScoreSummaryView: View {
                     .accentColor(urlQueue.LegitScore > 50 ? .green : .red)
                     .padding(.horizontal)
             }
+            .padding(.top, 40)
             
             if analysisStarted {
                 VStack {
@@ -29,10 +30,11 @@ struct ScoreSummaryView: View {
                             Text("Final domain:")
                                 .font(.headline)
                                 .foregroundColor(.blue)
-                            Text("\(finalHost)\(urlQueue.offlineQueue.count > 1 ? "  (\(urlQueue.offlineQueue.count - 1) hops)" : "")")
+                            Text("\(finalHost)\n\(urlQueue.offlineQueue.count > 1 ? "  (\(urlQueue.offlineQueue.count - 1) hops)" : "")")
                                 .font(.system(size: 25, weight: .bold))
                                 .foregroundColor(.primary)
                                 .padding(.top, 4)
+                                .multilineTextAlignment(.center)
                         }
                         .transition(.move(edge: .top))
                     }

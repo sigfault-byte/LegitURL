@@ -1,9 +1,3 @@
-//
-//  URLAnalysisResultView.swift
-//  URLChecker
-//
-//  Created by Chief Hakka on 28/03/2025.
-//
 import SwiftUI
 
 struct URLAnalysisResultView: View {
@@ -12,95 +6,119 @@ struct URLAnalysisResultView: View {
     @Binding var isAnalyzing: Bool
     
     @Environment(\.dismiss) private var dismiss
-    
     @ObservedObject var urlQueue = URLQueue.shared
+    
     @State private var showInfoMessage = true
     @State private var showAnimated = false
     @State private var hasAnalyzed = false
     @State private var showWarningsSheet = false
-
+    
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack {
-
+        ZStack(alignment: .bottom) {
+            // Main content in a NavigationView
+            NavigationView {
+                List {
+                    // Info Message Section
                     if showInfoMessage, let message = infoMessage, !message.isEmpty {
-                        Text("ℹ️ \(message)")
-                            .font(.footnote)
-                            .foregroundColor(.gray)
+                        Section {
+                            Text("ℹ️ \(message)")
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                        }
                     }
-                    // Placeholder: Add ScoreSummaryView or other analysis components here
-                    ScoreSummaryView(urlQueue: urlQueue, analysisStarted: $showAnimated)
-                    // Example ScoreSummaryView
-                    // ScoreSummaryView(score: someScore)
-
-                    // Using the new HopListView
-                    HopListView(urlQueue: urlQueue)
-                    if !urlQueue.isAnalysisComplete {
-                        Text("⏳ Full analysis still in progress...")
-                            .font(.footnote)
-                            .foregroundColor(.gray)
-                            .padding(.bottom, 4)
-                    } else {
-                        Text("✅ Full analysis complete.")
-                            .font(.footnote)
-                            .foregroundColor(.green)
-                            .padding(.bottom, 4)
+                    
+                    // Analysis Summary Section
+                    Section {
+                        ScoreSummaryView(urlQueue: urlQueue, analysisStarted: $showAnimated)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    }
+                    
+                    // Hop List Section
+                    Section(header: Text("Redirect chain")) {
+                        ForEach(urlQueue.offlineQueue) { urlInfo in
+                            NavigationLink(destination: URLDetailView(
+                                urlInfo: urlInfo,
+                                onlineInfo: urlQueue.onlineQueue.first(where: { $0.id == urlInfo.id })
+                            )) {
+                                // This label automatically gets the system row styling
+                                Label(urlInfo.components.host ?? "Unknown Host", systemImage: "network")
+                            }
+                        }
+                    }
+                    
+                    // Analysis Status Section
+                    Section {
+                        if !urlQueue.isAnalysisComplete {
+                            Text("Analysis still in progress...")
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                        } else {
+                            Text("Analysis complete.")
+                                .font(.footnote)
+                                .foregroundColor(.green)
+                        }
                     }
                 }
-                .padding()
-            }
-
-            Spacer()
-            Button(action: {
-                showWarningsSheet.toggle()
-            }) {
-                Text("⚠️ Security Warnings (\(urlQueue.allWarnings.count))")
-                    .font(.headline)
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemGray6)))
-                    .padding(.horizontal)
-            }
-            .sheet(isPresented: $showWarningsSheet) {
-                SecurityWarningsDetailView(urlQueue: urlQueue)
-            }
-//----------------------------------MENU-------------------------------------------
-            HStack {
-                Spacer()
-                Button("🏠 Home") {
-                    LegitSessionManager.reset()           // Optional: reset your shared data
-                    isAnalyzing = false
-                    dismiss()
+                .listStyle(InsetGroupedListStyle())
+                .navigationTitle("Analysis Result")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    // Bottom bar for Home & Help
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        HStack {
+                            Spacer()
+                            Button("🏠 Home") {
+                                LegitSessionManager.reset()
+                                isAnalyzing = false
+                                dismiss()
+                            }
+                            Spacer()
+                            Button("❓ Help") {
+                                // TODO: Add help logic
+                            }
+                            Spacer()
+                        }
+                    }
                 }
-                Spacer()
-                Button("❓ Help") {
-                    // TODO: Add help logic
+                .onAppear {
+                    if !hasAnalyzed {
+                        hasAnalyzed = true
+                        URLAnalyzer.analyze(urlString: urlInput)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                            showInfoMessage = false
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            showAnimated = true
+                        }
+                    }
                 }
-                Spacer()
             }
-            .padding()
-//            ---------------------END MENU--------------------------------------------
-        }
-        .onAppear {
-            if !hasAnalyzed {
-                hasAnalyzed = true
-                URLAnalyzer.analyze(urlString: urlInput)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                    showInfoMessage = false
+            
+            // "Mini-player" style bar above bottom toolbar
+            if !urlQueue.allWarnings.isEmpty {
+                HStack {
+                    Text("⚠️ Security Warnings (\(urlQueue.allWarnings.count))")
+                        .font(.headline)
+                        .foregroundColor(.red)
+                        .padding(.vertical, 12)
+                        .onTapGesture {
+                            showWarningsSheet.toggle()
+                        }
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    showAnimated = true
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 50)
+                .transition(.move(edge: .bottom))
+                .zIndex(1)
+                .sheet(isPresented: $showWarningsSheet) {
+                    SecurityWarningsDetailView(urlQueue: urlQueue)
                 }
             }
         }
     }
 }
-
-
-//struct URLAnalysisResultView_Preview: PreviewProvider {
-//    static var previews: some View {
-//        URLAnalysisResultView(urlInput: "https://test.com", infoMessage: nil, isAnalyzing: .constant(true))
-//    }
-//}
