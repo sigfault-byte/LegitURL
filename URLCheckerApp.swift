@@ -11,7 +11,9 @@ import SwiftUI
 struct URLCheckerApp: App {
     var body: some Scene {
         WindowGroup {
-            URLAnalyzerView()
+            NavigationStack {
+                InputHomeView()
+            }
         }
     }
 }

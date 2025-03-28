@@ -8,8 +8,9 @@
 import Foundation
 
 struct DeepScamHellCheck {
-    static func analyze(queryOrFragment: String, isFragment: Bool) -> [SecurityWarning] {
+    static func analyze(queryOrFragment: String, isFragment: Bool, urlOrigin: String) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
+        
         let componentType = isFragment ? "Fragment" : "Query"
 
         // Check for excessive slashes (excluding encoded ones)
@@ -19,7 +20,9 @@ struct DeepScamHellCheck {
             if !queryOrFragment.contains("=") && parts.count > 2 {
                 warnings.append(SecurityWarning(
                     message: "\(componentType) contains multiple `/` but lacks structured key-value pairs. This may be an obfuscation trick used by scammers.",
-                    severity: .critical
+                    severity: .critical,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
             }
 
@@ -27,7 +30,9 @@ struct DeepScamHellCheck {
             if queryOrFragment.range(of: #"cl/\d+_md/\d+/.+"#, options: .regularExpression) != nil {
                 warnings.append(SecurityWarning(
                     message: "\(componentType) follows a known scam pattern (`cl/xyz/md/...`). This is commonly used for deceptive tracking and redirection.",
-                    severity: .critical
+                    severity: .critical,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
             }
         }
@@ -37,7 +42,9 @@ struct DeepScamHellCheck {
         if queryOrFragment.rangeOfCharacter(from: specialChars) != nil {
             warnings.append(SecurityWarning(
                 message: "\(componentType) contains unusual special characters. These are often used in phishing or encoded payloads.",
-                severity: .critical
+                severity: .critical,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
         }
 
@@ -45,7 +52,9 @@ struct DeepScamHellCheck {
         if queryOrFragment.count > 100 {
             warnings.append(SecurityWarning(
                 message: "\(componentType) is unusually long, which may indicate an encoded payload or tracking injection.",
-                severity: .critical
+                severity: .critical,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
         }
 

@@ -2,20 +2,26 @@ struct PQFAnalyzer {
     
     static func analyze(urlInfo: inout URLInfo) -> String? {
         var newURL: String?
+        let urlOrigin = urlInfo.components.host ?? ""
         
         // Bad strict check of #? and ?#
         if let rawURL = urlInfo.components.fullURL {
             if rawURL.contains("#?") {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "The URL contains a fragment (`#`) before a query (`?`).\nThis is an obfuscation technique used by scammers to manipulate URL parsing and tracking systems.",
-                    severity: .critical
+                    severity: .critical,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
+                    
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
                 return (nil)
             } else if rawURL.contains("?#") {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "The URL contains a query (`?`) before a fragment (`#`).\nThis is an obfuscation technique used by scammers to manipulate URL parsing and tracking systems.",
-                    severity: .critical
+                    severity: .critical,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
                 return (nil)
@@ -34,7 +40,9 @@ struct PQFAnalyzer {
         } else if let rawQuery = urlInfo.components.rawQuery, rawQuery.isEmpty {
             urlInfo.warnings.append(SecurityWarning(
                 message: "The URL contains an empty query section (i.e., nothing follows '?').",
-                severity: .suspicious
+                severity: .suspicious,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.emptyQueryString
         }
@@ -46,7 +54,9 @@ struct PQFAnalyzer {
         } else if let rawFragment = urlInfo.components.fragment, rawFragment.isEmpty {
             urlInfo.warnings.append(SecurityWarning(
                 message: "The URL contains an empty fragment section (i.e., nothing follows '#').",
-                severity: .suspicious
+                severity: .suspicious,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.emptyFragment
         }

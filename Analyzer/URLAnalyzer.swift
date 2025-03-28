@@ -10,17 +10,10 @@ import Foundation
 struct URLAnalyzer {
     
     // MARK: - Public Entry Point
-    
-    public static func analyze(urlString: String, infoMessage: inout String?) {
+    public static func analyze(urlString: String) {
         resetQueue()
-        infoMessage = nil
         
-        let (cleanURL, message) = sanitizeAndValidate(urlString, &infoMessage)
-        infoMessage = message
-        
-        guard let cleanedURL = cleanURL else { return }
-        
-        let extractedInfo = extractComponents(from: cleanedURL)
+        let extractedInfo = extractComponents(from: urlString)
         URLQueue.shared.offlineQueue.append(extractedInfo)
         
         if shouldStopAnalysis(extractedInfo, atIndex: 0) { return }
@@ -93,6 +86,9 @@ struct URLAnalyzer {
         // Find the first URLInfo that hasn't been processed online
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline }) else {
             print("✅ All online checks complete.")
+            DispatchQueue.main.async {
+                URLQueue.shared.isAnalysisComplete = true
+            }
             return
         }
         
@@ -108,7 +104,10 @@ struct URLAnalyzer {
             DispatchQueue.main.async {
                 // Handle error if present
                 if let error = error {
-                    let warning = SecurityWarning(message: error.localizedDescription, severity: .urlGetFail)
+                    let warning = SecurityWarning(message: error.localizedDescription,
+                                                  severity: .fetchError,
+                                                  url: currentURLInfo.components.host ?? "",
+                                                  source: .onlineAnalysis)
                     URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
                     print("❌ Error handled:", error.localizedDescription)
                     markURLInfoOnlineProcessed(for: currentURLInfo)
@@ -118,7 +117,10 @@ struct URLAnalyzer {
                 // Handle unexpected nil onlineInfo
                 guard let onlineInfo = onlineInfo else {
                     print("❌ Unexpected state: no error, but also no OnlineURLInfo!")
-                    let warning = SecurityWarning(message: "Failed to retrieve online information.", severity: .urlGetFail)
+                    let warning = SecurityWarning(message: "Failed to retrieve online information.",
+                                                  severity: .fetchError,
+                                                  url: currentURLInfo.components.host ?? "",
+                                                  source: .onlineAnalysis)
                     URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
                     markURLInfoOnlineProcessed(for: currentURLInfo)
                     return
@@ -172,7 +174,7 @@ struct URLAnalyzer {
             URLQueue.shared.offlineQueue[atIndex].processed = true
             print("❌ Critical warning found. Stopping analysis.")
             return true
-        } else if urlInfo.warnings.contains(where: { $0.severity == .urlGetFail }) {
+        } else if urlInfo.warnings.contains(where: { $0.severity == .fetchError}) {
             URLQueue.shared.offlineQueue[atIndex].processed = true
             print("⚠️ URL GET request failed. Stopping analysis.")
             return true

@@ -12,38 +12,37 @@ struct SecurityWarning: Identifiable{
     let id: UUID = UUID()
     var message: String
     var severity: SeverityLevel
-    var url: String?
+    var url: String
+    var source: SourceType
     
     /// **Represents severity levels for warnings**
     enum SeverityLevel: String {
         case info = "INFO"
+        case tracking = "TRACKING"
         case suspicious = "SUSPICIOUS"
+        case scam = "SCAM"
         case dangerous = "DANGEROUS"
         case critical = "CRITICAL"
-        case urlGetFail = "GETFAILED"
-        
-//        TODO REFACTOR:
-//        enum SeverityLevel: String {
-//            case info = "INFO"
-//            case tracking = "TRACKING"
-//            case scam = "SCAM"
-//            case suspicious = "SUSPICIOUS"
-//            case dangerous = "DANGEROUS"
-//            case critical = "CRITICAL"
-//            case urlGetFail = "GETFAILED"
-//        }
-//        }
+        case fetchError = "FETCH_ERROR"
         
         /// Returns a color for UI representation
         var color: Color {
             switch self {
             case .info: return Color.blue
+            case .tracking: return Color.gray
             case .suspicious: return Color.orange
+            case .scam: return Color.purple
             case .dangerous: return Color.red
             case .critical: return Color.red.opacity(0.8)
-            case .urlGetFail: return Color.red
+            case .fetchError: return Color.black
             }
         }
+    }
+    
+    enum SourceType: Hashable {
+        case offlineAnalysis
+        case onlineAnalysis
+        case redirectedURL(hop: Int)
     }
 }
 

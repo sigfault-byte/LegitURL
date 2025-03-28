@@ -20,32 +20,37 @@ struct LegitURLTools {
     /// - Parameter input: The raw URL string entered by the user.
     /// - Returns: A sanitized URL or an error message if invalid.
     static func userInputCheck(_ input: String) -> (String?, String?) {
-        // 1️⃣ Trim leading/trailing whitespaces and newlines
+        //  Trim leading/trailing whitespaces and newlines
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         var message: String?
         
-        // 2️⃣ Ensure the input is not empty
+        //  Ensure the input is not empty
         guard !trimmed.isEmpty else {
             return (nil, "❌ Input is empty.")
         }
-        // 2️⃣b Try parsing it directly as a URL (basic structure check)
+        
+        // Check if input has a valid scheme in the first 10 characters
+        let schemeRegex = "^[A-Za-z][A-Za-z0-9+.-]*://"
+        let prefixToCheck = trimmed.prefix(10)
+        
+        if prefixToCheck.range(of: schemeRegex, options: .regularExpression) == nil {
+            let urlString = "https://" + trimmed // Default to HTTPS
+            message = "https:// was automatically added as the scheme"
+            return (urlString, message)
+        } else {
+            // Validate the scheme
+            if !trimmed.hasPrefix("http://") && !trimmed.hasPrefix("https://") {
+                return (nil, "❌ Only HTTP and HTTPS schemes are supported.")
+            }
+        }
+        
+        // Validate that the input contains at least one dot
         if URL(string: trimmed) == nil && !trimmed.contains(".") {
             return (nil, "❌ Not a valid URL structure.")
         }
         
-        // 3️⃣ Check if input has a valid scheme in the first 10 characters; if not, prepend "https://"
-        var urlString = trimmed
-        let schemeRegex = "^[A-Za-z][A-Za-z0-9+.-]*://"
-        // Only check the first 10 characters (or the entire string if shorter)
-        let prefixToCheck = trimmed.prefix(10)
-        if prefixToCheck.range(of: schemeRegex, options: .regularExpression) == nil {
-            urlString = "https://" + trimmed // Default to HTTPS
-            message = "https:// was automatically added as the scheme"
-        }
-        
-        //        print("urlStringCleaned: \(urlString)")
         // ✅ If all checks pass, return the sanitized URL
-        return (urlString, message)
+        return (trimmed, message)
     }
     
     /// **Extracts and splits host into parts**

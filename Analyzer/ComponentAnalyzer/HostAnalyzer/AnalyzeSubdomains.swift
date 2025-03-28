@@ -12,6 +12,9 @@
 //
 struct AnalyzeSubdomains {
     static func analyze(urlInfo: inout URLInfo, subdomains: [String]) {
+        
+        let urlOrigin = urlInfo.components.host ?? ""
+        
         if subdomains.count == 1, subdomains.first?.lowercased() == "www" {
             return
         }
@@ -22,7 +25,9 @@ struct AnalyzeSubdomains {
             if raw.contains("_") {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "⚠️ Subdomain '\(raw)' contains underscores, which are unusual and may be used for obfuscation.",
-                    severity: .suspicious
+                    severity: .suspicious,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.subdomainUnderscore
             }
@@ -32,7 +37,9 @@ struct AnalyzeSubdomains {
             if raw != normalized {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "ℹ️ Subdomain '\(raw)' was normalized by removing underscores → '\(normalized)'.",
-                    severity: .info
+                    severity: .info,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
             }
             let parts = normalized.split(separator: "-").map(String.init)
@@ -54,19 +61,24 @@ struct AnalyzeSubdomains {
     }
 
     private static func checkBrandImpersonation(_ part: String, urlInfo: inout URLInfo) -> Bool {
+        let urlOrigin = urlInfo.components.host ?? ""
         for brand in KnownBrands.names {
             let distance = LegitURLTools.levenshtein(part, brand)
             if distance == 0 {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "🚨 Subdomain segment '\(part)' matches the brand '\(brand)'.",
-                    severity: .critical
+                    severity: .dangerous,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.brandImpersonation
                 return true
             } else if distance == 1 && part.count > 4 {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "⚠️ Subdomain segment '\(part)' is very similar to the brand '\(brand)'.",
-                    severity: .suspicious
+                    severity: .suspicious,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.brandLookaLike
             }
@@ -75,18 +87,23 @@ struct AnalyzeSubdomains {
     }
 
     private static func checkPhishingAndScamTerms(_ part: String, urlInfo: inout URLInfo) -> Bool {
+        let urlOrigin = urlInfo.components.host ?? ""
         let lowercased = part.lowercased()
         if SuspiciousKeywords.phishingWords.contains(lowercased) {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ Subdomain segment '\(part)' contains a phishing-related term.",
-                severity: .suspicious
+                severity: .scam,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInHost
             return true
         } else if SuspiciousKeywords.scamTerms.contains(lowercased) {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ Subdomain segment '\(part)' contains a scam-related term.",
-                severity: .suspicious
+                severity: .scam,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.scamWordsInHost
             return true
@@ -95,12 +112,15 @@ struct AnalyzeSubdomains {
     }
 
     private static func checkWordOrEntropy(_ part: String, urlInfo: inout URLInfo) {
+        let urlOrigin = urlInfo.components.host ?? ""
         if !LegitURLTools.isRealWord(part) {
             let (isEntropyHigh, entropyScore) = LegitURLTools.isHighEntropy(part)
             if isEntropyHigh {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "⚠️ Subdomain segment '\(part)' appears random or obfuscated (high entropy \(String(format: "%.2f", entropyScore ?? 0))).",
-                    severity: .suspicious
+                    severity: .suspicious,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.highEntropySubDomain
             }

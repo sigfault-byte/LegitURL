@@ -61,11 +61,14 @@ struct KeyValuePairAnalyzer {
     
     private static func checkMultipleURLs(_ foundURLs: [String?], urlInfo: inout URLInfo, comp: String) -> Bool {
         let nonNilURLs = foundURLs.compactMap { $0 } // Remove nil values
+        let urlOrigin = urlInfo.components.host ?? ""
         if nonNilURLs.count > 1 {
             let urlList = nonNilURLs.joined(separator: "\n") // Format URLs on new lines
             urlInfo.warnings.append(SecurityWarning(
-                message: "❌ Multiple URLs detected in \(comp) parameters. This is highly suspicious:\n\(urlList)",
-                severity: .critical
+                message: "Multiple URLs detected in \(comp) parameters.\n\(urlList)",
+                severity: .critical,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
             return true  // 🚨 Indicate that analysis should halt

@@ -11,7 +11,6 @@ struct LamaiAnalyzerHub {
         child.method = method
         child.decoded = value
 
-        print("hello motherfucker")
         // Run all non-entropy analyses first
         child.runAllAnalyses()
 

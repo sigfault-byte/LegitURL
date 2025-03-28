@@ -5,12 +5,12 @@
 //  Created by Chief Hakka on 20/03/2025.
 //
 struct HeadersAnalyzer {
-    static func analyze(responseHeaders: [String: String]) -> [SecurityWarning] {
+    static func analyze(responseHeaders: [String: String], urlOrigin: String) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
         
         //        warnings.append(contentsOf: checkMissingSecurityHeaders(responseHeaders: responseHeaders))
         //        warnings.append(contentsOf: checkCookieSecurityFlags(responseHeaders: responseHeaders))
-        warnings.append(contentsOf: detectServerMisconfigurations(responseHeaders: responseHeaders))
+        warnings.append(contentsOf: detectServerMisconfigurations(responseHeaders: responseHeaders, urlOrigin: urlOrigin))
         
         return warnings
     }
@@ -23,7 +23,7 @@ struct HeadersAnalyzer {
     //        // Implementation of the check for cookie security flags
     //    }
     //
-    private static func detectServerMisconfigurations(responseHeaders: [String: String]) -> [SecurityWarning] {
+    private static func detectServerMisconfigurations(responseHeaders: [String: String], urlOrigin: String) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
         var detectedValues: [String: String] = [:]
         var penalty: Int = 0
@@ -50,14 +50,18 @@ struct HeadersAnalyzer {
 
                 warnings.append(SecurityWarning(
                     message: warningMessage,
-                    severity: severity
+                    severity: severity,
+                    url: urlOrigin,
+                    source: .onlineAnalysis
                 ))
             }
         }
         if !detectedValues.isEmpty {
             warnings.append(SecurityWarning(
                 message: "🔍 Detected Server Stack: \(detectedValues.map { "\($0.key): \($0.value)" }.joined(separator: ", "))",
-                severity: .info
+                severity: .info,
+                url: urlOrigin,
+                source: .onlineAnalysis
                 ))
                 penalty += 10
         }

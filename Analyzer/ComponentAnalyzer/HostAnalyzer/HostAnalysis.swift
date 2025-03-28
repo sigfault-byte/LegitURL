@@ -17,7 +17,9 @@ struct HostAnalysis {
         if LegitURLTools.isIPv4(host) || LegitURLTools.isIPv6(host) {
             urlObject.warnings.append(SecurityWarning(
                 message: "🚨 The host \(host) is an IP address.",
-                severity: .critical
+                severity: .critical,
+                url: host,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.userInfoInHost
             return
@@ -30,7 +32,9 @@ struct HostAnalysis {
         if let userInfo = urlObject.components.userinfo, !userInfo.isEmpty {
             urlObject.warnings.append(SecurityWarning(
                 message: "🚨 URL contains user info '\(userInfo)'.",
-                severity: .dangerous
+                severity: .dangerous,
+                url: host,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.userInfoInHost
         }
@@ -38,7 +42,9 @@ struct HostAnalysis {
         if let password = urlObject.components.userPassword, !password.isEmpty {
             urlObject.warnings.append(SecurityWarning(
                 message: "🚨 URL contains a password component.",
-                severity: .critical
+                severity: .critical,
+                url: host,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
         }
@@ -48,7 +54,9 @@ struct HostAnalysis {
             if port != "443" {
                 urlObject.warnings.append(SecurityWarning(
                     message: "🚨 URL uses port :\(port), non-standard https.",
-                    severity: .critical
+                    severity: .critical,
+                    url: host,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.unusualPort
             }

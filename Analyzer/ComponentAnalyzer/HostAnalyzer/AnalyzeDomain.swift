@@ -19,11 +19,14 @@ struct AnalyzeDomain {
         // If they differ, keep both for deeper analysis.
         let idnaEncodedDomain = urlInfo.components.idnaEncodedExtractedDomain ?? ""
         let idnaDecodedDomain = urlInfo.components.idnaDecodedExtractedDomain ?? ""
+        let urlOrigin = urlInfo.components.host ?? ""
 
         if domain != idnaEncodedDomain || domain != idnaDecodedDomain || idnaDecodedDomain != idnaEncodedDomain {
             urlInfo.warnings.append(SecurityWarning(
                 message: "Domain '\(domain)' mismatch: '\(idnaDecodedDomain)' decoded from '\(idnaEncodedDomain)'. Possible homograph or internationalized domain.",
-                severity: .suspicious
+                severity: .dangerous,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.domainNonASCII
         }
@@ -42,7 +45,9 @@ struct AnalyzeDomain {
         if domainParts.count >= 5 {
             urlInfo.warnings.append(SecurityWarning(
                 message: "Domain '\(domain)' contains \(domainParts.count) segments split by hyphens, which may be an attempt to obfuscate.",
-                severity: .suspicious
+                severity: .suspicious,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.tooManyHyphensInDomain
         }
@@ -60,13 +65,17 @@ struct AnalyzeDomain {
             if !LegitURLTools.isRealWord(part) {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Domain segment '\(part)' was not found in the user's English dictionary.",
-                    severity: .info
+                    severity: .info,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 let (isHighEntropy, score) = LegitURLTools.isHighEntropy(part)
                 if isHighEntropy, let entropy = score {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "Domain segment '\(part)' has high entropy (≈ \(String(format: "%.2f", entropy))).",
-                        severity: .suspicious
+                        severity: .suspicious,
+                        url: urlOrigin,
+                        source: .offlineAnalysis
                     ))
                     URLQueue.shared.LegitScore += PenaltySystem.Penalty.highEntropyDomain
                 }
@@ -75,18 +84,23 @@ struct AnalyzeDomain {
     }
 
     private static func checkForBrandMatch(in part: String, urlInfo: inout URLInfo) -> Bool {
+        let urlOrigin = urlInfo.components.host ?? ""
         for brand in KnownBrands.names {
             if part.lowercased().contains(brand) {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Domain segment '\(part)' contains known brand '\(brand)'.",
-                    severity: .dangerous
+                    severity: .dangerous,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.brandImpersonation
                 return true
             } else if LegitURLTools.levenshtein(part.lowercased(), brand) <= 2 {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Domain segment '\(part)' is similar to known brand '\(brand)' (Levenshtein ≤ 2).",
-                    severity: .dangerous
+                    severity: .scam,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.brandLookaLike
                 return true
@@ -97,12 +111,15 @@ struct AnalyzeDomain {
     
     private static func checkForPhishingKeyword(in part: String, urlInfo: inout URLInfo) -> Bool {
         let lower = part.lowercased()
-
+        let urlOrigin = urlInfo.components.host ?? ""
+        
         for keyword in SuspiciousKeywords.phishingWords {
             if lower.contains(keyword) {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Domain segment '\(part)' contains phishing-related keyword '\(keyword)'.",
-                    severity: .suspicious
+                    severity: .scam,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInHost
                 return true
@@ -113,7 +130,9 @@ struct AnalyzeDomain {
             if lower.contains(scam) {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Domain segment '\(part)' contains scam-related term '\(scam)'.",
-                    severity: .suspicious
+                    severity: .scam,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 URLQueue.shared.LegitScore += PenaltySystem.Penalty.scamWordsInHost
                 return true
@@ -126,6 +145,8 @@ struct AnalyzeDomain {
 private func checkScriptMismatch(domain: String, tld: String, urlInfo: inout URLInfo) {
     let scriptSet = analyzeUnicodeScripts(in: domain)
     let tldScriptSet = analyzeUnicodeScripts(in: tld)
+    
+    let urlOrigin = urlInfo.components.host ?? ""
 
     if scriptSet.count == 1 {
         if scriptSet.contains(.ascii) {
@@ -135,33 +156,43 @@ private func checkScriptMismatch(domain: String, tld: String, urlInfo: inout URL
         if let script = scriptSet.first, !tldScriptSet.contains(script) {
             urlInfo.warnings.append(SecurityWarning(
                 message: "🚨 Domain '\(domain)' uses only \(script) characters, but its TLD '\(tld)' is from a different script family.",
-                severity: .critical
+                severity: .critical,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
             return
         } else {
             urlInfo.warnings.append(SecurityWarning(
                 message: "ℹ️ Domain '\(domain)' is fully non-Latin but matches the script of the TLD '\(tld)'.",
-                severity: .info
+                severity: .info,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
         }
     } else if scriptSet.contains(.ascii) && scriptSet.contains(.latinExtended) {
         urlInfo.warnings.append(SecurityWarning(
             message: "⚠️ Domain '\(domain)' mixes basic Latin and Extended Latin characters, which may indicate subtle obfuscation.",
-            severity: .suspicious
+            severity: .suspicious,
+            url: urlOrigin,
+            source: .offlineAnalysis
         ))
         URLQueue.shared.LegitScore += PenaltySystem.Penalty.domainNonASCII
     } else if scriptSet.contains(.ascii) && (scriptSet.contains(.cyrillic) || scriptSet.contains(.greek)) {
         urlInfo.warnings.append(SecurityWarning(
             message: "🚨 Domain '\(domain)' mixes Latin and non-Latin characters, which strongly indicates a homograph attack.",
-            severity: .critical
+            severity: .critical,
+            url: urlOrigin,
+            source: .offlineAnalysis
         ))
         URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
         return
     } else if scriptSet.contains(.cyrillic) || scriptSet.contains(.greek) || scriptSet.contains(.other) {
         urlInfo.warnings.append(SecurityWarning(
             message: "⚠️ Domain '\(domain)' contains non-Latin characters, which may be deceptive.",
-            severity: .suspicious
+            severity: .suspicious,
+            url: urlOrigin,
+            source: .offlineAnalysis
         ))
         URLQueue.shared.LegitScore += PenaltySystem.Penalty.domainNonASCII
     }
@@ -169,11 +200,14 @@ private func checkScriptMismatch(domain: String, tld: String, urlInfo: inout URL
 
 /// Returns true if the domain is in the trusted whitelist.
 private func isWhitelisted(domain: String, tld: String, urlInfo: inout URLInfo) -> Bool {
+    let urlOrigin = urlInfo.components.host ?? ""
     let rootDomain = "\(domain).\(tld)"
     if WhiteList.trustedDomains.contains(rootDomain) {
         urlInfo.warnings.append(SecurityWarning(
             message: "The domain \(rootDomain) is trusted; further host checks are not required.",
-            severity: .info
+            severity: .info,
+            url: urlOrigin,
+            source: .offlineAnalysis
         ))
         return true
     }

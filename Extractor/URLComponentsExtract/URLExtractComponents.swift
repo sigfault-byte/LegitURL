@@ -19,7 +19,8 @@ struct URLExtractComponents {
             warnings.append(SecurityWarning(
                 message: "⚠️ Error parsing the URL",
                 severity: .dangerous,
-                url: nil
+                url: "",
+                source: .offlineAnalysis
             ))
             return URLInfo(components: URLComponentsInfo(fullURL: url), warnings: warnings)
         }
@@ -28,7 +29,9 @@ struct URLExtractComponents {
         guard let components = URLComponents(string: url) else {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to parse URL components",
-                severity: .dangerous
+                severity: .critical,
+                url: "",
+                source: .offlineAnalysis
             ))
             return URLInfo(components: URLComponentsInfo(fullURL: url), warnings: warnings)
         }
@@ -58,7 +61,9 @@ struct URLExtractComponents {
         guard let host = compInfo.host else {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to extract host from URL components",
-                severity: .dangerous
+                severity: .critical,
+                url: "",
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
             return URLInfo(components: compInfo, warnings: warnings)
@@ -67,7 +72,9 @@ struct URLExtractComponents {
         guard compInfo.punycodeHostEncoded != nil else {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to encode host to punycode",
-                severity: .dangerous
+                severity: .critical,
+                url: "",
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
             return URLInfo(components: compInfo, warnings: warnings)
@@ -79,7 +86,9 @@ struct URLExtractComponents {
         if hostToValidate.range(of: hostnameRegex, options: .regularExpression) == nil {
             warnings.append(SecurityWarning(
                 message: "⚠️ Host is malformed: \(host). No reason to analyze.",
-                severity: .critical
+                severity: .critical,
+                url: "",
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
             return URLInfo(components: compInfo, warnings: warnings)
@@ -95,7 +104,9 @@ struct URLExtractComponents {
         } else {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to identify Domain and TLD from the PSL",
-                severity: .critical
+                severity: .critical,
+                url: "",
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.unrecognizedTLD
             return URLInfo(components: compInfo, warnings: warnings)

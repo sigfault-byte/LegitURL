@@ -1,9 +1,3 @@
-//
-//  ScoreSummaryView.swift
-//  LegitURL
-//
-//  Created by Chief Hakka on 07/03/2025.
-//
 import SwiftUI
 
 struct ScoreSummaryView: View {
@@ -27,17 +21,15 @@ struct ScoreSummaryView: View {
                     .accentColor(urlQueue.LegitScore > 50 ? .green : .red)
                     .padding(.horizontal)
             }
-            .background(Color.gray.opacity(0.1)) // ✅ Debug border to visualize size
             
             if analysisStarted {
                 VStack {
-                    if let realDomain = urlQueue.offlineQueue.first?.components.extractedDomain,
-                       let realTLD = urlQueue.offlineQueue.first?.components.extractedTLD {
+                    if let finalHost = urlQueue.offlineQueue.last?.components.host {
                         VStack {
-                            Text("Real Domain:")
+                            Text("Final domain:")
                                 .font(.headline)
                                 .foregroundColor(.blue)
-                            Text("\(realDomain).\(realTLD)")
+                            Text("\(finalHost)\(urlQueue.offlineQueue.count > 1 ? "  (\(urlQueue.offlineQueue.count - 1) hops)" : "")")
                                 .font(.system(size: 25, weight: .bold))
                                 .foregroundColor(.primary)
                                 .padding(.top, 4)
@@ -53,7 +45,6 @@ struct ScoreSummaryView: View {
                             .transition(.opacity)
                     }
                 }
-                .background(Color.red.opacity(0.1)) // ✅ Debug border to visualize size
             }
             
             Spacer() // ✅ Pushes everything up when analysis results appear

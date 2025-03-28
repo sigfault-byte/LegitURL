@@ -10,12 +10,15 @@ import Foundation
 struct URLGetAnalyzer {
     static func analyze(urlInfo: inout URLInfo) {
         let originalURL = urlInfo.components.fullURL ?? ""
+        let urlOrigin = urlInfo.components.host ?? ""
         
         // ✅ Retrieve OnlineURLInfo using the ID
         guard let onlineInfo = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id }) else {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ No online analysis found for this URL. Skipping further checks.",
-                severity: .info
+                severity: .critical,
+                url: urlOrigin,
+                source: .onlineAnalysis
             ))
             return
         }
@@ -24,7 +27,7 @@ struct URLGetAnalyzer {
         let headers = onlineInfo.normalizedHeaders ?? [:]
 
         //  Analyze headers for security
-        let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers)
+        let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin)
         urlInfo.warnings.append(contentsOf: headerWarnings)
 
         //  Detect silent redirect (200 OK but URL changed)
@@ -35,7 +38,9 @@ struct URLGetAnalyzer {
         if onlineInfo.serverResponseCode == 200, normalizedFinalURL != normalizedOriginalURL {
             urlInfo.warnings.append(SecurityWarning(
                 message: "🚨 Hidden / Silent redirect detected.\nOriginal URL: \(originalURL)\nFinal URL: \(finalURL)\nThis is either bad practice or a scam attempt.",
-                severity: .suspicious
+                severity: .suspicious,
+                url: urlOrigin,
+                source: .onlineAnalysis
             ))
         }
     }

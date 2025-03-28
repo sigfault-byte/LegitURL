@@ -10,6 +10,8 @@ import Foundation
 struct PathAnalyzer {
     
     static func analyze(urlInfo: inout URLInfo) {
+        let urlOrigin = urlInfo.components.host ?? ""
+        
         guard let rawPath = urlInfo.components.pathEncoded else {
             return
         }
@@ -18,7 +20,9 @@ struct PathAnalyzer {
             urlInfo.components.isPathEndpointLike = true
             urlInfo.warnings.append(SecurityWarning(
                 message: "🧠 Suspicious endpoint-like path followed by query.",
-                severity: .suspicious
+                severity: .suspicious,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             URLQueue.shared.LegitScore += PenaltySystem.Penalty.pathIsEndpointLike
         }
@@ -27,7 +31,9 @@ struct PathAnalyzer {
         if !rawPath.matches(regex: pathRegex) {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ Malformed path structure detected",
-                severity: .critical
+                severity: .critical,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             return
         }
@@ -35,7 +41,9 @@ struct PathAnalyzer {
         if rawPath.contains("//") {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ Suspicious double slashes in path",
-                severity: .critical
+                severity: .critical,
+                url: urlOrigin,
+                source: .offlineAnalysis
             ))
             return
         }
@@ -45,7 +53,9 @@ struct PathAnalyzer {
             if segment.rangeOfCharacter(from: .alphanumerics) == nil {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "⚠️ Suspicious path segment contains no alphanumeric characters: '\(segment)'",
-                    severity: .critical
+                    severity: .critical,
+                    url: urlOrigin,
+                    source: .offlineAnalysis
                 ))
                 return
             }
@@ -75,7 +85,9 @@ struct PathAnalyzer {
                 if SuspiciousKeywords.scamTerms.contains(part.lowercased()) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "🚩 Scam-related word detected in path segment: '\(part)'",
-                        severity: .suspicious
+                        severity: .scam,
+                        url: urlOrigin,
+                        source: .offlineAnalysis
                     ))
                     URLQueue.shared.LegitScore += PenaltySystem.Penalty.scamWordsInPath
                 }
@@ -83,7 +95,9 @@ struct PathAnalyzer {
                 if SuspiciousKeywords.phishingWords.contains(part.lowercased()) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "🚩 Phishing-related word detected in path segment: '\(part)'",
-                        severity: .suspicious
+                        severity: .scam,
+                        url: urlOrigin,
+                        source: .offlineAnalysis
                     ))
                     URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInPath
                 }
@@ -91,7 +105,9 @@ struct PathAnalyzer {
                 if KnownBrands.names.contains(part.lowercased()) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "ℹ️ Brand reference found in path segment: '\(part)'",
-                        severity: .info
+                        severity: .info,
+                        url: urlOrigin,
+                        source: .offlineAnalysis
                     ))
                 }
 
@@ -101,7 +117,9 @@ struct PathAnalyzer {
                        ["exe", "sh", "bat", "dll", "apk", "msi", "scr"].contains(ext) {
                         urlInfo.warnings.append(SecurityWarning(
                             message: "🚨 Executable file extension detected: '\(ext)'",
-                            severity: .critical
+                            severity: .critical,
+                            url: urlOrigin,
+                            source: .offlineAnalysis
                         ))
                     }
                 }
@@ -111,13 +129,17 @@ struct PathAnalyzer {
                 if !LegitURLTools.isRealWord(part) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "Path segment '\(part)' is not recognized by the dictionnary.",
-                        severity: .info
+                        severity: .info,
+                        url: urlOrigin,
+                        source: .offlineAnalysis
                     ))
                     let (isHighEntropy, score) = LegitURLTools.isHighEntropy(part)
                     if isHighEntropy, let entropy = score {
                         urlInfo.warnings.append(SecurityWarning(
                             message: "Path segment '\(part)' has high entropy (≈ \(String(format: "%.2f", entropy))).",
-                            severity: .suspicious
+                            severity: .suspicious,
+                            url: urlOrigin,
+                            source: .offlineAnalysis
                         ))
                         URLQueue.shared.LegitScore += PenaltySystem.Penalty.highEntropyDomain
                     }

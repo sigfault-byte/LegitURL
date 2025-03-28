@@ -11,6 +11,7 @@ class URLQueue: ObservableObject {
     @Published var offlineQueue: [URLInfo] = []
     @Published var onlineQueue: [OnlineURLInfo] = []
     @Published var LegitScore: Int = 100
+    @Published var isAnalysisComplete: Bool = false
     
     /// Dynamically updates with all warnings from `offlineQueue`
     var allWarnings: [SecurityWarning] {
