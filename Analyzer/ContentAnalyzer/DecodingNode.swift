@@ -6,7 +6,7 @@
 //
 import Foundation
 
-class DecodedNode {
+class DecodedNode: Identifiable {
     let id: String = UUID().uuidString
     let value: String                 // Original string (input or sub-part)
     var decoded: String?             // Decoded version (if any)

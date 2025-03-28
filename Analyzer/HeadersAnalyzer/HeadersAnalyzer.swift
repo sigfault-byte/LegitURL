@@ -32,7 +32,7 @@ struct HeadersAnalyzer {
             if let value = responseHeaders[key]?.lowercased() {
                 detectedValues[key] = value
                 var severity: SecurityWarning.SeverityLevel = .suspicious
-                var warningMessage = "⚠️ Server information exposed in '\(key)': \(value):\n"
+                var warningMessage = "Server information exposed in '\(key)': \(value):\n"
 
                 if HeadersKeyWords.commonWebServers.contains(value) {
                     warningMessage += "It's a notorious web server."
