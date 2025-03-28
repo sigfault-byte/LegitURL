@@ -24,11 +24,14 @@ struct SecurityWarning: Identifiable{
         
 //        TODO REFACTOR:
 //        enum SeverityLevel: String {
-//            case info = "INFO"               // ✅ Stays the same
-//            case tracking = "TRACKING"       // 🔍 NEW: For tracking/fingerprinting
-//            case phishingScam = "SCAM"       // 🔍 NEW: For phishing & scam detection
-//            case dangerous = "DANGEROUS"      // ✅ Stays the same
-//            case critical = "CRITICAL"        // ✅ Stays the same, includes failed GETs
+//            case info = "INFO"
+//            case tracking = "TRACKING"
+//            case scam = "SCAM"
+//            case suspicious = "SUSPICIOUS"
+//            case dangerous = "DANGEROUS"
+//            case critical = "CRITICAL"
+//            case urlGetFail = "GETFAILED"
+//        }
 //        }
         
         /// Returns a color for UI representation
@@ -43,3 +46,31 @@ struct SecurityWarning: Identifiable{
         }
     }
 }
+
+
+// MARK: - TODO: Better Warning Structure & UX
+
+/*
+1. Add a `source` field to `SecurityWarning`:
+    enum SourceType {
+        case offlineAnalysis
+        case onlineHeaders
+        case redirectedURL(hop: Int)
+    }
+
+2. In the UI, group warnings based on source:
+    - Offline Findings
+    - Online Findings
+    - Redirect 1 → ...
+    - Final Destination
+
+3. Update the GET explanation on the URL component view:
+    - "GET requests are made without query or fragment for privacy."
+
+4. Optional (later): Expand SeverityLevel
+    - Add `.tracking`, `.scam`, maybe `.sslIssue`
+
+5. Visualize the full redirect chain with GET target highlighted.
+
+This will drastically improve clarity for both average users and security folks.
+*/

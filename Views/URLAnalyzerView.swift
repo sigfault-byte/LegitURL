@@ -26,21 +26,24 @@ struct URLAnalyzerView: View {
                     }
 
                     Button("Check URL") {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                         analysisStarted = true
                         URLAnalyzer.analyze(urlString: urlText, infoMessage: &infoMessage)
                     }
                     .buttonStyle(.borderedProminent)
-
+                    
                     Divider()
-
+                    
                     ScoreSummaryView(urlQueue: urlQueue, analysisStarted: $analysisStarted)
-                    Divider()
 
+                    Spacer()
+                    
                     if urlQueue.offlineQueue.count > 0 {
+                        Divider()
                         URLComponentsListView(urlQueue: urlQueue)
-                    } // ✅ Make sure this is inside the NavigationStack
-                    Divider()
+                    }
 
+                    Divider()
                     SecurityWarningsView(urlQueue: urlQueue)
                 }
                 .padding()

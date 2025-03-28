@@ -10,12 +10,12 @@ import Foundation
 struct RedirectAnalyzer {
     
     static func analyzeRedirect(fromInfo: URLInfo, toInfo: inout URLInfo, responseCode: Int? = nil) {
-        guard let originalDomain = fromInfo.domain,
-              let targetDomain = toInfo.domain,
+        guard let originalDomain = fromInfo.domain?.lowercased(),
+              let targetDomain = toInfo.domain?.lowercased(),
               let originalTLD = fromInfo.tld,
               let targetTLD = toInfo.tld,
-              let originalHost = fromInfo.host,
-              let targetHost = toInfo.host else {
+              let originalHost = fromInfo.host?.lowercased(),
+              let targetHost = toInfo.host?.lowercased() else {
             toInfo.warnings.append(SecurityWarning(
                 message: "❌ Missing domain, TLD, or host information for redirect analysis.",
                 severity: .suspicious
@@ -24,7 +24,7 @@ struct RedirectAnalyzer {
             return
         }
 
-        if originalDomain != targetDomain {
+        if originalDomain.lowercased() != targetDomain.lowercased() {
             toInfo.warnings.append(SecurityWarning(
                 message: "🚨 Redirect goes to a different domain: was \(originalDomain) now is \(targetDomain)",
                 severity: .suspicious
