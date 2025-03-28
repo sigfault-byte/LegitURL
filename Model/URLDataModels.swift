@@ -40,6 +40,7 @@ struct URLInfo: Identifiable {
     var warnings: [SecurityWarning]
     var processed: Bool = false
     var processedOnline = false
+    var processingNow: Bool = false
     
     public init(components: URLComponentsInfo, warnings: [SecurityWarning]) {
         self.components = components

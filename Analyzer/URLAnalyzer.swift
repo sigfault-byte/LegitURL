@@ -84,7 +84,7 @@ struct URLAnalyzer {
         }
         
         // Find the first URLInfo that hasn't been processed online
-        guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline }) else {
+        guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline && !$0.processingNow }) else {
             print("✅ All online checks complete.")
             DispatchQueue.main.async {
                 URLQueue.shared.isAnalysisComplete = true
@@ -93,6 +93,7 @@ struct URLAnalyzer {
         }
         
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
+        URLQueue.shared.offlineQueue[currentIndex].processingNow = true
         
         // If there's no online info, add a placeholder to the online queue
         if currentURLInfo.onlineInfo == nil {
@@ -149,6 +150,7 @@ struct URLAnalyzer {
         if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == urlInfo.id }) {
             var updated = URLQueue.shared.offlineQueue[index]
             updated.processedOnline = true
+            updated.processingNow = false
             URLQueue.shared.offlineQueue[index] = updated
         }
     }

@@ -63,7 +63,7 @@ struct HeadersAnalyzer {
                 url: urlOrigin,
                 source: .onlineAnalysis
                 ))
-                penalty += 10
+                penalty -= 10
         }
         URLQueue.shared.LegitScore += penalty
         return warnings

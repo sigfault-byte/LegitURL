@@ -117,7 +117,7 @@ struct DomainSecuritySection: View {
                         }) {
                             HStack {
                                 Text("\(severity.icon) \(severity.rawValue.capitalized) (\(severityWarnings.count))")
-                                    .font(.subheadline)
+                                    .font(.headline)
                                     .foregroundColor(severity.color)
                                 Spacer()
                                 Image(systemName: expandedSections.contains(severityKey) ? "chevron.down" : "chevron.right")
