@@ -38,13 +38,15 @@ struct ScoreSummaryView: View {
                         }
                         .transition(.move(edge: .top))
                     }
-                    if let warningSummary = generateWarningSummary(from: urlQueue) {
-                        Text(warningSummary)
-                            .font(.subheadline)
-                            .foregroundColor(.orange)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                            .transition(.opacity)
+                    if URLQueue.shared.isAnalysisComplete {
+                        if let warningSummary = generateWarningSummary(from: urlQueue) {
+                            Text(warningSummary)
+                                .font(.subheadline)
+                                .foregroundColor(.orange)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                                .transition(.opacity)
+                        }
                     }
                 }
             }

@@ -112,6 +112,7 @@ struct URLAnalyzer {
                     URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
                     print("❌ Error handled:", error.localizedDescription)
                     markURLInfoOnlineProcessed(for: currentURLInfo)
+                    processOnlineQueue()
                     return
                 }
                 
@@ -124,6 +125,7 @@ struct URLAnalyzer {
                                                   source: .onlineAnalysis)
                     URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
                     markURLInfoOnlineProcessed(for: currentURLInfo)
+                    processOnlineQueue()
                     return
                 }
                 

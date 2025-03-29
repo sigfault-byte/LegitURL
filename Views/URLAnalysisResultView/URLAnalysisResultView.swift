@@ -10,13 +10,13 @@ struct URLAnalysisResultView: View {
     
     @State private var showInfoMessage = true
     @State private var showAnimated = false
-    @State private var hasAnalyzed = false
     @State private var showWarningsSheet = false
+    @State private var didStartAnalysis = false
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Main content in a NavigationView
-            NavigationView {
+        // Main content in a NavigationView
+        NavigationView {
+            withAnimation {
                 List {
                     // Info Message Section
                     if showInfoMessage, let message = infoMessage, !message.isEmpty {
@@ -59,6 +59,7 @@ struct URLAnalysisResultView: View {
                         }
                     }
                 }
+                .animation(.easeInOut, value: showAnimated)
                 .listStyle(InsetGroupedListStyle())
                 .navigationTitle("Analysis Result")
                 .navigationBarTitleDisplayMode(.inline)
@@ -80,44 +81,41 @@ struct URLAnalysisResultView: View {
                         }
                     }
                 }
-                .onAppear {
-                    if !hasAnalyzed {
-                        hasAnalyzed = true
-                        URLAnalyzer.analyze(urlString: urlInput)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            showInfoMessage = false
+                // Use safeAreaInset to insert the mini-player above the bottom toolbar
+                .safeAreaInset(edge: .bottom) {
+                    if !urlQueue.allWarnings.isEmpty {
+                        HStack {
+                            Text("⚠️ Security Warnings (\(urlQueue.allWarnings.count))")
+                                .font(.headline)
+                                .foregroundColor(.red)
+                                .padding(.vertical, 12)
+                                .onTapGesture {
+                                    showWarningsSheet.toggle()
+                                }
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            showAnimated = true
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
+                        )
+                        .sheet(isPresented: $showWarningsSheet) {
+                            SecurityWarningsDetailView(urlQueue: urlQueue)
                         }
                     }
                 }
             }
+        }
+        .task {
+            guard !didStartAnalysis else { return }
+            didStartAnalysis = true
             
-            // "Mini-player" style bar above bottom toolbar
-            if !urlQueue.allWarnings.isEmpty {
-                HStack {
-                    Text("⚠️ Security Warnings (\(urlQueue.allWarnings.count))")
-                        .font(.headline)
-                        .foregroundColor(.red)
-                        .padding(.vertical, 12)
-                        .onTapGesture {
-                            showWarningsSheet.toggle()
-                        }
-                }
-                .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
-                )
-                .padding(.horizontal)
-                .padding(.bottom, 50)
-                .transition(.move(edge: .bottom))
-                .zIndex(1)
-                .sheet(isPresented: $showWarningsSheet) {
-                    SecurityWarningsDetailView(urlQueue: urlQueue)
-                }
+            URLAnalyzer.analyze(urlString: urlInput)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                showInfoMessage = false
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                showAnimated = true
             }
         }
     }

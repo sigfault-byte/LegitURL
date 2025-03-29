@@ -44,16 +44,18 @@ struct SecurityWarningsDetailView: View {
 
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(groupedByDomain.sorted(by: { $0.key < $1.key }), id: \.key) { (domain, warnings) in
+            List {
+                ForEach(groupedByDomain.sorted(by: { $0.key < $1.key }), id: \.key) { (domain, warnings) in
+                    Section(header: Text(domain)) {
                         DomainSecuritySection(domain: domain, warnings: warnings, expandedDomains: $expandedDomains, expandedSections: $expandedSections)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
                             .padding(.vertical, 4)
                     }
+                    .listRowSeparator(.hidden)       // Hide the default row separator
                 }
-                .padding()
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .listStyle(InsetGroupedListStyle())
             .navigationTitle("Security Warnings")
             .navigationBarItems(trailing: Button("Close") {
                 if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -84,60 +86,57 @@ struct DomainSecuritySection: View {
     @Binding var expandedSections: Set<String>
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(domain)
-                .font(.headline)
-                .padding(.horizontal)
-                .padding(.top, 6)
+        ForEach(SecurityWarning.SeverityLevel.allCases, id: \.self) { severity in
+            let severityWarnings = warnings.filter { $0.severity == severity }
+            if !severityWarnings.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("\(severity.rawValue.capitalized)")
+                            .font(.headline)
+                            .foregroundColor(severity.color)
+                        Spacer()
+                        Text("(\(severityWarnings.count))")
+                            .font(.headline)
+                            .foregroundColor(severity.color)
+                        
+                    }
 
-            ForEach(SecurityWarning.SeverityLevel.allCases, id: \.self) { severity in
-                let severityWarnings = warnings.filter { $0.severity == severity }
-                if !severityWarnings.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
+                    let groupedBySource = Dictionary(grouping: severityWarnings, by: { $0.source })
+
+                    ForEach(groupedBySource.keys.sorted(by: sortSourceTypes), id: \.self) { source in
                         HStack {
-                            Text("\(severity.rawValue.capitalized) (\(severityWarnings.count))")
-                                .font(.headline)
-                                .foregroundColor(severity.color)
                             Spacer()
+                            Text(sourceDescription(source))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
+                        .padding(.trailing, 6)
 
-                        let groupedBySource = Dictionary(grouping: severityWarnings, by: { $0.source })
+                        ForEach(groupedBySource[source] ?? [], id: \.id) { warning in
+                            HStack(alignment: .top, spacing: 5) {
+                                Circle()
+                                    .fill(warning.severity.color)
+                                    .frame(width: 10, height: 10)
+                                    .padding(.top, 4)
 
-                        ForEach(groupedBySource.keys.sorted(by: sortSourceTypes), id: \.self) { source in
-                            HStack {
-                                Spacer()
-                                Text(sourceDescription(source))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.trailing, 6)
-
-                            ForEach(groupedBySource[source] ?? [], id: \.id) { warning in
-                                HStack(alignment: .top, spacing: 5) {
-                                    Circle()
-                                        .fill(warning.severity.color)
-                                        .frame(width: 10, height: 10)
-                                        .padding(.top, 4)
-
-                                    Text(warning.message)
-                                        .font(.footnote)
-                                        .foregroundColor(.primary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .multilineTextAlignment(.leading)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
+                                Text(warning.message)
+                                    .font(.footnote)
+                                    .foregroundColor(.primary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .multilineTextAlignment(.leading)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                     }
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color(.separator), lineWidth: 0.5)
-                    )
-                    .padding(.horizontal)
                 }
+                .padding()
+                .background(Color(.secondarySystemGroupedBackground))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(.separator), lineWidth: 0.5)
+                )
+                .padding(.bottom, 8)
             }
         }
     }

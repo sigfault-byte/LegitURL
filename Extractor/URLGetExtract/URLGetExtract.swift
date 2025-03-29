@@ -73,8 +73,13 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         // Create a data task with the request.
         let task = session.dataTask(with: request) { data, response, error in
             // Handle any errors that occur during the request.
-            if let error = error {
-                completion(nil, error)
+            if let error = error as NSError? {
+                if error.code == NSURLErrorCancelled {
+                    // Task was cancelled manually (likely due to our timeout)
+                    completion(nil, NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [NSLocalizedDescriptionKey: "Request timed out"]))
+                } else {
+                    completion(nil, error)
+                }
                 return
             }
             
@@ -89,10 +94,10 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             let statusCode = httpResponse.statusCode
             let statusText = HTTPURLResponse.localizedString(forStatusCode: statusCode)
             var normalizedHeaders: [String: String] = [:]
-//            let normalizedHeaders = Dictionary(uniqueKeysWithValues: httpResponse.allHeaderFields.compactMap {
-//                guard let key = $0.key as? String, let value = $0.value as? String else { return nil }
-//                return (key.lowercased(), value)
-//            })
+            //            let normalizedHeaders = Dictionary(uniqueKeysWithValues: httpResponse.allHeaderFields.compactMap {
+            //                guard let key = $0.key as? String, let value = $0.value as? String else { return nil }
+            //                return (key.lowercased(), value)
+            //            })
             // One liner is horrible this is more readable
             for (key, value) in httpResponse.allHeaderFields {
                 if let keyString = key as? String, let valueString = value as? String {
@@ -130,6 +135,14 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         }
         // Start the data task.
         task.resume()
+        
+        // Schedule a manual cancellation after 10 seconds if the task is still running
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+            if task.state == .running {
+                print("Manually cancelling the task after 10 seconds")
+                task.cancel()
+            }
+        }
     }
     
     // URLSessionTaskDelegate method:
@@ -155,7 +168,7 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             return
         }
         
-//        print("🔍 SSL Challenge received for:", challenge.protectionSpace.host)
+        //        print("🔍 SSL Challenge received for:", challenge.protectionSpace.host)
         
         var sslCertificateDetails: [String: Any] = [:]
         
@@ -166,24 +179,24 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             // ✅ Convert SecCertificate to raw Data
             let certificateData = SecCertificateCopyData(firstCertificate) as Data
             
-//            // 🔍 Dump raw certificate before decoding
+            // 🔍 Dump raw certificate before decoding
 //            let hexPreview = certificateData.prefix(32).map { String(format: "%02hhx", $0) }.joined(separator: " ")
 //            print("🔍 RAW CERTIFICATE DATA (hex preview): \(hexPreview)")
-//
+//            
 //            let base64EncodedCert = certificateData.base64EncodedString(options: .lineLength64Characters)
 //            let pemFormattedCert = "-----BEGIN CERTIFICATE-----\n" + base64EncodedCert + "\n-----END CERTIFICATE-----"
 //            print("🔍 RAW CERTIFICATE PEM FORMAT:\n\(pemFormattedCert)")
-//            --------------------------------------------------------------------------------
-            // ✅ Decode the certificate using ASN1Decoder
+            //                        --------------------------------------------------------------------------------
+            //             ✅ Decode the certificate using ASN1Decoder
             if let decodedCertificate = try? X509Certificate(data: certificateData){
-//                print("✅ Successfully decoded certificate", decodedCertificate)
+//                                print("✅ Successfully decoded certificate", decodedCertificate)
                 sslCertificateDetails["Issuer"] = decodedCertificate.issuerDistinguishedName
                 sslCertificateDetails["Issuer Organization"] = decodedCertificate.issuer(oid: .organizationName)
                 sslCertificateDetails["Validity"] = [
                     "Not Before": decodedCertificate.notBefore,
                     "Not After": decodedCertificate.notAfter
                 ]
-
+                
                 let parsedCert = ParsedCertificate(
                     commonName: decodedCertificate.subject(oid: .commonName)?.first,
                     organization: decodedCertificate.subject(oid: .organizationName)?.first,
@@ -195,7 +208,7 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                     keyUsage: decodedCertificate.keyUsage.enumerated().compactMap { index, isSet in
                         isSet ? ["Digital Signature", "Non-Repudiation", "Key Encipherment", "Data Encipherment", "Key Agreement", "Cert Sign", "CRL Sign", "Encipher Only", "Decipher Only"][index] : nil
                     }.joined(separator: ", "),  // Convert Key Usage Bits
-//                    publicKeyBits: (decodedCertificate.publicKey?.asn1?.sub(0)?.value as? Data)?.count ?? 0 * 8,
+                    //                    publicKeyBits: (decodedCertificate.publicKey?.asn1?.sub(0)?.value as? Data)?.count ?? 0 * 8,
                     publicKeyBits: 0,
                     extendedKeyUsage: decodedCertificate.extendedKeyUsage.joined(separator: ", "), // Extract extended key usage
                     isSelfSigned: decodedCertificate.subjectDistinguishedName == decodedCertificate.issuerDistinguishedName

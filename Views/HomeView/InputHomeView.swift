@@ -12,92 +12,93 @@ struct InputHomeView: View {
     @State private var isAnalyzing: Bool = false
     @State private var errorMessage: String = ""
     @State private var infoMessage: String = ""
+    @State private var didStartAnalysis = false
     
     var body: some View {
-        VStack {
+        NavigationView {
             VStack {
-                Text("URLChecker")
-                    .font(.largeTitle)
-                    .bold()
-                    .padding(.top, 40)
-            }
-            .frame(maxHeight: .infinity, alignment: .center)
-            .frame(height: UIScreen.main.bounds.height / 3)
-            
-            VStack {
-                TextField("Enter URL", text: $urlInput)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .autocorrectionDisabled(true)
-                    .textInputAutocapitalization(.never)
-                    .padding()
-                    .onChange(of: urlInput) { _, _ in
-                        errorMessage = ""
-                    }
+                // Big Title occupying 1/3 of the screen height
+                VStack {
+                    Text("URLChecker")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .padding(.top, 40)
+                }
+                .frame(maxHeight: .infinity, alignment: .center)
+                .frame(height: UIScreen.main.bounds.height / 3)
                 
-                Button(action: {
-                    let (cleanedURL, message) = LegitURLTools.userInputCheck(urlInput)
+                // Input & Button Section
+                VStack(spacing: 16) {
+                    TextField("Enter URL", text: $urlInput)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(UIColor.systemGray6))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(UIColor.separator), lineWidth: 1)
+                        )
+                        .padding(.horizontal)
+                        .onChange(of: urlInput) { _,_ in
+                            errorMessage = ""
+                        }
                     
-                    if let finalURL = cleanedURL {
-                        errorMessage = ""
-                        infoMessage = message ?? ""   // ✅ populate info message here
-                        urlInput = finalURL
-                        isAnalyzing = true
-                    } else if let error = message {
-                        errorMessage = error
+                    Button(action: {
+                        let (cleanedURL, message) = LegitURLTools.userInputCheck(urlInput)
+                        if let finalURL = cleanedURL {
+                            errorMessage = ""
+                            infoMessage = message ?? ""
+                            urlInput = finalURL
+                            isAnalyzing = true
+                        } else if let error = message {
+                            errorMessage = error
+                        }
+                    }) {
+                        Text("Check URL")
+                            .frame(maxWidth: .infinity)
                     }
-                }) {
-                    Text("Check URL")
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
+                    .buttonStyle(.borderedProminent)
+                    .padding(.horizontal)
+                    
+                    if !errorMessage.isEmpty {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .padding(.horizontal)
+                    }
                 }
-                .padding()
-                
-                if !errorMessage.isEmpty {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .padding()
-                }
+                .padding(.vertical)
                 
                 Spacer()
-                
-                //----------------------------------MENU-------------------------------------------
-                HStack {
-                    Spacer()
-                    Button("🏠 Home") {
-                        LegitSessionManager.reset()           // Optional: reset your shared data
-                        isAnalyzing = false
-                    }
-                    Spacer()
-                    Button("❓ Help") {
-                        // TODO: Add help logic
-                    }
-                    Spacer()
-                }
-                .padding()
-                //            ---------------------END MENU--------------------------------------------
             }
-            .border(Color.gray)
-            .frame(maxHeight: .infinity)
+            .background(Color(UIColor.systemBackground))
+            .toolbar {
+                // Bottom toolbar for Home & Help
+                ToolbarItemGroup(placement: .bottomBar) {
+                    HStack {
+                        Spacer()
+                        Button("🏠 Home") {
+                            LegitSessionManager.reset()
+                            isAnalyzing = false
+                        }
+                        Spacer()
+                        Button("❓ Help") {
+                            // TODO: Add help logic
+                        }
+                        Spacer()
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $isAnalyzing) {
+                URLAnalysisResultView(urlInput: urlInput, infoMessage: infoMessage, isAnalyzing: $isAnalyzing)
+            }
+            .onAppear {
+                UITextField.appearance().clearButtonMode = .whileEditing
+                errorMessage = ""
+            }
         }
-        .navigationDestination(isPresented: $isAnalyzing) {
-            URLAnalysisResultView(urlInput: urlInput, infoMessage: infoMessage, isAnalyzing: $isAnalyzing)
-        }
-        .onAppear {
-            UITextField.appearance().clearButtonMode = .whileEditing
-            errorMessage = ""
-        }
-    }
-    
-    private func isValidURL(_ url: String) -> Bool {
-        guard let url = URL(string: url) else { return false }
-        return UIApplication.shared.canOpenURL(url)
     }
 }
-
-//struct InputHomeView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        InputHomeView()
-//    }
-//}
