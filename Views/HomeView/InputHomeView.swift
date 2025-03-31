@@ -47,7 +47,7 @@ struct InputHomeView: View {
                         }
                     
                     Button(action: {
-                        let (cleanedURL, message) = LegitURLTools.userInputCheck(urlInput)
+                        let (cleanedURL, message) = LegitURLTools.sanitizeInputURL(urlInput)
                         if let finalURL = cleanedURL {
                             errorMessage = ""
                             infoMessage = message ?? ""

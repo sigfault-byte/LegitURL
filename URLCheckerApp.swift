@@ -16,7 +16,8 @@ struct URLCheckerApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                AppRootView()
+                AppCoordinatorView()
+//                AppRootView()
             }
         }
     }

@@ -19,38 +19,29 @@ struct LegitURLTools {
     ///
     /// - Parameter input: The raw URL string entered by the user.
     /// - Returns: A sanitized URL or an error message if invalid.
-    static func userInputCheck(_ input: String) -> (String?, String?) {
-        //  Trim leading/trailing whitespaces and newlines
-        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        var message: String?
-        
-        //  Ensure the input is not empty
-        guard !trimmed.isEmpty else {
+    static func sanitizeInputURL(_ input: String) -> (String?, String?) {
+        let trimmedInput = input.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedInput.isEmpty else {
             return (nil, "❌ Input is empty.")
         }
-        
-        // Check if input has a valid scheme in the first 10 characters
-        let schemeRegex = "^[A-Za-z][A-Za-z0-9+.-]*://"
-        let prefixToCheck = trimmed.prefix(10)
-        
-        if prefixToCheck.range(of: schemeRegex, options: .regularExpression) == nil {
-            let urlString = "https://" + trimmed // Default to HTTPS
-            message = "https:// was automatically added as the scheme"
-            return (urlString, message)
-        } else {
-            // Validate the scheme
-            if !trimmed.hasPrefix("http://") && !trimmed.hasPrefix("https://") {
-                return (nil, "❌ Only HTTP and HTTPS schemes are supported.")
-            }
+
+        var urlString = trimmedInput
+        var message: String? = nil
+
+        let schemeRegex = "^[a-zA-Z][a-zA-Z0-9+.-]*://"
+        if urlString.range(of: schemeRegex, options: .regularExpression) == nil {
+            urlString = "https://" + urlString
+            message = "ℹ️ 'https://' scheme was automatically added."
         }
-        
-        // Validate that the input contains at least one dot
-        if URL(string: trimmed) == nil && !trimmed.contains(".") {
-            return (nil, "❌ Not a valid URL structure.")
+
+        guard let url = URL(string: urlString),
+              let host = url.host,
+              host.contains(".") else {
+            return (nil, "❌ URL format is invalid.")
         }
-        
-        // ✅ If all checks pass, return the sanitized URL
-        return (trimmed, message)
+
+        return (urlString, message)
     }
     
     /// **Extracts and splits host into parts**

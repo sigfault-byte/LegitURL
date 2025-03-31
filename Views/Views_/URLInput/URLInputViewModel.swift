@@ -1,0 +1,36 @@
+//
+//  URLInputViewModel.swift
+//  URLChecker
+//
+//  Created by Chief Hakka on 31/03/2025.
+//
+import SwiftUI
+
+
+class URLInputViewModel: ObservableObject{
+    @Published var errorMessage: String = ""
+    var infoMessage: String = ""
+
+    @Published var isInputValid: Bool = false
+
+    var urlInput: String = "" {
+        didSet {
+            isInputValid = !urlInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
+    func analyzeURL() -> Bool {
+        let (finalURL, message) = LegitURLTools.sanitizeInputURL(urlInput)
+
+        if let finalURL = finalURL {
+            urlInput = finalURL
+            infoMessage = message ?? ""
+            errorMessage = ""
+            return true
+        } else {
+            errorMessage = message ?? "Invalid URL"
+            infoMessage = ""
+            return false
+        }
+    }
+}

@@ -241,15 +241,6 @@ struct URLDetailRow: View {
     }
 }
 
-/// Thin iOS-style divider with leading inset
-struct iOSStyleDivider: View {
-    var body: some View {
-        Divider()
-            .padding(.leading, 16)
-            .padding(.trailing, 0)
-    }
-}
-
 struct URLCertificateDetailView: View {
     var cert: ParsedCertificate
     

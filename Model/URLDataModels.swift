@@ -47,7 +47,6 @@ struct URLInfo: Identifiable {
         self.warnings = warnings
     }
     
-    /// ✅ No private var! We store everything in `URLQueue.shared.onlineQueue`
     var onlineInfo: OnlineURLInfo? {
         get { URLQueue.shared.onlineQueue.first { $0.id == self.id } }
         set {
@@ -66,6 +65,15 @@ extension URLInfo {
     var domain: String? { components.extractedDomain }
     var tld: String? { components.extractedTLD }
     var host: String? { components.host }
+}
+
+extension URLInfo {
+    static var placeholder: URLInfo {
+        URLInfo(
+            components: URLComponentsInfo(fullURL: "https://placeholder.url"),
+            warnings: []
+        )
+    }
 }
 
 /// **Holds extracted URL parts**

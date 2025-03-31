@@ -168,7 +168,7 @@ struct URLAnalyzer {
     }
     
     private static func sanitizeAndValidate(_ urlString: String, _ infoMessage: inout String?) -> (String?, String?) {
-        return LegitURLTools.userInputCheck(urlString)
+        return LegitURLTools.sanitizeInputURL(urlString)
     }
     
     private static func extractComponents(from url: String) -> URLInfo {
