@@ -43,7 +43,6 @@ struct SecurityWarningsDetailView: View {
     }
 
     var body: some View {
-        NavigationView {
             List {
                 ForEach(groupedByDomain.sorted(by: { $0.key < $1.key }), id: \.key) { (domain, warnings) in
                     Section(header: Text(domain)) {
@@ -64,7 +63,6 @@ struct SecurityWarningsDetailView: View {
                     rootVC.dismiss(animated: true)
                 }
             })
-        }
     }
 
     func sourceDescription(_ source: SecurityWarning.SourceType) -> String {

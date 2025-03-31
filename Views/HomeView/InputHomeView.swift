@@ -8,14 +8,13 @@
 import SwiftUI
 
 struct InputHomeView: View {
+    var onAnalyze: (_ urlInput: String, _ infoMessage: String) -> Void
+    
     @State private var urlInput: String = ""
-    @State private var isAnalyzing: Bool = false
     @State private var errorMessage: String = ""
     @State private var infoMessage: String = ""
-    @State private var didStartAnalysis = false
     
     var body: some View {
-        NavigationView {
             VStack {
                 // Big Title occupying 1/3 of the screen height
                 VStack {
@@ -53,7 +52,7 @@ struct InputHomeView: View {
                             errorMessage = ""
                             infoMessage = message ?? ""
                             urlInput = finalURL
-                            isAnalyzing = true
+                            onAnalyze(urlInput, infoMessage)
                         } else if let error = message {
                             errorMessage = error
                         }
@@ -80,9 +79,7 @@ struct InputHomeView: View {
                 ToolbarItemGroup(placement: .bottomBar) {
                     HStack {
                         Spacer()
-                        Button("🏠 Home") {
-                            LegitSessionManager.reset()
-                            isAnalyzing = false
+                        Button("⚙️ Settings") {
                         }
                         Spacer()
                         Button("❓ Help") {
@@ -92,13 +89,5 @@ struct InputHomeView: View {
                     }
                 }
             }
-            .navigationDestination(isPresented: $isAnalyzing) {
-                URLAnalysisResultView(urlInput: urlInput, infoMessage: infoMessage, isAnalyzing: $isAnalyzing)
-            }
-            .onAppear {
-                UITextField.appearance().clearButtonMode = .whileEditing
-                errorMessage = ""
-            }
-        }
     }
 }

@@ -1,109 +1,90 @@
 import SwiftUI
 
 struct URLAnalysisResultView: View {
-    var urlInput: String
-    var infoMessage: String?
-    @Binding var isAnalyzing: Bool
+    let urlInput: String
+    let infoMessage: String
+    // Function to root to the other view
+    let onExit: () -> Void
     
-    @Environment(\.dismiss) private var dismiss
     @ObservedObject var urlQueue = URLQueue.shared
     
     @State private var showInfoMessage = true
-    @State private var showAnimated = false
     @State private var showWarningsSheet = false
     @State private var didStartAnalysis = false
+    @State private var infoOpacity: Double = 1.0
     
     var body: some View {
-        // Main content in a NavigationView
-        NavigationView {
-            withAnimation {
-                List {
-                    // Info Message Section
-                    if showInfoMessage, let message = infoMessage, !message.isEmpty {
-                        Section {
-                            Text("ℹ️ \(message)")
-                                .font(.footnote)
-                                .foregroundColor(.gray)
-                        }
+        NavigationStack {
+            List {
+                if showInfoMessage && !infoMessage.isEmpty {
+                    Section(header: Text("Info message")) {
+                        Text("\(infoMessage)")
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                            .opacity(infoOpacity)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    
-                    // Analysis Summary Section
-                    Section {
-                        ScoreSummaryView(urlQueue: urlQueue, analysisStarted: $showAnimated)
-                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    }
-                    
-                    // Hop List Section
-                    Section(header: Text("Redirect chain")) {
-                        ForEach(urlQueue.offlineQueue) { urlInfo in
-                            NavigationLink(destination: URLDetailView(
-                                urlInfo: urlInfo,
-                                onlineInfo: urlQueue.onlineQueue.first(where: { $0.id == urlInfo.id })
-                            )) {
-                                // This label automatically gets the system row styling
-                                Label(urlInfo.components.host ?? "Unknown Host", systemImage: "network")
-                            }
-                        }
-                    }
-                    
-                    // Analysis Status Section
-                    Section {
-                        if !urlQueue.isAnalysisComplete {
-                            Text("Analysis still in progress...")
-                                .font(.footnote)
-                                .foregroundColor(.gray)
-                        } else {
-                            Text("Analysis complete.")
-                                .font(.footnote)
-                                .foregroundColor(.green)
+                }
+                
+                // Analysis Summary Section
+                Section {
+                    ScoreSummaryViewOLD()
+                }
+                
+                // Hop List Section
+                Section(header: Text("Redirect chain")) {
+                    ForEach(urlQueue.offlineQueue) { urlInfo in
+                        NavigationLink(destination: URLDetailView(
+                            urlInfo: urlInfo,
+                            onlineInfo: urlQueue.onlineQueue.first(where: { $0.id == urlInfo.id })
+                        )) {
+                            // This label automatically gets the system row styling
+                            Label(urlInfo.components.host ?? "Unknown Host", systemImage: "network")
                         }
                     }
                 }
-                .animation(.easeInOut, value: showAnimated)
-                .listStyle(InsetGroupedListStyle())
-                .navigationTitle("Analysis Result")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    // Bottom bar for Home & Help
-                    ToolbarItemGroup(placement: .bottomBar) {
-                        HStack {
-                            Spacer()
-                            Button("🏠 Home") {
-                                LegitSessionManager.reset()
-                                isAnalyzing = false
-                                dismiss()
-                            }
-                            Spacer()
-                            Button("❓ Help") {
-                                // TODO: Add help logic
-                            }
-                            Spacer()
+            }
+            .navigationTitle("Analysis Result")
+            .navigationBarTitleDisplayMode(.inline)
+            .listStyle(InsetGroupedListStyle())
+            .toolbar {
+                // Bottom bar for Home & Help
+                ToolbarItemGroup(placement: .bottomBar) {
+                    HStack {
+                        Spacer()
+                        Button("🏠 Home from analysis") {
+                            onExit()
                         }
+                        Spacer()
+                        Button("❓ Help") {
+                            // TODO: Add help logic
+                        }
+                        Spacer()
                     }
                 }
-                // Use safeAreaInset to insert the mini-player above the bottom toolbar
-                .safeAreaInset(edge: .bottom) {
-                    if !urlQueue.allWarnings.isEmpty {
-                        HStack {
-                            Text("⚠️ Security Warnings (\(urlQueue.allWarnings.count))")
-                                .font(.headline)
-                                .foregroundColor(.red)
-                                .padding(.vertical, 12)
-                                .onTapGesture {
-                                    showWarningsSheet.toggle()
-                                }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                                .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
-                        )
-                        .sheet(isPresented: $showWarningsSheet) {
-                            SecurityWarningsDetailView(urlQueue: urlQueue)
-                        }
+            }
+            // Use safeAreaInset to insert the mini-player above the bottom toolbar
+            .safeAreaInset(edge: .bottom) {
+                if !urlQueue.allWarnings.isEmpty {
+                    HStack {
+                        Text("⚠️ Security Warnings (\(urlQueue.allWarnings.count))")
+                            .font(.headline)
+                            .foregroundColor(.red)
+                            .padding(.vertical, 12)
+                            .onTapGesture {
+                                showWarningsSheet.toggle()
+                            }
                     }
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
+                    )
                 }
+            }
+            .sheet(isPresented: $showWarningsSheet) {
+                SecurityWarningsDetailView(urlQueue: urlQueue)
             }
         }
         .task {
@@ -111,11 +92,15 @@ struct URLAnalysisResultView: View {
             didStartAnalysis = true
             
             URLAnalyzer.analyze(urlString: urlInput)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                showInfoMessage = false
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                showAnimated = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                withAnimation(.easeInOut(duration: 1)) {
+                    infoOpacity = 0.3
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    withAnimation(.easeInOut(duration: 1)) {
+                        showInfoMessage = false
+                    }
+                }
             }
         }
     }

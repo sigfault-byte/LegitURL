@@ -16,7 +16,7 @@ struct URLAnalyzer {
         let extractedInfo = extractComponents(from: urlString)
         URLQueue.shared.offlineQueue.append(extractedInfo)
         
-        if shouldStopAnalysis(extractedInfo, atIndex: 0) { return }
+        if shouldStopAnalysis(atIndex: 0) { return }
         
         processQueue()
     }
@@ -47,17 +47,17 @@ struct URLAnalyzer {
         var urlInfo = URLQueue.shared.offlineQueue[index]
         
         // Check for early exit conditions before processing
-        if shouldStopAnalysis(urlInfo, atIndex: index) { return false }
+        if shouldStopAnalysis(atIndex: index) { return false }
         
         // Run offline analysis: Host analysis
         HostAnalysis.analyze(urlObject: &urlInfo)
         URLQueue.shared.offlineQueue[index] = urlInfo
-        if shouldStopAnalysis(urlInfo, atIndex: index) { return false }
+        if shouldStopAnalysis(atIndex: index) { return false }
         
         // Run PQF analysis and capture any new URL generated
         let newURL = PQFAnalyzer.analyze(urlInfo: &urlInfo)
         URLQueue.shared.offlineQueue[index] = urlInfo
-        if shouldStopAnalysis(urlInfo, atIndex: index) { return false }
+        if shouldStopAnalysis(atIndex: index) { return false }
         
         // Handle loopback/redirect URLs
         if let newURL = newURL {
@@ -111,9 +111,11 @@ struct URLAnalyzer {
                                                   source: .onlineAnalysis)
                     URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
                     print("❌ Error handled:", error.localizedDescription)
-                    markURLInfoOnlineProcessed(for: currentURLInfo)
-                    processOnlineQueue()
-                    return
+//                    markURLInfoOnlineProcessed(for: currentURLInfo)
+                    if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) {
+                        URLQueue.shared.offlineQueue[index].processedOnline = true
+                        URLQueue.shared.offlineQueue[index].processingNow = false
+                    }
                 }
                 
                 // Handle unexpected nil onlineInfo
@@ -173,13 +175,17 @@ struct URLAnalyzer {
         return URLExtractComponents.extract(url: url)
     }
     
-    private static func shouldStopAnalysis(_ urlInfo: URLInfo, atIndex: Int) -> Bool {
+    private static func shouldStopAnalysis(atIndex index: Int) -> Bool {
+        let urlInfo = URLQueue.shared.offlineQueue[index]
+        
         if urlInfo.warnings.contains(where: { $0.severity == .critical }) {
-            URLQueue.shared.offlineQueue[atIndex].processed = true
+            URLQueue.shared.offlineQueue[index].processed = true
+            URLQueue.shared.isAnalysisComplete = true
             print("❌ Critical warning found. Stopping analysis.")
             return true
-        } else if urlInfo.warnings.contains(where: { $0.severity == .fetchError}) {
-            URLQueue.shared.offlineQueue[atIndex].processed = true
+        } else if urlInfo.warnings.contains(where: { $0.severity == .fetchError }) {
+            URLQueue.shared.offlineQueue[index].processed = true
+            URLQueue.shared.isAnalysisComplete = true
             print("⚠️ URL GET request failed. Stopping analysis.")
             return true
         }

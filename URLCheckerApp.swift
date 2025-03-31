@@ -9,10 +9,14 @@ import SwiftUI
 
 @main
 struct URLCheckerApp: App {
+    // Shared state to controll the rootView
+    @State private var rootScreen: RootScreen = .input
+    
+    
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                InputHomeView()
+                AppRootView()
             }
         }
     }
