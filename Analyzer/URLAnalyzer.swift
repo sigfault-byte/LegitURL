@@ -99,7 +99,6 @@ struct URLAnalyzer {
         if currentURLInfo.onlineInfo == nil {
             URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
         }
-        
         // Asynchronously extract online information
         URLGetExtract.extract(urlInfo: currentURLInfo) { onlineInfo, error in
             DispatchQueue.main.async {
@@ -144,8 +143,7 @@ struct URLAnalyzer {
                         handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect)
                     }
                 }
-                
-                processOnlineQueue()
+                    processOnlineQueue()
             }
         }
     }

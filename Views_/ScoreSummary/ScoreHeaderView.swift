@@ -69,19 +69,6 @@ struct ScoreHeaderView: View {
     }
 }
 
-
-//#Preview {
-//    ScoreHeaderView(
-//        score: 80,
-//        scoreColor: .green,
-//        hasFinalScore: true,
-//        isFetchFailure: false,
-//        scoreAnimationStarted: false,
-//        flickerText: "x00",
-//        flickerColor: .gray
-//    )
-//}
-
 struct ScoreValueView: View {
     let scoreAnimationStarted: Bool
     let isFetchFailure: Bool

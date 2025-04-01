@@ -7,17 +7,18 @@
 import SwiftUI
 
 class URLComponentsViewModel: ObservableObject {
+    // Shared across all of the  view
     @Published var urlInfo: [URLInfo] = [] {
         didSet {
             updateURL()
         }
     }
-    
     @Published var onlineInfo: [OnlineURLInfo] = []
     @Published var isAnalysisComplete: Bool = false
     
+    
     //Var for UI
-    @Published var isExpanded: Bool = false
+    @Published var isFullURLExpanded: Bool = false
     @Published var isPathExpanded: Bool = false
     @Published var isQueryExpanded: Bool = false
     @Published var isFragmentExpanded: Bool = false
@@ -30,9 +31,7 @@ class URLComponentsViewModel: ObservableObject {
     }
     
     private func updateURL() -> Void {
-        print("happended")
         self.urlEntered = self.urlInfo.first?.components.fullURL ?? ""
-        print(self.urlEntered)
     }
+    
 }
-

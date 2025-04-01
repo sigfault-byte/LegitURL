@@ -7,20 +7,26 @@
 import SwiftUI
 
 class URLAnalysisViewModel: ObservableObject {
-    @Published var urlQueue = URLQueue.shared
+    var urlQueue = URLQueue.shared
     @Published var analysisStarted: Bool = false
+    @Published var score = URLQueue.shared.LegitScore
+    @Published var isAnalysisComplete: Bool = false
+    @Published var isSynchIsOver: Bool = false
+    @Published var allSecurityWarnings: [SecurityWarning] = []
+    
     var urlInput: String
     var infoMessage: String
     @Published var showInfoMessage = true
     @Published var infoOpacity: Double = 1.0
+    @Published var liveLegitScore: Int = 0
 
     //ModelViews to populate
     @Published var scoreSummaryVM = ScoreSummaryViewModel(
         score: 100,
-        isAnalysisComplete: false,
-        errorMessage: ""
+        isSynchIsOver: false,
+        errorMessage: []
     )
-    @Published var URLComponentsVM = URLComponentsViewModel(
+    @Published var urlComponentsVM = URLComponentsViewModel(
         urlInfo: [URLInfo.placeholder],
         onlineInfo: [OnlineURLInfo(from: URLInfo.placeholder)],
         isAnalysisComplete: false
@@ -32,7 +38,7 @@ class URLAnalysisViewModel: ObservableObject {
     init(urlInput: String, infoMessage: String) {
         self.urlInput = urlInput
         self.infoMessage = infoMessage
-        startAnalysis()
+        self.startAnalysis()
     }
 
     func startAnalysis() {
@@ -52,30 +58,40 @@ class URLAnalysisViewModel: ObservableObject {
             }
         }
 
-        // Pooling data
-        timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+        // Pooling data, this is ugly but necessary before refactoring struct to class, there is a "lag" when pooling data, defering the stop is necessary
+        timer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             self.updateAnalysisState()
             
             if self.urlQueue.isAnalysisComplete {
-                self.stopAnalysis()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    self.stopAnalysis()
+                    self.updateAnalysisState()
+                    self.scoreSummaryVM.errorMessage = self.urlQueue.criticalAndFetchErrorWarnings
+                    self.isSynchIsOver = true
+                }
             }
         }
     }
     
+    
     //Assigning pooled data
     private func updateAnalysisState() {
-        scoreSummaryVM.score = urlQueue.LegitScore
-        scoreSummaryVM.isAnalysisComplete = urlQueue.isAnalysisComplete
-        scoreSummaryVM.errorMessage = "" //Place holder in the meantime
+        self.isAnalysisComplete = self.urlQueue.isAnalysisComplete
+        self.allSecurityWarnings = self.urlQueue.allWarnings
         
-        URLComponentsVM.isAnalysisComplete = urlQueue.isAnalysisComplete
-        URLComponentsVM.urlInfo = Array(urlQueue.offlineQueue)
-        URLComponentsVM.onlineInfo = Array(urlQueue.onlineQueue)
+        self.scoreSummaryVM.score = self.urlQueue.LegitScore
+        self.scoreSummaryVM.isSynchIsOver = self.urlQueue.isAnalysisComplete
+
+        self.urlComponentsVM.isAnalysisComplete = self.urlQueue.isAnalysisComplete
+        self.urlComponentsVM.urlInfo = self.urlQueue.offlineQueue
+        self.urlComponentsVM.onlineInfo = self.urlQueue.onlineQueue
+        
+        
     }
 
     func stopAnalysis() {
-        timer?.invalidate()
-        timer = nil
+        self.timer?.invalidate()
+        self.timer = nil
     }
 }

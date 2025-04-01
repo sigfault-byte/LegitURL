@@ -18,7 +18,7 @@ struct URLDetailView: View {
     var body: some View {
         List {
             Section(header: Text("FULL URL")) {
-                URLDetailHeaderView(isExpanded: $isExpanded, fullURL: urlInfo.components.fullURL)
+                URLDetailHeaderView2(isExpanded: $isExpanded, fullURL: urlInfo.components.fullURL)
             }
             Section(header: Text("OFFLINE INFORMATION")) {
                 URLComponentSection(urlInfo: urlInfo, isPathExpanded: $isPathExpanded, isQueryExpanded: $isQueryExpanded, isFragmentExpanded: $isFragmentExpanded)
@@ -35,7 +35,7 @@ struct URLDetailView: View {
     }
 }
 
-private struct URLDetailHeaderView: View {
+private struct URLDetailHeaderView2: View {
     @Binding var isExpanded: Bool
     var fullURL: String?
     
@@ -204,7 +204,7 @@ private func formatParsedHeaders(_ headers: ParsedHeaders) -> String {
 }
 
 /// **Reusable Row for URL Components**
-struct URLDetailRow: View {
+struct URLDetailRow2: View {
     var label: String
     var value: String
     

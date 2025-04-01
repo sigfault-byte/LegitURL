@@ -18,6 +18,9 @@ class URLQueue: ObservableObject {
         offlineQueue.flatMap { $0.warnings }
     }
     
+    var criticalAndFetchErrorWarnings: [SecurityWarning] {
+        allWarnings.filter { $0.severity == .critical || $0.severity == .fetchError }
+    }
     static let shared = URLQueue() // ✅ Singleton to use it globally
 }
 
