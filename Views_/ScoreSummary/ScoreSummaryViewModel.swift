@@ -8,30 +8,43 @@ import SwiftUI
 
 class ScoreSummaryViewModel: ObservableObject{
     
-    @Published var score: Int = 100 {
+    @Published var score: Int = 0 {
         didSet {
-            displayFlickerOrScore()
+            self.displayFlickerOrScore()
+            self.displayAnalysisSummary()
         }
     }
     
     @Published var isSynchIsOver: Bool = false {
         didSet {
-            displayFlickerOrScore()
-            displayAnalysisSumamry()
+            self.displayFlickerOrScore()
         }
     }
     
-    @Published var errorMessage: [SecurityWarning] {
+    @Published var errorMessage: [String]? = nil {
         didSet {
-            displayAnalysisSumamry()
+            if isSynchIsOver && errorMessage != nil {
+                displayAnalysisSummary()
+            }
         }
     }
+    
+    @Published var shouldShowDivider: Bool = true
+    
+    var displayError: Bool = false
+    
+    @Published var labelText: String = "0x"
+    
+    @Published var useTitleFont: Bool = false
+    
     var flickerText: String = "00"
     var flickerColor: Color = .gray
-    var byteString: String = "00000000"
+    var byteString: String = "00101010"
     
     @Published var displayScore: String = ""
     @Published var displayScoreText: String = ""
+    
+    @Published var isInFlickerPhase: Bool = true
     
     var scoreColor: Color {
         if score >= 80 {
@@ -44,9 +57,11 @@ class ScoreSummaryViewModel: ObservableObject{
     }
     
     var scoreText: String {
-        if !errorMessage.isEmpty {
-            let messages = errorMessage.compactMap { $0.message }
-            return messages.joined(separator: "\n\n")
+        if self.errorMessage != [] {
+            if let messages = self.errorMessage {
+                self.shouldShowDivider = false
+                return messages.joined(separator: "\n\n")
+            }
         }
         
         switch score {
@@ -62,23 +77,38 @@ class ScoreSummaryViewModel: ObservableObject{
             return "Analysis incomplete."
         }
     }
-
-    init(score: Int, isSynchIsOver: Bool, errorMessage: [SecurityWarning] = []) {
+    
+    init(score: Int, isSynchIsOver: Bool, errorMessage: [String]?) {
         self.score = score
         self.isSynchIsOver = isSynchIsOver
-        self.errorMessage = errorMessage
+        self.errorMessage = nil
+        
+        // Run loops first
         self.flickerTextLoop()
         self.byteStringLoop()
+        
+        // Immediately generate initial values
+        self.flickerText = String(format: "%02X", Int.random(in: 0...255))
+        let randomByte = Int.random(in: 0...255)
+        let binary = String(randomByte, radix: 2)
+        self.byteString = String(repeating: "0", count: 8 - binary.count) + binary
+        
+        // Delay exiting flicker phase for visual consistency
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            self.isInFlickerPhase = false
+            self.displayFlickerOrScore()
+            self.displayAnalysisSummary()
+        }
     }
     
     private func flickerTextLoop() -> Void {
-        Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { timer in
+        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
             if !self.isSynchIsOver {
                 let hex = String(format: "%02X", Int.random(in: 0...255))
                 self.flickerText = hex
                 let colors: [Color] = [.gray, .cyan, .orange, .purple, .yellow, .blue]
                 self.flickerColor = colors.randomElement() ?? .gray
-
+                
             } else {
                 timer.invalidate()
             }
@@ -86,7 +116,7 @@ class ScoreSummaryViewModel: ObservableObject{
     }
     
     private func byteStringLoop() -> Void {
-        Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { timer in
+        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
             if !self.isSynchIsOver {
                 let randomByte = Int.random(in: 0...255)
                 let binary = String(randomByte, radix: 2)
@@ -100,26 +130,33 @@ class ScoreSummaryViewModel: ObservableObject{
     }
     
     private func displayFlickerOrScore() -> Void {
-        if !self.isSynchIsOver {
+        if !self.isSynchIsOver || self.isInFlickerPhase {
             self.displayScore = self.flickerText
         } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                if self.errorMessage.isEmpty {
-                    self.displayScore = String(self.score)
-                } else {
-                    self.displayScore = "x00"
-                    self.score = 0
+            Timer.scheduledTimer(withTimeInterval: 0.6, repeats: false) { _ in
+                withAnimation {
+                    if self.errorMessage == [] && self.isSynchIsOver {
+                        self.labelText = "Legit Score"
+                        self.useTitleFont = true
+                        self.displayScore = String(self.score)
+                    } else {
+                        if self.score != 0 {
+                            self.score = 0
+                        }
+                        self.displayScore = "00"
+                    }
                 }
             }
         }
     }
     
-    private func displayAnalysisSumamry() -> Void {
-        if !self.isSynchIsOver {
-            self.displayScoreText = "Analysing... \n\(self.byteString)"
+    private func displayAnalysisSummary() -> Void {
+        if !self.isSynchIsOver || self.isInFlickerPhase {
+            self.displayScoreText = "Analysing ... \n\(self.byteString)"
         } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false){_ in withAnimation {
                 self.displayScoreText = self.scoreText
+            }
             }
         }
     }

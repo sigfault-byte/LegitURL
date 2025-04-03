@@ -19,18 +19,38 @@ class URLAnalysisViewModel: ObservableObject {
     @Published var showInfoMessage = true
     @Published var infoOpacity: Double = 1.0
     @Published var liveLegitScore: Int = 0
+    
+    @Published var showingWarningsSheet : Bool = false
 
     //ModelViews to populate
     @Published var scoreSummaryVM = ScoreSummaryViewModel(
         score: 100,
         isSynchIsOver: false,
-        errorMessage: []
+        errorMessage: nil
     )
     @Published var urlComponentsVM = URLComponentsViewModel(
         urlInfo: [URLInfo.placeholder],
         onlineInfo: [OnlineURLInfo(from: URLInfo.placeholder)],
         isAnalysisComplete: false
     )
+    
+    @Published var destinationInfoVM = DestinationInfoViewModel(
+        inputDomain: "",
+        finalHost: "",
+        finalHostPunycode: "",
+        hopCount: 0,
+        domainLabel: "",
+        tldLabel: ""
+    )
+    
+    func populateDestinationVM() -> Void {
+        self.destinationInfoVM.inputDomain = self.urlQueue.offlineQueue.first?.components.host ?? ""
+        self.destinationInfoVM.finalHost = self.urlQueue.offlineQueue.last?.components.host ?? ""
+        self.destinationInfoVM.finalHostPunycode = self.urlQueue.offlineQueue.last?.components.punycodeHostEncoded ?? ""
+        self.destinationInfoVM.hopCount = self.urlQueue.offlineQueue.count
+        self.destinationInfoVM.domainLabel = self.urlQueue.offlineQueue.last?.components.extractedDomain ?? ""
+        self.destinationInfoVM.tldLabel = self.urlQueue.offlineQueue.last?.components.extractedTLD ?? ""
+    }
     
     // Timer for pooling
     private var timer: Timer?
@@ -40,7 +60,12 @@ class URLAnalysisViewModel: ObservableObject {
         self.infoMessage = infoMessage
         self.startAnalysis()
     }
-
+    
+    func filterErrorMessage() -> Void {
+        let filteredWarnings = urlQueue.criticalAndFetchErrorWarnings
+        self.scoreSummaryVM.errorMessage = filteredWarnings.map { $0.message }
+    }
+    
     func startAnalysis() {
         if !analysisStarted {
             analysisStarted = true
@@ -67,7 +92,9 @@ class URLAnalysisViewModel: ObservableObject {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     self.stopAnalysis()
                     self.updateAnalysisState()
-                    self.scoreSummaryVM.errorMessage = self.urlQueue.criticalAndFetchErrorWarnings
+                    self.allSecurityWarnings = self.urlQueue.allWarnings
+                    self.filterErrorMessage()
+                    self.populateDestinationVM()
                     self.isSynchIsOver = true
                 }
             }
@@ -79,7 +106,7 @@ class URLAnalysisViewModel: ObservableObject {
     private func updateAnalysisState() {
         self.isAnalysisComplete = self.urlQueue.isAnalysisComplete
         self.allSecurityWarnings = self.urlQueue.allWarnings
-        
+
         self.scoreSummaryVM.score = self.urlQueue.LegitScore
         self.scoreSummaryVM.isSynchIsOver = self.urlQueue.isAnalysisComplete
 
@@ -93,5 +120,9 @@ class URLAnalysisViewModel: ObservableObject {
     func stopAnalysis() {
         self.timer?.invalidate()
         self.timer = nil
+    }
+    
+    func showWarningsSheet() -> Void {
+        self.showingWarningsSheet = true
     }
 }

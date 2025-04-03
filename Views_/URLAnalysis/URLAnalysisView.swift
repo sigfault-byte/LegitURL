@@ -27,34 +27,16 @@ struct URLAnalysisView: View {
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
-                
 
                 ScoreSummaryView(viewModel: viewModel.scoreSummaryVM)
 
+                DestinationInfoView(viewModel: viewModel.destinationInfoVM)
                 
                 RedirectChainSection(viewModel: viewModel.urlComponentsVM)
+                
             }
             .safeAreaInset(edge: .bottom) {
-                if viewModel.allSecurityWarnings.isEmpty {
-                    HStack {
-                        Text("Warnings (\(viewModel.allWarnings.count))")
-                            .font(.headline)
-                            .foregroundColor(.red)
-                            .padding(.vertical, 12)
-                            .onTapGesture {
-                                showWarningsSheet.toggle()
-                            }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                            .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
-                    )
-                }
-            }
-            .sheet(isPresented: $showWarningsSheet) {
-                SecurityWarningsDetailView(urlQueue: urlQueue)
+                WarningBannerComponent(viewModel: viewModel)
             }
             .toolbar {
                 // Bottom bar for Home & Help

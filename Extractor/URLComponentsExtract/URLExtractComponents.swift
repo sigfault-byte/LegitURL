@@ -128,6 +128,19 @@ struct URLExtractComponents {
                 compInfo.subdomain = subdomainPart.isEmpty ? nil : subdomainPart
             }
         }
+        
+        // Https check, before return so the offline extraction is done
+        guard compInfo.scheme?.lowercased() == "https" else {
+            warnings.append(SecurityWarning(
+                message: "URL: \(url) is not using TLS encryption. \nAnalysis aborded",
+                severity: .critical,
+                url: components.url?.absoluteString ?? "",
+                source: .offlineAnalysis
+            ))
+            URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
+            return URLInfo(components: compInfo, warnings: warnings                   )
+        }
+        
         return URLInfo(components: compInfo, warnings: warnings)
     }
     

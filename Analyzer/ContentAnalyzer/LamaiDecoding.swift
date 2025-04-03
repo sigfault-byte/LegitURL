@@ -35,7 +35,6 @@ struct LamaiDecoding {
         // Step 2: Try base64
         let currentBase64 = current
         let padded = normalizeBase64(currentBase64)
-        print("padded :", padded)
         if let data = Data(base64Encoded: padded),
            let b64Str = String(data: data, encoding: .utf8) {
             LamaiAnalyzerHub.handleDecodedChild(value: b64Str, method: "base64", under: node, maxDepth: maxDepth)

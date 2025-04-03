@@ -151,12 +151,12 @@ struct DomainSecuritySection: View {
     }
 }
 
-// ✅ Update SeverityLevel to support sorting & icons
-extension SecurityWarning.SeverityLevel: CaseIterable {
-    static var allCases: [SecurityWarning.SeverityLevel] {
-        return [.critical, .dangerous, .scam, .suspicious, .tracking, .info, .fetchError]
-    }
-}
+//// ✅ Update SeverityLevel to support sorting & icons
+//extension SecurityWarning.SeverityLevel: CaseIterable {
+//    static var allCases: [SecurityWarning.SeverityLevel] {
+//        return [.critical, .dangerous, .scam, .suspicious, .tracking, .info, .fetchError]
+//    }
+//}
 
 func sortSourceTypes(_ lhs: SecurityWarning.SourceType, _ rhs: SecurityWarning.SourceType) -> Bool {
     switch (lhs, rhs) {

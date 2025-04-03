@@ -9,12 +9,20 @@ import Foundation
 import SwiftUI
 
 struct SecurityWarning: Identifiable{
-    let id: UUID = UUID()
+    let id: UUID
     var message: String
     var severity: SeverityLevel
     var url: String
     var source: SourceType
     
+    init(message: String, severity: SeverityLevel, url: String, source: SourceType) {
+            self.id = UUID()
+            self.message = message
+            self.severity = severity
+            self.url = url
+            self.source = source
+        }
+
     /// **Represents severity levels for warnings**
     enum SeverityLevel: String {
         case info = "INFO"
@@ -45,4 +53,9 @@ struct SecurityWarning: Identifiable{
         case redirectedURL(hop: Int)
     }
 }
-
+// ✅ Update SeverityLevel to support sorting & icons
+extension SecurityWarning.SeverityLevel: CaseIterable {
+    static var allWarnings: [SecurityWarning.SeverityLevel] {
+        return [.critical, .dangerous, .scam, .suspicious, .tracking, .info, .fetchError]
+    }
+}

@@ -105,8 +105,6 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                 }
             }
             let parsedHeaders = parseHeaders(httpResponse.allHeaderFields)
-            let redirectLocation = parsedHeaders.otherHeaders["location"] ?? nil
-            let detectedRedirect = httpResponse.url?.absoluteString != sanitizedURLString.lowercased() ? httpResponse.url?.absoluteString : nil
             
             
             let sslCertificateDetails = URLGetExtract.sslCertificateDetails
@@ -121,7 +119,7 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                 body: data,
                 certificateAuthority: sslCertificateDetails["Issuer"] as? String,
                 sslValidity: !(sslCertificateDetails["Warning"] != nil),
-                finalRedirectURL: detectedRedirect ?? redirectLocation
+                finalRedirectURL: parsedHeaders.otherHeaders["location"]
             )
             let parsedCert = sslCertificateDetails["ParsedCertificate"] as? ParsedCertificate
             onlineInfo.parsedCertificate = parsedCert
@@ -168,28 +166,16 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             return
         }
         
-        //        print("🔍 SSL Challenge received for:", challenge.protectionSpace.host)
-        
         var sslCertificateDetails: [String: Any] = [:]
         
         // ✅ Extract certificate details using ASN1Decoder
         if let certificateChain = SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate],
            let firstCertificate = certificateChain.first {
-            
-            // ✅ Convert SecCertificate to raw Data
+
             let certificateData = SecCertificateCopyData(firstCertificate) as Data
             
-            // 🔍 Dump raw certificate before decoding
-//            let hexPreview = certificateData.prefix(32).map { String(format: "%02hhx", $0) }.joined(separator: " ")
-//            print("🔍 RAW CERTIFICATE DATA (hex preview): \(hexPreview)")
-//            
-//            let base64EncodedCert = certificateData.base64EncodedString(options: .lineLength64Characters)
-//            let pemFormattedCert = "-----BEGIN CERTIFICATE-----\n" + base64EncodedCert + "\n-----END CERTIFICATE-----"
-//            print("🔍 RAW CERTIFICATE PEM FORMAT:\n\(pemFormattedCert)")
-            //                        --------------------------------------------------------------------------------
-            //             ✅ Decode the certificate using ASN1Decoder
             if let decodedCertificate = try? X509Certificate(data: certificateData){
-//                                print("✅ Successfully decoded certificate", decodedCertificate)
+
                 sslCertificateDetails["Issuer"] = decodedCertificate.issuerDistinguishedName
                 sslCertificateDetails["Issuer Organization"] = decodedCertificate.issuer(oid: .organizationName)
                 sslCertificateDetails["Validity"] = [

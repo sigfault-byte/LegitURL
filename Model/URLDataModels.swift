@@ -21,6 +21,7 @@ class URLQueue: ObservableObject {
     var criticalAndFetchErrorWarnings: [SecurityWarning] {
         allWarnings.filter { $0.severity == .critical || $0.severity == .fetchError }
     }
+    
     static let shared = URLQueue() // ✅ Singleton to use it globally
 }
 

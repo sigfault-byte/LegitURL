@@ -8,12 +8,20 @@
 import Foundation
 
 struct URLAnalyzer {
+    private static var hasManuallyStopped = false
     
     // MARK: - Public Entry Point
     public static func analyze(urlString: String) {
         resetQueue()
         
         let extractedInfo = extractComponents(from: urlString)
+        
+        if extractedInfo.warnings.contains(where: { $0.severity == .critical }) {
+            URLQueue.shared.offlineQueue.append(extractedInfo)
+            URLQueue.shared.isAnalysisComplete = true
+            return
+        }
+        
         URLQueue.shared.offlineQueue.append(extractedInfo)
         
         if shouldStopAnalysis(atIndex: 0) { return }
@@ -24,26 +32,38 @@ struct URLAnalyzer {
     // MARK: - Offline Queue Processing
     
     private static func processQueue() {
-        // Check if the offline queue limit is reached
-        guard URLQueue.shared.offlineQueue.count < 5 else {
-            print("⛔ Offline queue limit reached. Stopping further analysis.")
-            return
-        }
-        
-        // Find the first unprocessed URLInfo
-        guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processed }) else {
-            print("✅ All URLs processed in OfflineQueue. Now processing OnlineQueue...")
-            processOnlineQueue()
-            return
-        }
-        
-        // Process the current URLInfo and then recursively process the next one
-        if processOfflineURL(at: currentIndex) {
-            processQueue()
+        DispatchQueue.main.async {
+            guard !hasManuallyStopped else {
+                print("🛑 Prevented re-entry into processQueue() — analysis was stopped.")
+                return
+            }
+
+            // Check if the offline queue limit is reached
+            guard URLQueue.shared.offlineQueue.count < 5 else {
+                print("⛔ Offline queue limit reached. Stopping further analysis.")
+                return
+            }
+
+            // Find the first unprocessed URLInfo
+            guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processed }) else {
+                if hasManuallyStopped {
+                    print("🛑 Analysis was stopped. Not starting OnlineQueue.")
+                    return
+                }
+                print("✅ All URLs processed in OfflineQueue. Now processing OnlineQueue...")
+                processOnlineQueue()
+                return
+            }
+
+            // Process the current URLInfo and then recursively process the next one
+            if processOfflineURL(at: currentIndex) {
+                processQueue()
+            }
         }
     }
     
     private static func processOfflineURL(at index: Int) -> Bool {
+        
         var urlInfo = URLQueue.shared.offlineQueue[index]
         
         // Check for early exit conditions before processing
@@ -77,6 +97,11 @@ struct URLAnalyzer {
     // MARK: - Online Queue Processing
     
     private static func processOnlineQueue() {
+        guard !hasManuallyStopped else {
+            print("🛑 processOnlineQueue aborted — analysis manually stopped.")
+            return
+        }
+        
         // Check if the online queue limit is reached
         guard URLQueue.shared.onlineQueue.count < 5 else {
             print("⛔ Online queue limit reached. Stopping further analysis.")
@@ -179,6 +204,7 @@ struct URLAnalyzer {
         if urlInfo.warnings.contains(where: { $0.severity == .critical }) {
             URLQueue.shared.offlineQueue[index].processed = true
             URLQueue.shared.isAnalysisComplete = true
+            hasManuallyStopped = true
             print("❌ Critical warning found. Stopping analysis.")
             return true
         } else if urlInfo.warnings.contains(where: { $0.severity == .fetchError }) {
