@@ -20,12 +20,12 @@ struct URLGetAnalyzer {
         let headers = onlineInfo.normalizedHeaders ?? [:]
 
         // Analyze body response
+        // TODO : multi check the final url, there can be only one!
         if let rawbody = onlineInfo.responseBody,
            let contentType = headers["content-type"]?.lowercased(),
            let responseCode = onlineInfo.serverResponseCode {
             
-            let bodyWarnings = BodyAnalyzer.analyze(bodyData: rawbody, contentType: contentType, responseCode: responseCode, urlOrigin: urlOrigin)
-            urlInfo.warnings.append(contentsOf: bodyWarnings)
+            BodyAnalyzer.analyze(bodyData: rawbody, contentType: contentType, responseCode: responseCode, urlOrigin: urlOrigin, urlInfo: &urlInfo)
         }
 
         //  Analyze headers for security

@@ -138,6 +138,8 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
             if task.state == .running {
                 print("Manually cancelling the task after 10 seconds")
+                //NEed to refactor to add it to the warnings!
+//                urlInfo.warnings.append(SecurityWarning(message: "Manually cancelled after 10 seconds", severity: .info, url: urlInfo.host, source: .onlineAnalysis))
                 task.cancel()
             }
         }
