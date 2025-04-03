@@ -1,10 +1,3 @@
-//
-//  URLGetAnalyzer.swift
-//  URLChecker
-//
-//  Created by Chief Hakka on 18/03/2025.
-//
-
 import Foundation
 
 struct URLGetAnalyzer {
@@ -12,7 +5,7 @@ struct URLGetAnalyzer {
         let originalURL = urlInfo.components.fullURL ?? ""
         let urlOrigin = urlInfo.components.host ?? ""
         
-        // ✅ Retrieve OnlineURLInfo using the ID
+        // ✅ Retrieve OnlineURLInfo using the ID and guard for sanity check and sync mystery
         guard let onlineInfo = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id }) else {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ No online analysis found for this URL. Skipping further checks.",
@@ -25,6 +18,15 @@ struct URLGetAnalyzer {
         
         let finalURL = onlineInfo.finalRedirectURL ?? originalURL
         let headers = onlineInfo.normalizedHeaders ?? [:]
+
+        // Analyze body response
+        if let rawbody = onlineInfo.responseBody,
+           let contentType = headers["content-type"]?.lowercased(),
+           let responseCode = onlineInfo.serverResponseCode {
+            
+            let bodyWarnings = BodyAnalyzer.analyze(bodyData: rawbody, contentType: contentType, responseCode: responseCode, urlOrigin: urlOrigin)
+            urlInfo.warnings.append(contentsOf: bodyWarnings)
+        }
 
         //  Analyze headers for security
         let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin)
