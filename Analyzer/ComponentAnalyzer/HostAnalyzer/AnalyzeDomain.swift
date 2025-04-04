@@ -88,7 +88,7 @@ struct AnalyzeDomain {
         for brand in KnownBrands.names {
             if part.lowercased().contains(brand) {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "Domain segment '\(part)' contains known brand '\(brand)'.",
+                    message: "Domain segment '\(part)' tries to impersonate '\(brand)'.",
                     severity: .dangerous,
                     url: urlOrigin,
                     source: .offlineAnalysis

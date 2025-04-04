@@ -124,6 +124,13 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
             let parsedCert = sslCertificateDetails["ParsedCertificate"] as? ParsedCertificate
             onlineInfo.parsedCertificate = parsedCert
             
+            if let bodyData = data, let bodyText = String(data: bodyData, encoding: .utf8) {
+                onlineInfo.humanBodySize = bodyData.count
+                onlineInfo.humanReadableBody = bodyText
+            } else {
+                onlineInfo.humanReadableBody = "⚠️ Unable to decode body"
+            }
+            
             // Pass the response and updated URLInfo to the completion handler.
             if let error = error {
                 completion(nil, error)
@@ -134,13 +141,27 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         // Start the data task.
         task.resume()
         
-        // Schedule a manual cancellation after 10 seconds if the task is still running
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+        
+        Task.detached {
+            try? await Task.sleep(nanoseconds: 10 * 1_000_000_000)
             if task.state == .running {
-                print("Manually cancelling the task after 10 seconds")
-                //NEed to refactor to add it to the warnings!
-//                urlInfo.warnings.append(SecurityWarning(message: "Manually cancelled after 10 seconds", severity: .info, url: urlInfo.host, source: .onlineAnalysis))
                 task.cancel()
+            }
+        }
+    }
+    
+    // New async version of the extract function
+    static func extractAsync(urlInfo: URLInfo) async throws -> OnlineURLInfo {
+        try await withCheckedThrowingContinuation { continuation in
+            extract(urlInfo: urlInfo) { onlineInfo, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else if let info = onlineInfo {
+                    continuation.resume(returning: info)
+                } else {
+                    let unknownError = NSError(domain: "URLGetExtract", code: -999, userInfo: [NSLocalizedDescriptionKey: "Unknown error occurred during extract."])
+                    continuation.resume(throwing: unknownError)
+                }
             }
         }
     }
@@ -173,11 +194,11 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         // ✅ Extract certificate details using ASN1Decoder
         if let certificateChain = SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate],
            let firstCertificate = certificateChain.first {
-
+            
             let certificateData = SecCertificateCopyData(firstCertificate) as Data
             
             if let decodedCertificate = try? X509Certificate(data: certificateData){
-
+                
                 sslCertificateDetails["Issuer"] = decodedCertificate.issuerDistinguishedName
                 sslCertificateDetails["Issuer Organization"] = decodedCertificate.issuer(oid: .organizationName)
                 sslCertificateDetails["Validity"] = [
@@ -188,18 +209,26 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                 let parsedCert = ParsedCertificate(
                     commonName: decodedCertificate.subject(oid: .commonName)?.first,
                     organization: decodedCertificate.subject(oid: .organizationName)?.first,
+                    validationLevel: validationLevel(decodedCertificate: decodedCertificate),
                     issuerCommonName: decodedCertificate.issuer(oid: .commonName),
                     issuerOrganization: decodedCertificate.issuer(oid: .organizationName),
                     notBefore: decodedCertificate.notBefore,
                     notAfter: decodedCertificate.notAfter,
-                    publicKeyAlgorithm: decodedCertificate.sigAlgName, // Fix: Use sigAlgName
+                    publicKeyAlgorithm: {
+                        if let oid = decodedCertificate.publicKey?.algOid,
+                           let named = OID(rawValue: oid) {
+                            return "\(named)"
+                        }
+                        return decodedCertificate.publicKey?.algOid
+                    }(),
                     keyUsage: decodedCertificate.keyUsage.enumerated().compactMap { index, isSet in
                         isSet ? ["Digital Signature", "Non-Repudiation", "Key Encipherment", "Data Encipherment", "Key Agreement", "Cert Sign", "CRL Sign", "Encipher Only", "Decipher Only"][index] : nil
                     }.joined(separator: ", "),  // Convert Key Usage Bits
-                    //                    publicKeyBits: (decodedCertificate.publicKey?.asn1?.sub(0)?.value as? Data)?.count ?? 0 * 8,
-                    publicKeyBits: 0,
+//                    publicKeyBits: inferredPublicKeyBits(from: decodedCertificate),
+                    publicKeyBits: inferredPublicKeyBits(from: decodedCertificate),
                     extendedKeyUsage: decodedCertificate.extendedKeyUsage.joined(separator: ", "), // Extract extended key usage
-                    isSelfSigned: decodedCertificate.subjectDistinguishedName == decodedCertificate.issuerDistinguishedName
+                    isSelfSigned: decodedCertificate.subjectDistinguishedName == decodedCertificate.issuerDistinguishedName,
+                    subjectAlternativeNames: decodedCertificate.subjectAlternativeNames
                 )
                 
                 sslCertificateDetails["ParsedCertificate"] = parsedCert
@@ -242,4 +271,40 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         
         return parsedHeaders
     }
+    
+    private func validationLevel(decodedCertificate: X509Certificate) -> ParsedCertificate.CertificateValidationLevel {
+        if decodedCertificate.subject(oid: .organizationName)?.first != nil {
+            if decodedCertificate.subject(oid: .extendedValidation)?.first != nil {
+                return .ev
+            }
+            return .ov
+        } else {
+            return .dv
+        }
+    }
+    
+func inferredPublicKeyBits(from cert: X509Certificate) -> Int? {
+    guard let algOID = cert.publicKey?.algOid,
+          let keyOID = OID(rawValue: algOID) else { return nil }
+
+    switch keyOID {
+    case .rsaEncryption:
+        if let keyByteCount = cert.publicKey?.key?.count {
+            return keyByteCount * 8
+        }
+    case .ecPublicKey:
+        guard let curveOID = cert.publicKey?.algParams else { return nil }
+        switch curveOID {
+        case OID.prime256v1.rawValue: return 256
+        case "1.3.132.0.34": return 384  // secp384r1
+        case "1.3.132.0.35": return 521  // secp521r1
+        default: return nil
+        }
+    default:
+        return nil
+    }
+
+    return nil
+}
+
 }

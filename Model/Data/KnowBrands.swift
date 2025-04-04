@@ -25,7 +25,7 @@ struct KnownBrands {
         // 🔹 Finance & Banking
         "paypal", "visa", "mastercard", "stripe", "revolut", "wise", "americanexpress",
         "capitalone", "hsbc", "citibank", "wellsfargo", "chase", "bankofamerica",
-        "monzo", "n26", "sofi", "goldmansachs",
+        "monzo", "n26", "sofi", "goldmansachs", "bnpparibas",
         
         // 🔹 Crypto & Trading Platforms
         "binance", "coinbase", "kraken", "bitstamp", "bybit", "kucoin", "crypto",

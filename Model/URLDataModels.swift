@@ -26,6 +26,7 @@ class URLQueue: ObservableObject {
 }
 
 extension URLQueue {
+    // Ensure safe update from the background
     func addWarning(to urlID: UUID, warning: SecurityWarning) {
         DispatchQueue.main.async {
             if let index = self.offlineQueue.firstIndex(where: { $0.id == urlID }) {
@@ -131,24 +132,28 @@ struct OnlineURLInfo: Identifiable {
     var normalizedHeaders: [String: String]?
     var parsedHeaders: ParsedHeaders?  // ✅ Store structured headers
     var responseBody: Data?  // ✅ Store raw response body
+    var humanReadableBody: String? = nil
+    var humanBodySize: Int? = 0
     var normalizedCertificate: [String:String] = [:]
     var parsedCertificate: ParsedCertificate?
     var certificateAuthority: String?
     var sslValidity: Bool = false
     var finalRedirectURL: String?
     
-    //    Need to be either analysed, or cleaned because it can be way too big!
-    var formattedBody: String {
-        guard let data = responseBody else { return "No body available" }
-        return String(data: data, encoding: .utf8) ?? "⚠️ Unable to decode body"
-    }
+//    //    Need to be either analysed, or cleaned because it can be way too big!
+//    var formattedBody: String {
+//        guard let data = responseBody else { return "No body available" }
+//        return String(data: data, encoding: .utf8) ?? "⚠️ Unable to decode body"
+//    }
     
     init(from urlInfo: URLInfo,
          responseCode: Int? = nil,
          statusText: String? = nil,
          normalizedHeaders: [String: String]? = nil,
-         parsedHeaders: ParsedHeaders? = nil,  // ✅ New structured headers
+         parsedHeaders: ParsedHeaders? = nil,
          body: Data? = nil,
+         humanReadableBody: String? = nil,
+         humanBodySize: Int? = 0,
          certificateAuthority: String? = nil,
          sslValidity: Bool = false,
          finalRedirectURL: String? = nil)
@@ -159,6 +164,8 @@ struct OnlineURLInfo: Identifiable {
         self.normalizedHeaders = normalizedHeaders
         self.parsedHeaders = parsedHeaders
         self.responseBody = body
+        self.humanReadableBody = humanReadableBody
+        self.humanBodySize = humanBodySize
         self.certificateAuthority = certificateAuthority
         self.sslValidity = sslValidity
         self.finalRedirectURL = finalRedirectURL
@@ -175,6 +182,7 @@ struct ParsedHeaders {
 struct ParsedCertificate {
     var commonName: String?
     var organization: String?
+    var validationLevel: CertificateValidationLevel?
     var issuerCommonName: String?
     var issuerOrganization: String?
     var notBefore: Date?
@@ -184,4 +192,13 @@ struct ParsedCertificate {
     var publicKeyBits: Int?
     var extendedKeyUsage: String?
     var isSelfSigned: Bool = false
+    var subjectAlternativeNames: [String]?
+    
+    enum CertificateValidationLevel: String {
+        case ev = "Extended Validation"
+        case ov = "Organization Validation"
+        case dv = "Domain Validation"
+        case unknown = "Unknown"
+    }
+
 }

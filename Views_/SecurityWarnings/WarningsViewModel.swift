@@ -22,10 +22,6 @@ class WarningsViewModel: ObservableObject {
         
     init(warnings: [SecurityWarning]) {
         self.warnings = warnings
-        print("🧠 WarningsViewModel INIT — count: \(warnings.count)")
-            warnings.forEach {
-                print(" - [\($0.url)] \($0.message)")
-            }
     }
     
     static var allSeverityLevels: [SecurityWarning.SeverityLevel] {

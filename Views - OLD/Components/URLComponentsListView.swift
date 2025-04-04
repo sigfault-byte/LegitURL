@@ -23,11 +23,11 @@ struct URLDetailView: View {
             Section(header: Text("OFFLINE INFORMATION")) {
                 URLComponentSection(urlInfo: urlInfo, isPathExpanded: $isPathExpanded, isQueryExpanded: $isQueryExpanded, isFragmentExpanded: $isFragmentExpanded)
             }
-            if let onlineInfo = onlineInfo {
-                Section(header: Text("ONLINE INFORMATION")) {
-                    URLSSLSection(onlineInfo: onlineInfo)
-                }
-            }
+//            if let onlineInfo = onlineInfo {
+//                Section(header: Text("ONLINE INFORMATION")) {
+//                    URLSSLSection(onlineInfo: onlineInfo)
+//                }
+//            }
         }
         .listStyle(InsetGroupedListStyle())
         .navigationTitle("URL Details")
@@ -113,39 +113,39 @@ private struct URLComponentSection: View {
     }
 }
 
-private struct URLSSLSection: View {
-    var onlineInfo: OnlineURLInfo
-    
-    var body: some View {
-        Group {
-            if let responseCode = onlineInfo.serverResponseCode {
-                URLDetailRow(label: "Server Response Code", value: "\(responseCode)")
-            }
-            if let statusText = onlineInfo.statusText {
-                URLDetailRow(label: "Status Text", value: statusText)
-            }
-            if let finalRedirectURL = onlineInfo.finalRedirectURL {
-                URLDetailRow(label: "Server redirects to:", value: finalRedirectURL)
-            }
-            URLDetailRow(label: "SSL Validity", value: onlineInfo.sslValidity ? "✅ Valid" : "❌ Invalid")
-            if let cert = onlineInfo.parsedCertificate {
-                NavigationLink(destination: URLCertificateDetailView(cert: cert)) {
-                Text("View Certificate Details")
-                }
-            }
-            if let parsedHeaders = onlineInfo.parsedHeaders {
-                NavigationLink(destination: URLFormattedView(title: "Response Headers", content: formatParsedHeaders(parsedHeaders))) {
-                    Text("View Response Headers")
-                }
-            }
-            if !onlineInfo.formattedBody.isEmpty {
-                NavigationLink(destination: URLFormattedView(title: "Response Body", content: onlineInfo.formattedBody)) {
-                    Text("View Response Body")
-                }
-            }
-        }
-    }
-}
+//private struct URLSSLSection: View {
+//    var onlineInfo: OnlineURLInfo
+//    
+//    var body: some View {
+//        Group {
+//            if let responseCode = onlineInfo.serverResponseCode {
+//                URLDetailRow(label: "Server Response Code", value: "\(responseCode)")
+//            }
+//            if let statusText = onlineInfo.statusText {
+//                URLDetailRow(label: "Status Text", value: statusText)
+//            }
+//            if let finalRedirectURL = onlineInfo.finalRedirectURL {
+//                URLDetailRow(label: "Server redirects to:", value: finalRedirectURL)
+//            }
+//            URLDetailRow(label: "SSL Validity", value: onlineInfo.sslValidity ? "✅ Valid" : "❌ Invalid")
+//            if let cert = onlineInfo.parsedCertificate {
+//                NavigationLink(destination: URLCertificateDetailView(cert: cert)) {
+//                Text("View Certificate Details")
+//                }
+//            }
+//            if let parsedHeaders = onlineInfo.parsedHeaders {
+//                NavigationLink(destination: URLFormattedView(title: "Response Headers", content: formatParsedHeaders(parsedHeaders))) {
+//                    Text("View Response Headers")
+//                }
+//            }
+//            if !onlineInfo.formattedBody.isEmpty {
+//                NavigationLink(destination: URLFormattedView(title: "Response Body", content: onlineInfo.formattedBody)) {
+//                    Text("View Response Body")
+//                }
+//            }
+//        }
+//    }
+//}
 
 struct URLFormattedView: View {
     var title: String
@@ -247,18 +247,26 @@ struct URLCertificateDetailView: View {
     var body: some View {
         List {
             Section(header: Text("Certificate Info")) {
-                LabeledContent("Common Name", value: cert.commonName ?? "N/A")
-                LabeledContent("Organization", value: cert.organization ?? "N/A")
-                LabeledContent("Issuer CN", value: cert.issuerCommonName ?? "N/A")
-                LabeledContent("Issuer Org", value: cert.issuerOrganization ?? "N/A")
-                LabeledContent("Public Key", value: "\(cert.publicKeyAlgorithm ?? "N/A") (\(cert.publicKeyBits ?? 0) bits)")
-                LabeledContent("Key Usage", value: cert.keyUsage ?? "N/A")
-                LabeledContent("Extended Key Usage", value: cert.extendedKeyUsage ?? "N/A")
-                LabeledContent("Valid From", value: cert.notBefore?.formatted() ?? "N/A")
-                LabeledContent("Valid Until", value: cert.notAfter?.formatted() ?? "N/A")
-                LabeledContent("Self-Signed", value: cert.isSelfSigned ? "Yes" : "No")
+                ForEach([
+                    ("Common Name", cert.commonName),
+                    ("Organization", cert.organization),
+                    ("Validation Level", cert.validationLevel?.rawValue),
+                    ("Issuer CN", cert.issuerCommonName),
+                    ("Issuer Org", cert.issuerOrganization),
+                    ("Public Key", cert.publicKeyAlgorithm != nil && cert.publicKeyBits != nil ? "\(cert.publicKeyAlgorithm!) (\(cert.publicKeyBits!) bits)" : nil),
+                    ("Key Usage", cert.keyUsage),
+                    ("Extended Key Usage", cert.extendedKeyUsage),
+                    ("Valid From", cert.notBefore?.formatted()),
+                    ("Valid Until", cert.notAfter?.formatted()),
+                    ("Self-Signed", cert.isSelfSigned ? "Yes" : nil),
+                    ("SANs", cert.subjectAlternativeNames?.joined(separator: "\n"))
+                ].compactMap { label, value in
+                    value.map { (label, $0) }
+                }, id: \.0) { label, value in
+                    LabeledContent(label, value: value)
+                }
+                .navigationTitle("Certificate")
             }
         }
-        .navigationTitle("Certificate")
     }
 }

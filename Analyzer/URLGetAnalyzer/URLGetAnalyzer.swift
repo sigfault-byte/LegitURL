@@ -20,14 +20,27 @@ struct URLGetAnalyzer {
         let headers = onlineInfo.normalizedHeaders ?? [:]
 
         // Analyze body response
-        // TODO : multi check the final url, there can be only one!
+        // TODO : multi check the final url, there can be only one! -> we do not extract final url from the body for now
         if let rawbody = onlineInfo.responseBody,
            let contentType = headers["content-type"]?.lowercased(),
            let responseCode = onlineInfo.serverResponseCode {
             
-            BodyAnalyzer.analyze(bodyData: rawbody, contentType: contentType, responseCode: responseCode, urlOrigin: urlOrigin, urlInfo: &urlInfo)
+            BodyAnalyzer.analyze(bodyData: rawbody,
+                                 contentType: contentType,
+                                 responseCode: responseCode,
+                                 urlOrigin: urlOrigin,
+                                 urlInfo: &urlInfo)
         }
-
+        
+        if let tlsCertificate = onlineInfo.parsedCertificate {
+            let domainAndTLD = [urlInfo.domain, urlInfo.tld].compactMap { $0 }.joined(separator: ".")
+            let host = urlInfo.host ?? ""
+            TLSCertificateAnalyzer.analyze(certificate: tlsCertificate,
+                                           host: host,
+                                           domain: domainAndTLD,
+                                           warnings: &urlInfo.warnings )
+        }
+        
         //  Analyze headers for security
         let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin)
         urlInfo.warnings.append(contentsOf: headerWarnings)

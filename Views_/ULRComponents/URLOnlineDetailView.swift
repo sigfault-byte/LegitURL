@@ -1,4 +1,3 @@
-//
 //  URLOnlineDetailView.swift
 //  URLChecker
 //
@@ -31,11 +30,7 @@ struct URLOnlineDetailView: View {
                     Text("View Response Headers")
                 }
             }
-            if !onlineInfo.formattedBody.isEmpty {
-                NavigationLink(destination: RawToFormated(title: "Response Body", content: onlineInfo.formattedBody)) {
-                    Text("View Response Body")
-                }
-            }
+            bodyNavigationLink(for: onlineInfo)
         }
     }
 }
@@ -54,6 +49,21 @@ private struct RawToFormated: View {
             }
         }
         .listStyle(InsetGroupedListStyle())
+        .navigationTitle(title)
+    }
+}
+
+private struct RawToFormatedForHeavyBody: View {
+    var title: String
+    var content: String
+    
+    var body: some View {
+        ScrollView {
+            Text(content)
+                .font(.system(size: 10, weight: .regular, design: .monospaced))
+                .foregroundColor(.primary)
+                .padding()
+        }
         .navigationTitle(title)
     }
 }
@@ -94,4 +104,32 @@ private func formatParsedHeaders(_ headers: ParsedHeaders) -> String {
     }
     
     return output.isEmpty ? "No Headers Available" : output
+}
+
+private func bodyNavigationLink(for info: OnlineURLInfo) -> some View {
+    Group {
+        if let humanReadableBody = info.humanReadableBody, !humanReadableBody.isEmpty {
+            let bodyView: some View = {
+                let bodySize = info.humanBodySize ?? 0
+                if bodySize > 150_000 {
+                    return AnyView(RawToFormatedForHeavyBody(title: "Response Body", content: humanReadableBody))
+                } else {
+                    return AnyView(RawToFormated(title: "Response Body", content: humanReadableBody))
+                }
+            }()
+
+            let bodySize = info.humanBodySize ?? 0
+            let label: String = {
+                if bodySize > 150_000 {
+                    return "⚠️ Heavy Response Body (~\(bodySize / 1024) KB)"
+                } else {
+                    return "View Response Body"
+                }
+            }()
+
+            NavigationLink(destination: bodyView) {
+                Text(label)
+            }
+        }
+    }
 }

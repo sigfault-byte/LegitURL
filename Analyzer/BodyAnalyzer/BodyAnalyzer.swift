@@ -3,19 +3,26 @@ import Foundation
 struct BodyAnalyzer {
     static func analyze(bodyData: Data, contentType: String, responseCode: Int, urlOrigin: String, urlInfo: inout URLInfo) {
         var warnings: [SecurityWarning] = []
+        var scriptRatio = 0.0
         var matchedAnyCriticalOrSuspicious = false
+        
+        guard responseCode == 200 else {
+            return
+        }
         
         // Only analyze text or html content types
         if contentType.contains("text/html") || contentType.contains("text/plain") {
             let htmlOpen = HTMLEntities.htmlOpen
             let htmlClose = HTMLEntities.htmlClose
             
-            let htmlStartIsNearTop = bodyData.prefix(40).containsBytesCaseInsensitive(of: htmlOpen)
-            let htmlCloseIsNearEnd = bodyData.suffix(40).containsBytesCaseInsensitive(of: htmlClose)
+            
+            /// Initial prefix was 40, but some website ( hello www.apple.com pad the html before the current code ? need to thinke about a cleaning logic )
+            let htmlStartIsNearTop = bodyData.prefix(512).containsBytesCaseInsensitive(of: htmlOpen)
+            let htmlCloseIsNearEnd = bodyData.suffix(512).containsBytesCaseInsensitive(of: htmlClose)
             
             if !htmlStartIsNearTop || !htmlCloseIsNearEnd {
                 warnings.append(SecurityWarning(
-                    message: "Body does not contain HTML.",
+                    message: "Body does not contain HTML.\nThis is surely a security risk.",
                     severity: .critical,
                     url: urlOrigin,
                     source: .onlineAnalysis
@@ -40,7 +47,7 @@ struct BodyAnalyzer {
                     searchStart = scriptEnd.upperBound
                 }
                 
-                let scriptRatio = Double(totalScriptBytes) / Double(htmlBytes.count)
+                scriptRatio = Double(totalScriptBytes) / Double(htmlBytes.count)
                 if scriptRatio >= 0.2 {
                     let level: Int
                     if scriptRatio >= 0.8 {
@@ -132,20 +139,21 @@ struct BodyAnalyzer {
                             if afterIndex + suffix.count <= totalLength {
                                 let followingBytes = bodyData[afterIndex..<afterIndex + suffix.count]
                                 if followingBytes.elementsEqual(suffix) {
-                                    foundExpected = true
+                                    foundExpected = true;
                                     break
                                 }
                             }
                         }
                         if foundExpected {
                             warnings.append(SecurityWarning(
-                                message: "Forced redirect detected using window.location with immediate redirect method.",
-                                severity: .dangerous,
+                                message: "Forced redirect detected using window.location with immediate redirect method in a \(Int(scriptRatio * 100))% script-only page.",
+//                                If page is > 70% scrip bytes and uses windows relocation its bail
+                                severity: scriptRatio >= 0.7 ? .critical : .suspicious,
                                 url: urlOrigin,
                                 source: .onlineAnalysis
                             ))
                             matchedAnyCriticalOrSuspicious = true
-                            break // only flag once
+                            break
                         }
                     }
                 }
@@ -180,18 +188,18 @@ struct BodyAnalyzer {
                 matchedAnyCriticalOrSuspicious = true
             }
             
-            // Obfuscation patterns (still decode because these are flexible, not fixed byte sequences)
-            if !matchedAnyCriticalOrSuspicious, let decodedBody = urlInfo.onlineInfo?.formattedBody {
-                if decodedBody.contains("eval(") || decodedBody.contains("atob(") || decodedBody.contains("unescape(") {
-                    warnings.append(SecurityWarning(
-                        message: "Obfuscated or encoded JavaScript found in body (eval, atob, unescape, etc.).",
-                        severity: .dangerous,
-                        url: urlOrigin,
-                        source: .onlineAnalysis
-                    ))
-                }
-                
-            }
+//            // Obfuscation patterns (still decode because these are flexible, not fixed byte sequences)
+//            if !matchedAnyCriticalOrSuspicious, let decodedBody = urlInfo.onlineInfo?.formattedBody {
+//                if decodedBody.contains("eval(") || decodedBody.contains("atob(") || decodedBody.contains("unescape(") {
+//                    warnings.append(SecurityWarning(
+//                        message: "Obfuscated or encoded JavaScript found in body (eval, atob, unescape, etc.).",
+//                        severity: .dangerous,
+//                        url: urlOrigin,
+//                        source: .onlineAnalysis
+//                    ))
+//                }
+//
+//            }
         }
         
         urlInfo.warnings.append(contentsOf: warnings)

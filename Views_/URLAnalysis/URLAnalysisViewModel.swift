@@ -99,6 +99,21 @@ class URLAnalysisViewModel: ObservableObject {
                 }
             }
         }
+        
+        // TAsk is the real player, but this cascade into a will smith @mainactor movie
+//        Task {
+//            while !self.urlQueue.isAnalysisComplete {
+//                self.updateAnalysisState()
+//                try? await Task.sleep(nanoseconds: 400_000_000)
+//            }
+//
+//            // Final update and state sync
+//            self.updateAnalysisState()
+//            self.stopAnalysis()
+//            self.populateDestinationVM()
+//            self.filterErrorMessage()
+//            self.isSynchIsOver = true
+//        }
     }
     
     

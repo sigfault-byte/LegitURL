@@ -8,7 +8,7 @@ import SwiftUI
 
 class ScoreSummaryViewModel: ObservableObject{
     
-    @Published var score: Int = 0 {
+    @Published var score: Int = 100 {
         didSet {
             self.displayFlickerOrScore()
             self.displayAnalysisSummary()
@@ -133,18 +133,16 @@ class ScoreSummaryViewModel: ObservableObject{
         if !self.isSynchIsOver || self.isInFlickerPhase {
             self.displayScore = self.flickerText
         } else {
-            Timer.scheduledTimer(withTimeInterval: 0.6, repeats: false) { _ in
-                withAnimation {
-                    if self.errorMessage == [] && self.isSynchIsOver {
-                        self.labelText = "Legit Score"
-                        self.useTitleFont = true
-                        self.displayScore = String(self.score)
-                    } else {
-                        if self.score != 0 {
-                            self.score = 0
-                        }
-                        self.displayScore = "00"
+            withAnimation {
+                if  self.isSynchIsOver {
+                    self.labelText = "Legit Score"
+                    self.useTitleFont = true
+                    self.displayScore = String(self.score)
+                } else {
+                    if self.score != 0 {
+                        self.score = 0
                     }
+                    self.displayScore = "00"
                 }
             }
         }
@@ -154,7 +152,7 @@ class ScoreSummaryViewModel: ObservableObject{
         if !self.isSynchIsOver || self.isInFlickerPhase {
             self.displayScoreText = "Analysing ... \n\(self.byteString)"
         } else {
-            Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false){_ in withAnimation {
+            Timer.scheduledTimer(withTimeInterval: 1, repeats: false){_ in withAnimation {
                 self.displayScoreText = self.scoreText
             }
             }
