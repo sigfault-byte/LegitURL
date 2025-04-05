@@ -7,9 +7,18 @@
 import SwiftUI
 
 //Root view cases
-enum RootViews {
+enum RootScreen {
     case input
     case analysis(urlInput: String, infoMessage: String)
+}
+
+struct LegitSessionManager {
+    static func reset() {
+        URLQueue.shared.offlineQueue.removeAll()
+        URLQueue.shared.onlineQueue.removeAll()
+        URLQueue.shared.LegitScore = 100
+        URLQueue.shared.isAnalysisComplete = false
+    }
 }
 
 //Main rooter like struct

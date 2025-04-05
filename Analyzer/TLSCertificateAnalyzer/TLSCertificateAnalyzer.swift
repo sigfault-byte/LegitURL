@@ -1,5 +1,14 @@
 import Foundation
 
+
+//🔍 Certificate Chain:
+//→ All certificates in the chain are issued and signed by the same organization.
+//→ This is common in large corporations (e.g. Google, Apple).
+////→ While technically valid, it reduces third-party trust diversity. => not needed for now
+//•    Chain depth / issuer-to-CN overlap (you’ve debated this — keep it optional/advanced)
+//•    Custom certificate policies (you log them, and they’ll be useful down the line)
+//•    Certificate transparency / OCSP (not offline-friendly but future ideas)
+
 struct TLSCertificateAnalyzer {
     static func analyze(certificate: ParsedCertificate,
                         host: String,
@@ -18,7 +27,7 @@ struct TLSCertificateAnalyzer {
         }
         
         // Apple URLSession in strict mode enforces it, but turning it off helps ID the various ssl problem that might occur
-        guard domainIsCoveredBySANs(domain: domain, host: host, sans: sans) else {
+        guard TLSHeuristics.domainIsCoveredBySANs(domain: domain, host: host, sans: sans) else {
             warnings.append(SecurityWarning(
                 message: "TLS Certificate does not cover domain \(domain) or host \(host)",
                 severity: .critical,
@@ -45,14 +54,14 @@ struct TLSCertificateAnalyzer {
         if let notAfter = certificate.notAfter {
             if notAfter < now {
                 warnings.append(SecurityWarning(
-                    message: "TLS Certificate expired on \(formattedDate(notAfter))",
+                    message: "TLS Certificate expired on \(TLSHeuristics.formattedDate(notAfter))",
                     severity: .critical,
                     url: host,
                     source: .onlineAnalysis
                 ))
             } else if Calendar.current.dateComponents([.day], from: now, to: notAfter).day ?? 0 <= 7 {
                 warnings.append(SecurityWarning(
-                    message: "TLS Certificate will expire soon on \(formattedDate(notAfter))",
+                    message: "TLS Certificate will expire soon on \(TLSHeuristics.formattedDate(notAfter))",
                     severity: .suspicious,
                     url: host,
                     source: .onlineAnalysis
@@ -63,7 +72,7 @@ struct TLSCertificateAnalyzer {
         if let notBefore = certificate.notBefore {
             if let daysOld = Calendar.current.dateComponents([.day], from: notBefore, to: now).day, daysOld <= 1 {
                 warnings.append(SecurityWarning(
-                    message: "TLS Certificate was issued recently on \(formattedDate(notBefore))",
+                    message: "TLS Certificate was issued recently on \(TLSHeuristics.formattedDate(notBefore))",
                     severity: .info,
                     url: host,
                     source: .onlineAnalysis
@@ -90,7 +99,7 @@ struct TLSCertificateAnalyzer {
                 if keyBits < 2048 {
                     warnings.append(SecurityWarning(
                         message: "TLS Certificate uses a weak RSA key size of \(keyBits) bits",
-                        severity: .suspicious,
+                        severity: .dangerous,
                         url: host,
                         source: .onlineAnalysis
                     ))
@@ -106,11 +115,18 @@ struct TLSCertificateAnalyzer {
                 if keyBits < 256 {
                     warnings.append(SecurityWarning(
                         message: "TLS Certificate uses a weak EC key (less than 256 bits)",
-                        severity: .suspicious,
+                        severity: .info,
                         url: host,
                         source: .onlineAnalysis
                     ))
-                } else if keyBits >= 384 {
+                } else if keyBits < 384 {
+                        warnings.append(SecurityWarning(
+                            message: "TLS Certificate uses an EC key of \(keyBits) bits",
+                            severity: .info,
+                            url: host,
+                            source: .onlineAnalysis
+                        ))
+                    } else if keyBits >= 384 {
                     warnings.append(SecurityWarning(
                         message: "TLS Certificate uses a strong EC key of \(keyBits) bits",
                         severity: .info,
@@ -121,37 +137,34 @@ struct TLSCertificateAnalyzer {
             }
         }
 
-        // Date formatter utility
-        func formattedDate(_ date: Date) -> String {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .none
-            return formatter.string(from: date)
-        }
-    }
-
-    private static func domainIsCoveredBySANs(domain: String, host: String, sans: [String]) -> Bool {
-        print("✅ Checking cert against domain: \(domain) and host: \(host)")
-
-        // First try wildcard matches against the domain
-        for san in sans {
-            if san.hasPrefix("*.") {
-                let base = san.dropFirst(2)
-                if domain.hasSuffix(base) {
-                    print("✅ Domain '\(domain)' matched wildcard SAN '\(san)'")
-                    return true
-                }
-            }
-        }
-        // Fallback: try exact SAN match against the host
-        for san in sans {
-            if host == san {
-                print("✅ Host '\(host)' matched exact SAN '\(san)'")
-                return true
+        // Extended Key Usage Analysis
+        if let ekuRaw = certificate.extendedKeyUsageOID {
+            let ekuList = parseEKUs(from: ekuRaw)
+            for eku in ekuList {
+                warnings.append(SecurityWarning(
+                    message: "Extended Key Usage: \(eku.description)",
+                    severity: eku.severity,
+                    url: host,
+                    source: .onlineAnalysis
+                ))
             }
         }
 
-        print("❌ Neither domain '\(domain)' nor host '\(host)' matched any SAN")
-        return false
+        if let policyOIDRaw = certificate.certificatePolicyOIDs {
+            let rawOIDs = policyOIDRaw
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+            let policyResults = TLSHeuristics.classifyCertificatePolicyOIDs(rawOIDs)
+
+            for (description, severity) in policyResults {
+                warnings.append(SecurityWarning(
+                    message: "Certificate Policy: \(description)",
+                    severity: severity,
+                    url: host,
+                    source: .onlineAnalysis
+                ))
+            }
+        }
     }
 }

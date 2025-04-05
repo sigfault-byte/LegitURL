@@ -11,7 +11,6 @@ class ScoreSummaryViewModel: ObservableObject{
     @Published var score: Int = 100 {
         didSet {
             self.displayFlickerOrScore()
-            self.displayAnalysisSummary()
         }
     }
     

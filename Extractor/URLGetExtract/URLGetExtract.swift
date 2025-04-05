@@ -166,6 +166,8 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         }
     }
     
+    
+    
     // URLSessionTaskDelegate method:
     // This method is called when a redirect response is received.
     // By calling completionHandler(nil), we cancel the redirect so that the URLSession returns the original response.
@@ -209,7 +211,6 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                 let parsedCert = ParsedCertificate(
                     commonName: decodedCertificate.subject(oid: .commonName)?.first,
                     organization: decodedCertificate.subject(oid: .organizationName)?.first,
-                    validationLevel: validationLevel(decodedCertificate: decodedCertificate),
                     issuerCommonName: decodedCertificate.issuer(oid: .commonName),
                     issuerOrganization: decodedCertificate.issuer(oid: .organizationName),
                     notBefore: decodedCertificate.notBefore,
@@ -224,13 +225,14 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
                     keyUsage: decodedCertificate.keyUsage.enumerated().compactMap { index, isSet in
                         isSet ? ["Digital Signature", "Non-Repudiation", "Key Encipherment", "Data Encipherment", "Key Agreement", "Cert Sign", "CRL Sign", "Encipher Only", "Decipher Only"][index] : nil
                     }.joined(separator: ", "),  // Convert Key Usage Bits
-//                    publicKeyBits: inferredPublicKeyBits(from: decodedCertificate),
                     publicKeyBits: inferredPublicKeyBits(from: decodedCertificate),
-                    extendedKeyUsage: decodedCertificate.extendedKeyUsage.joined(separator: ", "), // Extract extended key usage
+                    extendedKeyUsageOID: decodedCertificate.extendedKeyUsage.joined(separator: ", "),
+                    extendedKeyUsageString: parseEKUs(from: decodedCertificate.extendedKeyUsage.joined(separator: ", ")),
+                    certificatePolicyOIDs: extractCertificatePolicyOIDs(from: decodedCertificate),
                     isSelfSigned: decodedCertificate.subjectDistinguishedName == decodedCertificate.issuerDistinguishedName,
                     subjectAlternativeNames: decodedCertificate.subjectAlternativeNames
                 )
-                
+                print(parsedCert.certificatePolicyOIDs)
                 sslCertificateDetails["ParsedCertificate"] = parsedCert
             } else {
                 print("❌ Failed to decode certificate using ASN1Decoder")
@@ -272,39 +274,47 @@ class URLGetExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
         return parsedHeaders
     }
     
-    private func validationLevel(decodedCertificate: X509Certificate) -> ParsedCertificate.CertificateValidationLevel {
-        if decodedCertificate.subject(oid: .organizationName)?.first != nil {
-            if decodedCertificate.subject(oid: .extendedValidation)?.first != nil {
-                return .ev
+    func inferredPublicKeyBits(from cert: X509Certificate) -> Int? {
+        guard let algOID = cert.publicKey?.algOid,
+              let keyOID = OID(rawValue: algOID) else { return nil }
+        
+        switch keyOID {
+        case .rsaEncryption:
+            if let keyByteCount = cert.publicKey?.key?.count {
+                return keyByteCount * 8
             }
-            return .ov
-        } else {
-            return .dv
+        case .ecPublicKey:
+            guard let curveOID = cert.publicKey?.algParams else { return nil }
+            switch curveOID {
+            case OID.prime256v1.rawValue: return 256
+                // coudnt find ECC alg in the library
+            case "1.3.132.0.34": return 384  // secp384r1
+            case "1.3.132.0.35": return 521  // secp521r1
+            default: return nil
+            }
+        default:
+            return nil
         }
-    }
-    
-func inferredPublicKeyBits(from cert: X509Certificate) -> Int? {
-    guard let algOID = cert.publicKey?.algOid,
-          let keyOID = OID(rawValue: algOID) else { return nil }
-
-    switch keyOID {
-    case .rsaEncryption:
-        if let keyByteCount = cert.publicKey?.key?.count {
-            return keyByteCount * 8
-        }
-    case .ecPublicKey:
-        guard let curveOID = cert.publicKey?.algParams else { return nil }
-        switch curveOID {
-        case OID.prime256v1.rawValue: return 256
-        case "1.3.132.0.34": return 384  // secp384r1
-        case "1.3.132.0.35": return 521  // secp521r1
-        default: return nil
-        }
-    default:
+        
         return nil
     }
-
-    return nil
-}
-
+    
+    // Helper function to extract certificate policy OIDs from a decoded certificate
+    func extractCertificatePolicyOIDs(from decodedCertificate: X509Certificate) -> String {
+        guard let certPoliciesExt = decodedCertificate.extensionObject(oid: OID.certificatePolicies)
+                as? X509Certificate.CertificatePoliciesExtension else {
+            return ""
+        }
+        
+        for policy in certPoliciesExt.policies ?? [] {
+            print("Policy OID: \(policy.oid)")
+            for qualifier in policy.qualifiers ?? [] {
+                print("  ↪ Qualifier OID: \(qualifier.oid)")
+                print("  ↪ Qualifier Value: \(qualifier.value ?? "No value")")
+            }
+        }
+        
+        return certPoliciesExt.policies?.map { $0.oid }.joined(separator: ", ") ?? ""
+    }
+    
 }
