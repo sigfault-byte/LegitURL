@@ -13,6 +13,7 @@ struct URLAnalyzer {
     // MARK: - Public Entry Point
     public static func analyze(urlString: String) {
         resetQueue()
+        hasManuallyStopped = false
         
         let extractedInfo = extractComponents(from: urlString)
         
