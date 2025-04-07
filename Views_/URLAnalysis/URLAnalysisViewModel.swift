@@ -21,7 +21,7 @@ class URLAnalysisViewModel: ObservableObject {
     @Published var liveLegitScore: Int = 0
     
     @Published var showingWarningsSheet : Bool = false
-
+    
     //ModelViews to populate
     @Published var scoreSummaryVM = ScoreSummaryViewModel(
         score: 100,
@@ -54,7 +54,7 @@ class URLAnalysisViewModel: ObservableObject {
     
     // Timer for pooling
     private var timer: Timer?
-
+    
     init(urlInput: String, infoMessage: String) {
         self.urlInput = urlInput
         self.infoMessage = infoMessage
@@ -82,56 +82,56 @@ class URLAnalysisViewModel: ObservableObject {
                 }
             }
         }
-
+        
         // Pooling data, this is ugly but necessary before refactoring struct to class, there is a "lag" when pooling data, defering the stop is necessary
         timer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            self.updateAnalysisState()
+//            self.updateAnalysisState()
             
             if self.urlQueue.isAnalysisComplete {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    self.stopAnalysis()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     self.updateAnalysisState()
                     self.allSecurityWarnings = self.urlQueue.allWarnings
                     self.filterErrorMessage()
                     self.populateDestinationVM()
                     self.isSynchIsOver = true
+                    self.stopAnalysis()
                 }
             }
         }
-        
-        // TAsk is the real player, but this cascade into a will smith @mainactor movie
-//        Task {
-//            while !self.urlQueue.isAnalysisComplete {
-//                self.updateAnalysisState()
-//                try? await Task.sleep(nanoseconds: 400_000_000)
-//            }
-//
-//            // Final update and state sync
-//            self.updateAnalysisState()
-//            self.stopAnalysis()
-//            self.populateDestinationVM()
-//            self.filterErrorMessage()
-//            self.isSynchIsOver = true
-//        }
     }
+//     TAsk is the real player, but this cascade into a will smith @mainactor movie
+//            Task {
+//                while !self.urlQueue.isAnalysisComplete {
+//                    self.updateAnalysisState()
+//                    try? await Task.sleep(nanoseconds: 400_000_000)
+//                }
+//    
+//                // Final update and state sync
+//                self.updateAnalysisState()
+//                self.stopAnalysis()
+//                self.populateDestinationVM()
+//                self.filterErrorMessage()
+//                self.isSynchIsOver = true
+//            }
+//        }
     
     
     //Assigning pooled data
     private func updateAnalysisState() {
         self.isAnalysisComplete = self.urlQueue.isAnalysisComplete
         self.allSecurityWarnings = self.urlQueue.allWarnings
-
+        
         self.scoreSummaryVM.score = self.urlQueue.LegitScore
         self.scoreSummaryVM.isSynchIsOver = self.urlQueue.isAnalysisComplete
-
+        
         self.urlComponentsVM.isAnalysisComplete = self.urlQueue.isAnalysisComplete
         self.urlComponentsVM.urlInfo = self.urlQueue.offlineQueue
         self.urlComponentsVM.onlineInfo = self.urlQueue.onlineQueue
         
         
     }
-
+    
     func stopAnalysis() {
         self.timer?.invalidate()
         self.timer = nil

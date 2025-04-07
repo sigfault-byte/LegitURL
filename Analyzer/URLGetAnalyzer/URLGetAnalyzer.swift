@@ -6,7 +6,7 @@ struct URLGetAnalyzer {
         let urlOrigin = urlInfo.components.host ?? ""
         
         // ✅ Retrieve OnlineURLInfo using the ID and guard for sanity check and sync mystery
-        guard let onlineInfo = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id }) else {
+        guard let onlineInfo = urlInfo.onlineInfo else {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ No online analysis found for this URL. Skipping further checks.",
                 severity: .critical,
@@ -15,11 +15,18 @@ struct URLGetAnalyzer {
             ))
             return
         }
-        
+
+        //Should be Done in urlgGetExtract, in the meantime ill rawdog it here
         let finalURL = onlineInfo.finalRedirectURL ?? originalURL
         let headers = onlineInfo.normalizedHeaders ?? [:]
+        let cookies = GetAnalyzerUtils.extract(HeaderExtractionType.setCookie, from: headers)
+        let responseCode = onlineInfo.serverResponseCode ?? 0
+        
+        //Http response handler
+        HandleHTTPResponse.cases(responseCode: responseCode, urlInfo: &urlInfo)
+        
 
-        // Analyze body response
+        // Analyze body response Body first
         // TODO : multi check the final url, there can be only one! -> we do not extract final url from the body for now
         if let rawbody = onlineInfo.responseBody,
            let contentType = headers["content-type"]?.lowercased(),
@@ -29,9 +36,11 @@ struct URLGetAnalyzer {
                                  contentType: contentType,
                                  responseCode: responseCode,
                                  urlOrigin: urlOrigin,
-                                 urlInfo: &urlInfo)
+                                 warnings: &urlInfo.warnings)
         }
-        
+
+//        Then TLS
+
         if let tlsCertificate = onlineInfo.parsedCertificate {
             let domainAndTLD = [urlInfo.domain, urlInfo.tld].compactMap { $0 }.joined(separator: ".")
             let host = urlInfo.host ?? ""
@@ -40,11 +49,20 @@ struct URLGetAnalyzer {
                                            domain: domainAndTLD,
                                            warnings: &urlInfo.warnings )
         }
+
+//        Headers
+//        Cookie first
+        CookiesAnalyzer.analyzeAll(from: cookies,
+                                   httpResponseCode: responseCode,
+                                   url: urlOrigin,
+                                   warnings: &urlInfo.warnings)
         
-        //  Analyze headers for security
+
+        //  Analyze headers for content security policy
         let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin)
         urlInfo.warnings.append(contentsOf: headerWarnings)
 
+        
         //  Detect silent redirect (200 OK but URL changed)
         let normalizedOriginalURL = originalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let normalizedFinalURL = finalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))

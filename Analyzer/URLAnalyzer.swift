@@ -124,28 +124,37 @@ struct URLAnalyzer {
         Task {
             do {
                 let onlineInfo = try await URLGetExtract.extractAsync(urlInfo: currentURLInfo)
- 
-                if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) {
-                    var updatedURLInfo = URLQueue.shared.offlineQueue[index]
-                    updatedURLInfo.onlineInfo = onlineInfo
-                    URLGetAnalyzer.analyze(urlInfo: &updatedURLInfo)
-                    URLQueue.shared.offlineQueue[index] = updatedURLInfo
-                    URLQueue.shared.offlineQueue[index].processedOnline = true
- 
-                    if let finalRedirect = onlineInfo.finalRedirectURL {
-                        handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect)
-                    }
+
+                guard let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) else {
+                    print("❌ Could not find URLInfo to attach onlineInfo")
+                    return
                 }
+
+                var updatedURLInfo = URLQueue.shared.offlineQueue[index]
+                updatedURLInfo.onlineInfo = onlineInfo
+                URLQueue.shared.offlineQueue[index] = updatedURLInfo
+
+                // ✅ Safe to analyze AFTER onlineInfo has been stored
+                URLGetAnalyzer.analyze(urlInfo: &updatedURLInfo)
+                URLQueue.shared.offlineQueue[index] = updatedURLInfo
+                URLQueue.shared.offlineQueue[index].processedOnline = true
+
+                if let finalRedirect = updatedURLInfo.onlineInfo?.finalRedirectURL {
+                    handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect)
+                }
+
             } catch {
                 let warning = SecurityWarning(message: error.localizedDescription,
                                               severity: .fetchError,
                                               url: currentURLInfo.components.host ?? "",
                                               source: .onlineAnalysis)
                 URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
-                print("❌ Error handled:", error.localizedDescription)
                 markURLInfoOnlineProcessed(for: currentURLInfo)
+                processOnlineQueue()
+                return
             }
- 
+
+            // Always move to next item after success
             processOnlineQueue()
         }
     }

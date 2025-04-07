@@ -1,11 +1,9 @@
 import Foundation
 
 struct BodyAnalyzer {
-    static func analyze(bodyData: Data, contentType: String, responseCode: Int, urlOrigin: String, urlInfo: inout URLInfo) {
-        var warnings: [SecurityWarning] = []
+    static func analyze(bodyData: Data, contentType: String, responseCode: Int, urlOrigin: String, warnings: inout [SecurityWarning]) {
         var scriptRatio = 0.0
         var matchedAnyCriticalOrSuspicious = false
-        
         guard responseCode == 200 else {
             return
         }
@@ -201,7 +199,5 @@ struct BodyAnalyzer {
 //
 //            }
         }
-        
-        urlInfo.warnings.append(contentsOf: warnings)
     }
 }

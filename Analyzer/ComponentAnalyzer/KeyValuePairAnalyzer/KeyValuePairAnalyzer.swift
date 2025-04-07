@@ -23,7 +23,7 @@ struct KeyValuePairAnalyzer {
         for index in keys.indices {
             // Process the key.
             if let key = keys[index], !key.isEmpty {
-                let keyNode = LamaiDecoding.decode(input: key, maxDepth: 6)
+                let keyNode = LamaiDecoding.decode(input: key, maxDepth: 4)
                 if keyNode.hasDeepDescendant() {
                     if comp == "query" {
                         urlInfo.components.lamaiTrees[.queryKey, default: []].append(keyNode)

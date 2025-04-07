@@ -4,7 +4,11 @@
 //
 //  Created by Chief Hakka on 24/03/2025.
 //
-
+// TODO: Adapt Lamai for Set-Cookie analysis context.
+// - Most cookie values are percent or base64 encoded blobs
+// - Some are delimited flags or IDs, ideal for split heuristics
+// - A few may require binary/base64 tolerance (avoid UTF-8-only decoding assumptions)
+// - Consider skipping full tree generation unless wasRelevant=true or looksLikeToken()
 import Foundation
 
 struct LamaiDecoding {

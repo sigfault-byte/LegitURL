@@ -17,6 +17,13 @@ class URLQueue: ObservableObject {
     var allWarnings: [SecurityWarning] {
         offlineQueue.flatMap { $0.warnings }
     }
+//    
+    var allWarningsDebug: String {
+        offlineQueue
+            .flatMap { $0.warnings }
+            .map { "• [\($0.severity.rawValue.uppercased())] \($0.message)" }
+            .joined(separator: "\n")
+    }
     
     var criticalAndFetchErrorWarnings: [SecurityWarning] {
         allWarnings.filter { $0.severity == .critical || $0.severity == .fetchError }
@@ -139,6 +146,7 @@ struct OnlineURLInfo: Identifiable {
     var certificateAuthority: String?
     var sslValidity: Bool = false
     var finalRedirectURL: String?
+    var cookies: [String: String] = [:]
     
 //    //    Need to be either analysed, or cleaned because it can be way too big!
 //    var formattedBody: String {
@@ -156,7 +164,8 @@ struct OnlineURLInfo: Identifiable {
          humanBodySize: Int? = 0,
          certificateAuthority: String? = nil,
          sslValidity: Bool = false,
-         finalRedirectURL: String? = nil)
+         finalRedirectURL: String? = nil,
+         cookies: [String:String] = [:])
     {
         self.id = urlInfo.id
         self.serverResponseCode = responseCode
@@ -169,6 +178,7 @@ struct OnlineURLInfo: Identifiable {
         self.certificateAuthority = certificateAuthority
         self.sslValidity = sslValidity
         self.finalRedirectURL = finalRedirectURL
+        self.cookies = cookies
     }
 }
 
