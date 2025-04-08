@@ -18,7 +18,7 @@ struct ScoreSummaryView: View {
                     Spacer()
                     VStack(alignment: .trailing) {
                         Text(viewModel.labelText)
-                            .font(viewModel.useTitleFont ? .title : .system(size: 70, weight: .black, design: .monospaced))
+                            .font(.title)
                             .multilineTextAlignment(.trailing)
                     }
                     .frame(maxWidth: viewModel.shouldShowDivider ? .infinity : nil)

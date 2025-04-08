@@ -68,14 +68,21 @@ struct PenaltySystem {
         static let highEntropyKeyOrValue               = -5
         static let longQuery                           = -5
         
+        //JAVASCRIPT & SECURITY ISSUES
+         static let javascriptXSS                       = -30
+         static let deepObfuscation                     = -20
+         static let suspiciousPattern                   = -15
+         static let base64Url                           = -10
+        
+        
+/////////////////////ONLINE ///////////////////////////////////////////
+        ///Body
+        ///Cookie////
+        
         //RESPONSE HEADER ISSUE
         static let hidden200Redirect                   = -20
 
-       // 🔧 JAVASCRIPT & SECURITY ISSUES
-        static let javascriptXSS                       = -30
-        static let deepObfuscation                     = -20
-        static let suspiciousPattern                   = -15
-        static let base64Url                           = -10
+       
         
         // Redirect
         static let malformedRedirect                  = -20

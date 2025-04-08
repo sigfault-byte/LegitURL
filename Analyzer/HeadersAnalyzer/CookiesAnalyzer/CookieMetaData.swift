@@ -1,4 +1,3 @@
-//
 //  CookieMetaData.swift
 //  URLChecker
 //
@@ -6,7 +5,12 @@
 //
 
 import Foundation
-struct CookieMetadata {
+let trackingKeywords = Set(["sessionid", "sid", "sess", "jsessionid", "phpsessid", "utm_", "fbp", "_ga", "_gid", "_gcl_au", "_gat", "ajs_user_id", "cluid", "visitor_id", "trackid", "tracker", "campaign", "click_id", "__utm", "__hssc", "__hstc", "__cf_bm", "ads", "ad_id", "affiliate_id", "pixel_id"])
+
+typealias CookieSeverity = SecurityWarning.SeverityLevel
+
+
+struct CookieMetadata: Hashable{
     let name: String
     let value: String
     let domain: String

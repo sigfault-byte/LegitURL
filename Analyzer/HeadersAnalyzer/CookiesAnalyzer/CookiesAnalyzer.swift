@@ -31,7 +31,7 @@ struct CookiesAnalyzer {
     static func analyzeAll(from headersCookies: [String]?,
                            httpResponseCode: Int,
                            url: String,
-                           warnings: inout [SecurityWarning]) -> Void {
+                           urlInfo: inout URLInfo) -> Void {
         guard let headersCookies = headersCookies, !headersCookies.isEmpty else {
             return
         }
@@ -48,7 +48,7 @@ struct CookiesAnalyzer {
         print("AVG COOKIE SIZE :", avgCookieSize, "URL IS :", url, "responseCode is :", httpResponseCode)
         //        Google = grandma of internet, they do not give cookies on a 3xx. If even Google doesn’t do it, no one should.
         if httpResponseCode != 200 {
-            warnings.append(SecurityWarning(
+            urlInfo.warnings.append(SecurityWarning(
                 message: "Cookies averaging \(avgCookieSize) bytes set during a redirect or error (code \(httpResponseCode)). \(totalValueSize) bytes total of cookies.",
                 severity: .suspicious,
                 url: url,
@@ -57,9 +57,9 @@ struct CookiesAnalyzer {
             //Todo => scoring logic and penalty: suspicionIndex ?
         }
         
+        //tracking but on a 200 is Okayish
         if httpResponseCode == 200 && avgCookieSize >= 16 {
-            print("✅ Entered TRACKING block — should flag this")
-            warnings.append(SecurityWarning(
+            urlInfo.warnings.append(SecurityWarning(
                 message: "Cookies averaging \(avgCookieSize) bytes. \(totalValueSize) bytes total of cookies.",
                 severity: .tracking,
                 url: url,
@@ -70,28 +70,16 @@ struct CookiesAnalyzer {
         
         // Per-cookie analysis
         for cookie in parsedCookies {
-            analyzeEach(cookie: cookie, responseCode: String(httpResponseCode), url: url)
-        }
-    }
-    
-    
-    
-    static func analyzeEach(cookie: CookieMetadata, responseCode: String, url: String) {
-        //        print("🔍 Analyzing cookie: \(cookie)")
-        // Check long expiry
-        if let expireDate = cookie.expire {
-            let maxDuration: TimeInterval = 60 * 60 * 24 * 365 * 2 // 2 years
-            if expireDate.timeIntervalSinceNow > maxDuration {
-                print("⚠️ Cookie has unusually long lifespan: \(expireDate)")
-            }
-        }
-        // Check for known tracking names
-        let trackingKeywords = ["sessionid", "sid", "sess", "jsessionid", "phpsessid", "utm_", "fbp", "_ga", "_gid", "_gcl_au", "_gat", "ajs_user_id", "cluid", "visitor_id", "trackid", "tracker", "campaign", "click_id", "__utm", "__hssc", "__hstc", "__cf_bm", "ads", "ad_id", "affiliate_id", "pixel_id"]
-        for keyword in trackingKeywords {
-            if cookie.name.lowercased().contains(keyword.lowercased()) {
-                print("⚠️ Potential tracker detected: \(cookie.name)")
-                break
-            }
+            let result = analyzeCookie(cookie, httpResponseCode: httpResponseCode)
+            let combinedFlags = result.flags.joined(separator: ", ")
+            urlInfo.warnings.append(SecurityWarning(
+                message: "Cookie `\(cookie.name)` flagged as \(result.severity). Reasons: \(combinedFlags).",
+                severity: result.severity,
+                url: url,
+                source: .onlineAnalysis
+            ))
+            urlInfo.onlineInfo?.cookiesForUI.append(result)
+            
         }
     }
 }

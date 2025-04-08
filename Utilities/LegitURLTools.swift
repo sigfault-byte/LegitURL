@@ -143,7 +143,7 @@ struct LegitURLTools {
             return (false, nil)
         }
         
-        let length = Float(input.count)
+        let length = Float(input.utf8.count)
         var frequency: [Character: Float] = [:]
         
         // Count character frequencies

@@ -55,7 +55,7 @@ struct URLGetAnalyzer {
         CookiesAnalyzer.analyzeAll(from: cookies,
                                    httpResponseCode: responseCode,
                                    url: urlOrigin,
-                                   warnings: &urlInfo.warnings)
+                                   urlInfo: &urlInfo)
         
 
         //  Analyze headers for content security policy

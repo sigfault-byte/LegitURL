@@ -10,7 +10,8 @@ class URLAnalysisViewModel: ObservableObject {
     var urlQueue = URLQueue.shared
     @Published var analysisStarted: Bool = false
     @Published var score = URLQueue.shared.LegitScore
-    @Published var isAnalysisComplete: Bool = false
+    @Published var isAnalysisComplete = false
+    @Published var finalCompletionReached = URLQueue.shared.finalCompletionReached
     @Published var isSynchIsOver: Bool = false
     @Published var allSecurityWarnings: [SecurityWarning] = []
     
@@ -84,11 +85,11 @@ class URLAnalysisViewModel: ObservableObject {
         }
         
         // Pooling data, this is ugly but necessary before refactoring struct to class, there is a "lag" when pooling data, defering the stop is necessary
-        timer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-//            self.updateAnalysisState()
+            self.updateAnalysisState()
             
-            if self.urlQueue.isAnalysisComplete {
+            if self.urlQueue.finalCompletionReached {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     self.updateAnalysisState()
                     self.allSecurityWarnings = self.urlQueue.allWarnings
@@ -123,9 +124,9 @@ class URLAnalysisViewModel: ObservableObject {
         self.allSecurityWarnings = self.urlQueue.allWarnings
         
         self.scoreSummaryVM.score = self.urlQueue.LegitScore
-        self.scoreSummaryVM.isSynchIsOver = self.urlQueue.isAnalysisComplete
+        self.scoreSummaryVM.isSynchIsOver = self.urlQueue.finalCompletionReached
         
-        self.urlComponentsVM.isAnalysisComplete = self.urlQueue.isAnalysisComplete
+        self.urlComponentsVM.isAnalysisComplete = self.urlQueue.finalCompletionReached
         self.urlComponentsVM.urlInfo = self.urlQueue.offlineQueue
         self.urlComponentsVM.onlineInfo = self.urlQueue.onlineQueue
         

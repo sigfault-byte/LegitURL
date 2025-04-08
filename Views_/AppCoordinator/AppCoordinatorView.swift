@@ -12,15 +12,6 @@ enum RootScreen {
     case analysis(urlInput: String, infoMessage: String)
 }
 
-struct LegitSessionManager {
-    static func reset() {
-        URLQueue.shared.offlineQueue.removeAll()
-        URLQueue.shared.onlineQueue.removeAll()
-        URLQueue.shared.LegitScore = 100
-        URLQueue.shared.isAnalysisComplete = false
-    }
-}
-
 //Main rooter like struct
 struct AppCoordinatorView: View {
     @State private var rootScreen: RootScreen = .input
@@ -37,7 +28,6 @@ struct AppCoordinatorView: View {
                 urlInput: urlInput,
                 infoMessage: infoMessage,
                 onExit: {
-                    LegitSessionManager.reset()
                     rootScreen = .input
                 }
             )

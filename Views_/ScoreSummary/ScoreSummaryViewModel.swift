@@ -32,9 +32,7 @@ class ScoreSummaryViewModel: ObservableObject{
     
     var displayError: Bool = false
     
-    @Published var labelText: String = "0x"
-    
-    @Published var useTitleFont: Bool = false
+    @Published var labelText: String = "Legit Score"
     
     var flickerText: String = "00"
     var flickerColor: Color = .gray
@@ -135,7 +133,6 @@ class ScoreSummaryViewModel: ObservableObject{
             withAnimation {
                 if  self.isSynchIsOver {
                     self.labelText = "Legit Score"
-                    self.useTitleFont = true
                     self.displayScore = String(self.score)
                 } else {
                     if self.score != 0 {

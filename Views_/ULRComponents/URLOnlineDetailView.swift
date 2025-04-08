@@ -30,6 +30,12 @@ struct URLOnlineDetailView: View {
                     Text("View Response Headers")
                 }
             }
+            let cookies = onlineInfo.cookiesForUI.compactMap { $0 }
+            if !cookies.isEmpty {
+                NavigationLink(destination: CookieListView(cookies: cookies)) {
+                    Text("View Cookies (\(cookies.count))")
+                }
+            }
             bodyNavigationLink(for: onlineInfo)
         }
     }

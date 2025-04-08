@@ -36,13 +36,13 @@ struct URLAnalyzer {
             print("🛑 Prevented re-entry into processQueue() — analysis was stopped.")
             return
         }
-
+        
         // Check if the offline queue limit is reached
         guard URLQueue.shared.offlineQueue.count < 5 else {
             print("⛔ Offline queue limit reached. Stopping further analysis.")
             return
         }
-
+        
         // Find the first unprocessed URLInfo
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processed }) else {
             if hasManuallyStopped {
@@ -53,7 +53,7 @@ struct URLAnalyzer {
             processOnlineQueue()
             return
         }
-
+        
         // Process the current URLInfo and then recursively process the next one
         if processOfflineURL(at: currentIndex) {
             processQueue()
@@ -65,12 +65,12 @@ struct URLAnalyzer {
         var urlInfo = URLQueue.shared.offlineQueue[index]
         
         // Check for early exit conditions before processing
-//        if shouldStopAnalysis(atIndex: index) { return false }
+        //        if shouldStopAnalysis(atIndex: index) { return false }
         
         // Run offline analysis: Host analysis
         HostAnalysis.analyze(urlObject: &urlInfo)
         URLQueue.shared.offlineQueue[index] = urlInfo
-//        if shouldStopAnalysis(atIndex: index) { return false }
+        //        if shouldStopAnalysis(atIndex: index) { return false }
         
         // Run PQF analysis and capture any new URL generated
         let newURL = PQFAnalyzer.analyze(urlInfo: &urlInfo)
@@ -109,51 +109,60 @@ struct URLAnalyzer {
         // Find the first URLInfo that hasn't been processed online
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline && !$0.processingNow }) else {
             print("✅ All online checks complete.")
-            URLQueue.shared.isAnalysisComplete = true
+            if URLQueue.shared.activeAsyncCount == 0 {
+                URLQueue.shared.finalCompletionReached = true
+                if URLQueue.shared.LegitScore < 0 {
+                    URLQueue.shared.LegitScore = 0
+                }
+                URLQueue.shared.isAnalysisComplete = true
+            }
+            
             return
         }
+        if shouldStopAnalysis(atIndex: currentIndex) { return }
         
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
-        URLQueue.shared.offlineQueue[currentIndex].processingNow = true
         
         // If there's no online info, add a placeholder to the online queue
         if currentURLInfo.onlineInfo == nil {
             URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
         }
-        
+        URLQueue.shared.activeAsyncCount += 1
         Task {
             do {
+                URLQueue.shared.activeAsyncCount -= 1
                 let onlineInfo = try await URLGetExtract.extractAsync(urlInfo: currentURLInfo)
-
+                
                 guard let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) else {
                     print("❌ Could not find URLInfo to attach onlineInfo")
                     return
                 }
-
+                
                 var updatedURLInfo = URLQueue.shared.offlineQueue[index]
                 updatedURLInfo.onlineInfo = onlineInfo
                 URLQueue.shared.offlineQueue[index] = updatedURLInfo
-
-                // ✅ Safe to analyze AFTER onlineInfo has been stored
+                
                 URLGetAnalyzer.analyze(urlInfo: &updatedURLInfo)
                 URLQueue.shared.offlineQueue[index] = updatedURLInfo
                 URLQueue.shared.offlineQueue[index].processedOnline = true
-
+                
                 if let finalRedirect = updatedURLInfo.onlineInfo?.finalRedirectURL {
                     handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect)
                 }
-
+                
             } catch {
-                let warning = SecurityWarning(message: error.localizedDescription,
+                let warning = SecurityWarning(message: error.localizedDescription + "\nAnalysis is incomplete.",
                                               severity: .fetchError,
                                               url: currentURLInfo.components.host ?? "",
                                               source: .onlineAnalysis)
                 URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
+                URLQueue.shared.LegitScore -= 100
                 markURLInfoOnlineProcessed(for: currentURLInfo)
+                URLQueue.shared.offlineQueue[currentIndex].processingNow = true
                 processOnlineQueue()
                 return
             }
-
+            
             // Always move to next item after success
             processOnlineQueue()
         }
@@ -173,6 +182,8 @@ struct URLAnalyzer {
     public static func resetQueue() {
         URLQueue.shared.offlineQueue.removeAll()
         URLQueue.shared.onlineQueue.removeAll()
+        URLQueue.shared.isAnalysisComplete = false
+        URLQueue.shared.finalCompletionReached = false
         URLQueue.shared.LegitScore = 100
     }
     
@@ -189,13 +200,17 @@ struct URLAnalyzer {
         
         if urlInfo.warnings.contains(where: { $0.severity == .critical }) {
             URLQueue.shared.offlineQueue[index].processed = true
+            URLQueue.shared.LegitScore -= 100
             URLQueue.shared.isAnalysisComplete = true
+            URLQueue.shared.finalCompletionReached = true
             hasManuallyStopped = true
             print("❌ Critical warning found. Stopping analysis.")
             return true
         } else if urlInfo.warnings.contains(where: { $0.severity == .fetchError }) {
             URLQueue.shared.offlineQueue[index].processed = true
+            URLQueue.shared.LegitScore -= 100
             URLQueue.shared.isAnalysisComplete = true
+            URLQueue.shared.finalCompletionReached = true
             print("⚠️ URL GET request failed. Stopping analysis.")
             return true
         }

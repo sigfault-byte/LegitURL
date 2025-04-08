@@ -8,7 +8,7 @@ struct KnownBrands {
     static let names: Set<String> = [
         // 🔹 Tech Giants & Software
         "apple", "microsoft", "google", "amazon", "openai", "adobe", "oracle", "ibm",
-        "intel", "nvidia", "amd", "samsung", "huawei", "lenovo", "dell", "hp",
+        "intel", "nvidia", "amd", "samsung", "huawei", "lenovo", "dell", "hp", "wetransfer",
         
         // 🔹 Social Media & Communication
         "facebook", "twitter", "instagram", "linkedin", "whatsapp", "tiktok",

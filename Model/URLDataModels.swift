@@ -12,12 +12,17 @@ class URLQueue: ObservableObject {
     @Published var onlineQueue: [OnlineURLInfo] = []
     @Published var LegitScore: Int = 100
     @Published var isAnalysisComplete: Bool = false
+//    @Published var finalSnapshot: FinalAnalysisSnapshot? = nil
+    
+    @Published var finalCompletionReached: Bool = false
+    // i am sorry alan turing
+    @Published var activeAsyncCount: Int = 0
     
     /// Dynamically updates with all warnings from `offlineQueue`
     var allWarnings: [SecurityWarning] {
         offlineQueue.flatMap { $0.warnings }
     }
-//    
+//
     var allWarningsDebug: String {
         offlineQueue
             .flatMap { $0.warnings }
@@ -147,6 +152,7 @@ struct OnlineURLInfo: Identifiable {
     var sslValidity: Bool = false
     var finalRedirectURL: String?
     var cookies: [String: String] = [:]
+    var cookiesForUI: [CookieAnalysisResult?] = []
     
 //    //    Need to be either analysed, or cleaned because it can be way too big!
 //    var formattedBody: String {
@@ -165,7 +171,9 @@ struct OnlineURLInfo: Identifiable {
          certificateAuthority: String? = nil,
          sslValidity: Bool = false,
          finalRedirectURL: String? = nil,
-         cookies: [String:String] = [:])
+         cookies: [String:String] = [:],
+         cookiesForUI: [CookieAnalysisResult?] = []
+    )
     {
         self.id = urlInfo.id
         self.serverResponseCode = responseCode
@@ -179,6 +187,7 @@ struct OnlineURLInfo: Identifiable {
         self.sslValidity = sslValidity
         self.finalRedirectURL = finalRedirectURL
         self.cookies = cookies
+        self.cookiesForUI = cookiesForUI
     }
 }
 
