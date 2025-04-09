@@ -13,7 +13,6 @@ struct URLAnalyzer {
     // MARK: - Public Entry Point
     public static func analyze(urlString: String) {
         resetQueue()
-        hasManuallyStopped = false
         
         let extractedInfo = extractComponents(from: urlString)
         
@@ -33,23 +32,19 @@ struct URLAnalyzer {
     
     private static func processQueue() {
         guard !hasManuallyStopped else {
-            print("🛑 Prevented re-entry into processQueue() — analysis was stopped.")
             return
         }
         
         // Check if the offline queue limit is reached
         guard URLQueue.shared.offlineQueue.count < 5 else {
-            print("⛔ Offline queue limit reached. Stopping further analysis.")
             return
         }
         
         // Find the first unprocessed URLInfo
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processed }) else {
             if hasManuallyStopped {
-                print("🛑 Analysis was stopped. Not starting OnlineQueue.")
                 return
             }
-            print("✅ All URLs processed in OfflineQueue. Now processing OnlineQueue...")
             processOnlineQueue()
             return
         }
@@ -110,17 +105,14 @@ struct URLAnalyzer {
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline && !$0.processingNow }) else {
             print("✅ All online checks complete.")
             if URLQueue.shared.activeAsyncCount == 0 {
-                URLQueue.shared.finalCompletionReached = true
-                if URLQueue.shared.LegitScore < 0 {
-                    URLQueue.shared.LegitScore = 0
-                }
-                URLQueue.shared.isAnalysisComplete = true
+                URLAnalyzerUtils.finalizeAnalysis()
             }
             
             return
         }
         if shouldStopAnalysis(atIndex: currentIndex) { return }
         
+        // Work on a copy, the inout on the async call is somehow not stable, or maybe using the correct sync await cascade refactor can get rid of this copy.
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
         
         // If there's no online info, add a placeholder to the online queue
@@ -130,7 +122,7 @@ struct URLAnalyzer {
         URLQueue.shared.activeAsyncCount += 1
         Task {
             do {
-                URLQueue.shared.activeAsyncCount -= 1
+                print("123")
                 let onlineInfo = try await URLGetExtract.extractAsync(urlInfo: currentURLInfo)
                 
                 guard let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) else {
@@ -153,16 +145,17 @@ struct URLAnalyzer {
             } catch {
                 let warning = SecurityWarning(message: error.localizedDescription + "\nAnalysis is incomplete.",
                                               severity: .fetchError,
-                                              url: currentURLInfo.components.host ?? "",
-                                              source: .onlineAnalysis)
+                                              penalty: PenaltySystem.Penalty.critical,
+                                              url: currentURLInfo.components.coreURL ?? "",
+                                              source: .getError)
                 URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
-                URLQueue.shared.LegitScore -= 100
                 markURLInfoOnlineProcessed(for: currentURLInfo)
                 URLQueue.shared.offlineQueue[currentIndex].processingNow = true
+                URLQueue.shared.activeAsyncCount -= 1
                 processOnlineQueue()
                 return
             }
-            
+            URLQueue.shared.activeAsyncCount -= 1
             // Always move to next item after success
             processOnlineQueue()
         }
@@ -177,14 +170,13 @@ struct URLAnalyzer {
         }
     }
     
-    // MARK: - Utility Functions
+    // MARK: - Utility Functions --
     
     public static func resetQueue() {
         URLQueue.shared.offlineQueue.removeAll()
         URLQueue.shared.onlineQueue.removeAll()
-        URLQueue.shared.isAnalysisComplete = false
-        URLQueue.shared.finalCompletionReached = false
-        URLQueue.shared.LegitScore = 100
+        URLQueue.shared.legitScore.score = 100
+        hasManuallyStopped = false
     }
     
     private static func sanitizeAndValidate(_ urlString: String, _ infoMessage: inout String?) -> (String?, String?) {
@@ -200,17 +192,16 @@ struct URLAnalyzer {
         
         if urlInfo.warnings.contains(where: { $0.severity == .critical }) {
             URLQueue.shared.offlineQueue[index].processed = true
-            URLQueue.shared.LegitScore -= 100
-            URLQueue.shared.isAnalysisComplete = true
-            URLQueue.shared.finalCompletionReached = true
+            URLQueue.shared.legitScore.score -= 100
+            URLQueue.shared.legitScore.analysisCompleted = true
             hasManuallyStopped = true
             print("❌ Critical warning found. Stopping analysis.")
             return true
         } else if urlInfo.warnings.contains(where: { $0.severity == .fetchError }) {
             URLQueue.shared.offlineQueue[index].processed = true
-            URLQueue.shared.LegitScore -= 100
-            URLQueue.shared.isAnalysisComplete = true
-            URLQueue.shared.finalCompletionReached = true
+            URLQueue.shared.legitScore.score -= 100
+            URLQueue.shared.legitScore.analysisCompleted = true
+            hasManuallyStopped = true
             print("⚠️ URL GET request failed. Stopping analysis.")
             return true
         }

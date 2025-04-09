@@ -30,7 +30,10 @@ class DecodedNode: Identifiable {
         case isIPv4(String)
         case isIPv6(String)
         case email([String])
-        case json(keys: [String]) // New case for JSON
+        case json(keys: [String])
+        case brandExact(String) // New case for brand exact match
+        case brandContained(String) // New case for brand contained
+        case brandSimilar(String) // New case for brand similar
         
         var shortLabel: String {
             switch self {
@@ -44,6 +47,9 @@ class DecodedNode: Identifiable {
             case .isIPv6: return "IPv6"
             case .email: return "email"
             case .json: return "JSON" // Updated shortLabel for JSON
+            case .brandExact: return "BrandExact" // Short label for brand exact
+            case .brandContained: return "BrandContained" // Short label for brand contained
+            case .brandSimilar: return "BrandSimilar" // Short label for brand similar
             }
         }
     }
@@ -100,6 +106,18 @@ class DecodedNode: Identifiable {
             findingsList.append(.json(keys: keys))
         }
         
+        // New check for brand impersonation
+        if let match = NodeAnalyzer.detectBrandMatch(target) {
+            switch match {
+            case .exact(let brand):
+                findingsList.append(.brandExact(brand))
+            case .contained(let brand):
+                findingsList.append(.brandContained(brand))
+            case .similar(let brand):
+                findingsList.append(.brandSimilar(brand))
+            }
+        }
+        
         findings.append(contentsOf: findingsList)
         wasRelevant = !findingsList.isEmpty
     }
@@ -146,6 +164,12 @@ extension DecodedNode {
                 print("\(indent)  Email Found: \(value)")
             case .json(let keys): // Display JSON findings
                 print("\(indent)  📦 JSON Found with keys: \(keys.joined(separator: ", "))")
+            case .brandExact(let brand): // Display brand exact match
+                print("\(indent)  🏷️ Brand Exact Match: \(brand)")
+            case .brandContained(let brand): // Display brand contained
+                print("\(indent)  🧩 Brand Contained: \(brand)")
+            case .brandSimilar(let brand): // Display brand similar
+                print("\(indent)  🔍 Brand Similar: \(brand)")
             }
         }
         print("-----EndOfNode--------------------")
@@ -227,5 +251,13 @@ extension Data {
         }
         
         self = data
+    }
+}
+
+extension NodeAnalyzer {
+    enum BrandMatch {
+        case exact(String)
+        case contained(String)
+        case similar(String)
     }
 }

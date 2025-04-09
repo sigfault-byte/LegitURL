@@ -9,14 +9,18 @@ import SwiftUI
 class URLAnalysisViewModel: ObservableObject {
     var urlQueue = URLQueue.shared
     @Published var analysisStarted: Bool = false
-    @Published var score = URLQueue.shared.LegitScore
-    @Published var isAnalysisComplete = false
-    @Published var finalCompletionReached = URLQueue.shared.finalCompletionReached
+    @Published var isAnalysisComplete = URLQueue.shared.legitScore.analysisCompleted
+    
+    var allSecurityWarningsCount: Int {
+        warningsGroupedByURL.reduce(0) { $0 + $1.warnings.count }
+    }
     @Published var isSynchIsOver: Bool = false
-    @Published var allSecurityWarnings: [SecurityWarning] = []
+    
+    @Published var warningsGroupedByURL: [URLWarningGroup] = []
     
     var urlInput: String
     var infoMessage: String
+    
     @Published var showInfoMessage = true
     @Published var infoOpacity: Double = 1.0
     @Published var liveLegitScore: Int = 0
@@ -89,10 +93,9 @@ class URLAnalysisViewModel: ObservableObject {
             guard let self = self else { return }
             self.updateAnalysisState()
             
-            if self.urlQueue.finalCompletionReached {
+            if self.isAnalysisComplete {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     self.updateAnalysisState()
-                    self.allSecurityWarnings = self.urlQueue.allWarnings
                     self.filterErrorMessage()
                     self.populateDestinationVM()
                     self.isSynchIsOver = true
@@ -101,35 +104,23 @@ class URLAnalysisViewModel: ObservableObject {
             }
         }
     }
-//     TAsk is the real player, but this cascade into a will smith @mainactor movie
-//            Task {
-//                while !self.urlQueue.isAnalysisComplete {
-//                    self.updateAnalysisState()
-//                    try? await Task.sleep(nanoseconds: 400_000_000)
-//                }
-//    
-//                // Final update and state sync
-//                self.updateAnalysisState()
-//                self.stopAnalysis()
-//                self.populateDestinationVM()
-//                self.filterErrorMessage()
-//                self.isSynchIsOver = true
-//            }
-//        }
-    
     
     //Assigning pooled data
     private func updateAnalysisState() {
-        self.isAnalysisComplete = self.urlQueue.isAnalysisComplete
-        self.allSecurityWarnings = self.urlQueue.allWarnings
+        self.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
+        let structuredGroups = self.urlQueue.offlineQueue.map {
+            URLWarningGroup(urlInfo: $0, warnings: $0.warnings)
+        }
+        self.warningsGroupedByURL = structuredGroups
         
-        self.scoreSummaryVM.score = self.urlQueue.LegitScore
-        self.scoreSummaryVM.isSynchIsOver = self.urlQueue.finalCompletionReached
         
-        self.urlComponentsVM.isAnalysisComplete = self.urlQueue.finalCompletionReached
+        self.scoreSummaryVM.score = self.urlQueue.legitScore.score
+        self.scoreSummaryVM.isSynchIsOver = self.urlQueue.legitScore.analysisCompleted
+        
+        self.urlComponentsVM.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
         self.urlComponentsVM.urlInfo = self.urlQueue.offlineQueue
         self.urlComponentsVM.onlineInfo = self.urlQueue.onlineQueue
-        
+        print("Score in view: ",self.scoreSummaryVM.score)
         
     }
     
@@ -141,4 +132,5 @@ class URLAnalysisViewModel: ObservableObject {
     func showWarningsSheet() -> Void {
         self.showingWarningsSheet = true
     }
+    
 }

@@ -39,20 +39,21 @@ struct CookiesAnalyzer {
         // Parse each Set-Cookie header into CookieMetadata
         let parsedCookies: [CookieMetadata] = parseCookies(from: headersCookies, for: url)
         let numberOfCookies: Int = parsedCookies.count
+        let coreURL = urlInfo.components.coreURL ?? ""
         
         //        The size of the cookie is tied to the granularity of info it stores.
         //        let suspicionIndex = (avgCookieSize * Double(numberOfCookies)) / (httpResponseCode != 200 ? 1.5 : 3.0)
         //        let totalSize = headersCookies.reduce(0) { $0 + $1.utf8.count }
         let totalValueSize = parsedCookies.reduce(0) {$0 + $1.value.utf8.count}
         let avgCookieSize = Double(totalValueSize) / Double(numberOfCookies)
-        print("AVG COOKIE SIZE :", avgCookieSize, "URL IS :", url, "responseCode is :", httpResponseCode)
         //        Google = grandma of internet, they do not give cookies on a 3xx. If even Google doesn’t do it, no one should.
         if httpResponseCode != 200 {
             urlInfo.warnings.append(SecurityWarning(
                 message: "Cookies averaging \(avgCookieSize) bytes set during a redirect or error (code \(httpResponseCode)). \(totalValueSize) bytes total of cookies.",
                 severity: .suspicious,
-                url: url,
-                source: .onlineAnalysis
+                penalty: PenaltySystem.Penalty.cookiesOnNon200,
+                url: coreURL,
+                source: .cookie
             ))
             //Todo => scoring logic and penalty: suspicionIndex ?
         }
@@ -62,8 +63,9 @@ struct CookiesAnalyzer {
             urlInfo.warnings.append(SecurityWarning(
                 message: "Cookies averaging \(avgCookieSize) bytes. \(totalValueSize) bytes total of cookies.",
                 severity: .tracking,
-                url: url,
-                source: .onlineAnalysis
+                penalty: PenaltySystem.Penalty.moreThan16BofCookie,
+                url: coreURL,
+                source: .cookie
             ))
         }
         //Todo => scoring logic and penalty: suspicionIndex
@@ -72,11 +74,14 @@ struct CookiesAnalyzer {
         for cookie in parsedCookies {
             let result = analyzeCookie(cookie, httpResponseCode: httpResponseCode)
             let combinedFlags = result.flags.joined(separator: ", ")
+            let penalty = PenaltySystem.penaltyForCookieFlags(result.flags)
+
             urlInfo.warnings.append(SecurityWarning(
                 message: "Cookie `\(cookie.name)` flagged as \(result.severity). Reasons: \(combinedFlags).",
                 severity: result.severity,
+                penalty: penalty,
                 url: url,
-                source: .onlineAnalysis
+                source: .cookie
             ))
             urlInfo.onlineInfo?.cookiesForUI.append(result)
             

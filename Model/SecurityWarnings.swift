@@ -1,4 +1,3 @@
-//
 //  SecurityWarnings.swift
 //  LegitURL
 //
@@ -12,13 +11,15 @@ struct SecurityWarning: Identifiable{
     let id: UUID
     var message: String
     var severity: SeverityLevel
+    var penalty: Int
     var url: String
     var source: SourceType
     
-    init(message: String, severity: SeverityLevel, url: String, source: SourceType) {
+    init(message: String, severity: SeverityLevel, penalty: Int, url: String, source: SourceType) {
             self.id = UUID()
             self.message = message
             self.severity = severity
+            self.penalty = penalty
             self.url = url
             self.source = source
         }
@@ -48,14 +49,47 @@ struct SecurityWarning: Identifiable{
     }
     
     enum SourceType: Hashable {
-        case offlineAnalysis
-        case onlineAnalysis
-        case redirectedURL(hop: Int)
+        case host
+        case path
+        case query
+        case fragment
+        case cookie
+        case header
+        case body
+        case tls
+        case getError
+        case redirect
+        case responseCode
     }
 }
 // ✅ Update SeverityLevel to support sorting & icons
 extension SecurityWarning.SeverityLevel: CaseIterable {
     static var allWarnings: [SecurityWarning.SeverityLevel] {
         return [.critical, .dangerous, .scam, .suspicious, .tracking, .info, .fetchError]
+    }
+}
+
+extension SecurityWarning.SeverityLevel {
+    var iconName: String {
+        switch self {
+        case .info:
+            return "info.circle"
+        case .tracking:
+            return "dot.radiowaves.left.and.right"
+        case .suspicious:
+            return "exclamationmark.circle"
+        case .scam:
+            return "xmark.octagon"
+        case .dangerous:
+            return "exclamationmark.triangle"
+        case .critical:
+            return "exclamationmark.triangle.fill"
+        case .fetchError:
+            return "questionmark.circle"
+        }
+    }
+
+    var iconColor: Color {
+        return self.color
     }
 }

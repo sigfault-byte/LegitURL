@@ -10,9 +10,9 @@ struct WarningBannerComponent: View {
     @ObservedObject var viewModel: URLAnalysisViewModel
 
     var body: some View {
-        if viewModel.allSecurityWarnings.count > 0 {
+        if viewModel.allSecurityWarningsCount > 0 {
             HStack {
-                Text("⚠️ Warnings (\(viewModel.allSecurityWarnings.count))")
+                Text("⚠️ Warnings (\(viewModel.allSecurityWarningsCount))")
                     .font(.headline)
                     .foregroundColor(.red)
                     .padding(.vertical, 12)
@@ -28,7 +28,7 @@ struct WarningBannerComponent: View {
             )
             .sheet(isPresented: $viewModel.showingWarningsSheet) {
                 WarningsDetailView(
-                    viewModel: WarningsViewModel(warnings: viewModel.allSecurityWarnings)
+                    viewModel: WarningsViewModel(groupedByURL: viewModel.warningsGroupedByURL)
                 )
             }
         }

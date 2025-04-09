@@ -8,9 +8,9 @@
 import Foundation
 
 struct FragmentAnalyzer {
-    static func analyze(urlInfo: URLInfo) -> (URLInfo, String?) {
+    static func analyze(urlInfo: inout URLInfo) -> (String?) {
         var urlInfo = urlInfo
-        let urlOrigin = urlInfo.components.host ?? ""
+        let urlOrigin = urlInfo.components.coreURL ?? ""
         
         if let fragment = urlInfo.components.fragment {
             let allowedChars = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~=%:/")
@@ -23,8 +23,9 @@ struct FragmentAnalyzer {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Fragment is not a normal UI string fragment.",
                     severity: .info,
+                    penalty: 0,
                     url: urlOrigin,
-                    source: .offlineAnalysis
+                    source: .fragment
                 ))
 
                 let pairs = fragment.split(separator: "&", omittingEmptySubsequences: false)
@@ -36,8 +37,9 @@ struct FragmentAnalyzer {
                         urlInfo.warnings.append(SecurityWarning(
                             message: "Fragment pair '\(pair)' is malformed. It Should follow key=value format.",
                             severity: .suspicious,
+                            penalty: PenaltySystem.Penalty.malformedQueryPair,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: .fragment
                         ))
                         malformedPairFound = true
                         continue
@@ -47,8 +49,9 @@ struct FragmentAnalyzer {
                         urlInfo.warnings.append(SecurityWarning(
                             message: "Fragment pair '\(pair)' contains forbidden characters.",
                             severity: .suspicious,
+                            penalty: PenaltySystem.Penalty.malformedQueryPair,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: .fragment
                         ))
                         malformedPairFound = true
                     }
@@ -57,34 +60,35 @@ struct FragmentAnalyzer {
                 if malformedPairFound {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "Fragment does not fully conform to expected format or character set.",
-                        severity: .dangerous,
+                        severity: .info,
+                        penalty: 0,
                         url: urlOrigin,
-                        source: .offlineAnalysis
-                        
+                        source: .fragment
                     ))
-                    let deepWarnings = DeepScamHellCheck.analyze(queryOrFragment: fragment, isFragment: true, urlOrigin: urlOrigin)
-                    urlInfo.warnings.append(contentsOf: deepWarnings)
-                    URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
-                    return (urlInfo, nil)
-                }
-
-                // If it's a valid query-like fragment, extract key-value pairs and analyze further.
-                urlInfo.warnings.append(SecurityWarning(
-                    message: "Fragment is 'query-like' and uses key=value pairs.",
-                    severity: .info,
-                    url: urlOrigin,
-                    source: .offlineAnalysis
-                ))
+//                    let deepWarnings = DeepScamHellCheck.analyze(queryOrFragment: fragment, isFragment: true, urlOrigin: urlOrigin)
+//                    urlInfo.warnings.append(contentsOf: deepWarnings)
+//                    URLQueue.shared.LegitScore += PenaltySystem.Penalty.malformedQueryPair
+//                    return (nil)
+                } else {
+                    // If it's a valid query-like fragment, extract key-value pairs and analyze further.
+                    urlInfo.warnings.append(SecurityWarning(
+                        message: "Fragment is 'query-like' and uses key=value pairs.",
+                        severity: .info,
+                        penalty: 0,
+                        url: urlOrigin,
+                        source: .fragment
+                    ))}
+                
                 let (keys, values) = KeyValuePairExtract.extractAsArray(from: fragment)
                 urlInfo.components.fragmentKeys = keys
                 urlInfo.components.fragmentValues = values
 
                 var foundURL: String?
                 (urlInfo, foundURL) = KeyValuePairAnalyzer.analyze(urlInfo: &urlInfo, comp: "fragment")
-                return (urlInfo, foundURL)
+                return (foundURL)
             }
         }
         
-        return (urlInfo, nil)
+        return (nil)
     }
 }

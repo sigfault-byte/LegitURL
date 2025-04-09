@@ -19,7 +19,7 @@ struct DomainAndTLDExtract {
         for i in stride(from: explodedParts.count - 1, to: 0, by: -1) {
             let possibleTLD = explodedParts.suffix(i).joined(separator: ".")
             
-            if isValidTLD(possibleTLD) { // Now calls the dedicated function
+            if isValidTLD(possibleTLD) {
                 longestValidTLD = possibleTLD
                 domainCandidate = explodedParts[explodedParts.count - i - 1]
                 break

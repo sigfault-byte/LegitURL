@@ -1,23 +1,34 @@
+//                    // TODO: This should be decode again to see what its carrying
+//                        like so, need to give lamai a better interface, create a new datamodel to store the finding that were also decoded in the findings. findingception. Plus adapt the view!
+//                        let node = LamaiDecoding.decode(value, maxDepth: 3)
+//                                WalkTheNode.analyze(node: node, urlInfo: &urlInfo, comp: comp, label: "JSON[\(key)]")
+
 struct WalkTheNode {
     
     static func analyze(node: DecodedNode, urlInfo: inout URLInfo, comp: String = "query", label: String) -> String? {
         var foundURLs: [String] = []
-        let urlOrigin = urlInfo.components.host ?? ""
+        let urlOrigin = urlInfo.components.coreURL ?? ""
         var didWarnForDepth = false
+        var source = SecurityWarning.SourceType.query
+        if comp != "query" {
+            source = SecurityWarning.SourceType.fragment
+        }
         
         func walk(_ node: DecodedNode) {
             if !didWarnForDepth && node.depth > 1 {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "👁️ Decoded value detected by Lamai in \(comp) \(label). This was found through recursive decoding. Check the URLComponent tree for decoding layers.",
                     severity: .info,
+                    penalty: 0,
                     url: urlOrigin,
-                    source: .offlineAnalysis
+                    source: source
                 ))
                 didWarnForDepth = true
             }
             if node.wasRelevant {
                 let fromDecodedmessage: String? = decodingOrigin(for: node)
-                //(fromDecodedmessage.map { "\n\($0)" } ?? "")
+                var tokenResults: [TokenAnalysis] = []
+
                 for finding in node.findings {
                     switch finding {
                     case .url(let url):
@@ -25,92 +36,133 @@ struct WalkTheNode {
                         urlInfo.warnings.append(SecurityWarning(
                             message: "🔗 Found URL in \(comp) \(label): \(url)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .dangerous,
+                            penalty: PenaltySystem.Penalty.hiddenRedirectQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
-                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.urlInQueryValue
                         
                     case .uuid(let result):
                         let uuidText = result.formatted ?? result.original
                         urlInfo.warnings.append(SecurityWarning(
                             message: "🧬 UUID in \(comp) \(label): \(uuidText) \(result.classification)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .tracking,
+                            penalty: PenaltySystem.Penalty.uuidInQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
-                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.uuidInQuery
                         
                     case .scamWord(let word):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "⚠️ Scam keyword in \(comp) \(label): \(word)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .scam,
+                            penalty: PenaltySystem.Penalty.scamWordsInQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
-                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInValue
-                        
+                        tokenResults.append(TokenAnalysis(part: word, isPhishing: true, phishingTerms: [word]))
+
                     case .phishingWord(let word):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "⚠️ Phishing keyword in \(comp) \(label): \(word)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .scam,
+                            penalty: PenaltySystem.Penalty.phishingWordsInQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
-                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.phishingWordsInValue
-                        
+                        tokenResults.append(TokenAnalysis(part: word, isPhishing: true, phishingTerms: [word]))
+
+//                        Might duplicate key penalty, this is intended
                     case .entropy(let score, let value):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "🧪 High entropy in \(comp) \(label): '\(value)' (≈ \(String(format: "%.2f", score))\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .suspicious,
+                            penalty: PenaltySystem.Penalty.highEntropyQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
-                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.highEntropyKeyOrValue
-                        
+//TODO:                        double check if this is still running
                     case .longEntropyLike(let value):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "🧪 Suspicious long query value in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .suspicious,
+                            penalty: PenaltySystem.Penalty.highEntropyQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
-                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.longUnrecognisedValue
                         
                     case .isIPv4(let value):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "📡 IPv4 address in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .dangerous,
+                            penalty: PenaltySystem.Penalty.IpAddressInQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
-                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.hiddenIP
                         
                     case .isIPv6(let value):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "📡 IPv6 address in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .dangerous,
+                            penalty: PenaltySystem.Penalty.IpAddressInQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
-                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.hiddenIP
                         
                     case .email(let value):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "📧 Email address in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .dangerous,
+                            penalty: PenaltySystem.Penalty.emailInQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
-                        URLQueue.shared.LegitScore += PenaltySystem.Penalty.hiddenIP
-                        
+                        //                    // TODO: This should be decode again to see what its carrying
+                        //                        like so, need to give lamai a better interface, create a new datamodel to store the finding that were also decoded in the findings. findingception. Plus adapt the view!
+                        //                        let node = LamaiDecoding.decode(value, maxDepth: 3)
+                        //                                WalkTheNode.analyze(node: node, urlInfo: &urlInfo, comp: comp, label: "JSON[\(key)]")
                     case .json(let keys):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "📦 JSON structure in \(comp) \(label) with keys: \(keys.joined(separator: ", "))\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .info,
+                            penalty: PenaltySystem.Penalty.jsonInQuery,
                             url: urlOrigin,
-                            source: .offlineAnalysis
+                            source: source
                         ))
+                        
+                    case .brandExact(let brand):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "🏷️ Brand exact match in \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            severity: .dangerous,
+                            penalty: PenaltySystem.Penalty.exactBrandInQuery,
+                            url: urlOrigin,
+                            source: source
+                        ))
+                        tokenResults.append(TokenAnalysis(part: brand, isBrand: true, brands: [brand]))
+
+                    case .brandContained(let brand):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "🧩 Brand contained in string from \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            severity: .suspicious,
+                            penalty: PenaltySystem.Penalty.queryContainsBrand,
+                            url: urlOrigin,
+                            source: source
+                        ))
+                        tokenResults.append(TokenAnalysis(part: brand, isBrand: true, brands: [brand]))
+
+                    case .brandSimilar(let brand):
+                        urlInfo.warnings.append(SecurityWarning(
+                            message: "🔍 Brand similar (obfuscated) match in \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            severity: .suspicious,
+                            penalty: PenaltySystem.Penalty.brandLookAlikeInQuery,
+                            url: urlOrigin,
+                            source: source
+                        ))
+                        tokenResults.append(TokenAnalysis(part: brand, isBrand: true, brands: [brand]))
                     }
+                }
+
+                for token in tokenResults where token.isRelevant {
+                    urlInfo.components.appendToken(comp: comp, token)
                 }
             }
             for child in node.children {
@@ -134,17 +186,21 @@ struct WalkTheNode {
 }
 
 private func checkMultipleURLs(_ foundURLs: [String?], urlInfo: inout URLInfo, comp: String) -> Bool {
-    let urlOrigin = urlInfo.components.host ?? ""
+    var source = SecurityWarning.SourceType.query
+    if comp != "query" {
+        source = SecurityWarning.SourceType.fragment
+    }
+    let urlOrigin = urlInfo.components.coreURL ?? ""
     let nonNilURLs = foundURLs.compactMap { $0 } // Remove nil values
     if nonNilURLs.count > 1 {
         let urlList = nonNilURLs.joined(separator: "\n") // Format URLs on new lines
         urlInfo.warnings.append(SecurityWarning(
             message: "❌ Multiple URLs detected in \(comp) parameters. This is highly suspicious:\n\(urlList)",
             severity: .critical,
+            penalty: -100,
             url: urlOrigin,
-            source: .offlineAnalysis
+            source: source
         ))
-        URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
         return true  // 🚨 Indicate that analysis should halt
     }
     return false  // ✅ Continue normally

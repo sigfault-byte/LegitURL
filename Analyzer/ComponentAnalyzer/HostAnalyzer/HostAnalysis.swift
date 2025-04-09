@@ -18,35 +18,38 @@ struct HostAnalysis {
             urlObject.warnings.append(SecurityWarning(
                 message: "🚨 The host \(host) is an IP address.",
                 severity: .critical,
-                url: host,
-                source: .offlineAnalysis
+                penalty: PenaltySystem.Penalty.critical,
+                url: urlObject.components.coreURL!,
+                source: .host
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.userInfoInHost
             return
         }
         
         AnalyzeDomain.analyze(in: &urlObject, domain: domainRoot, tld: tld)
         AnalyzeSubdomains.analyze(urlInfo: &urlObject, subdomains: subdomains)
         
+        // Check for suspicious TLD
+        AnalyzeTLD.analyze(tld, urlInfo: &urlObject)
+        
         // MARK: - Check for suspicious user info
         if let userInfo = urlObject.components.userinfo, !userInfo.isEmpty {
             urlObject.warnings.append(SecurityWarning(
                 message: "🚨 URL contains user info '\(userInfo)'.",
                 severity: .dangerous,
-                url: host,
-                source: .offlineAnalysis
+                penalty: PenaltySystem.Penalty.userInfoInHost,
+                url: urlObject.components.coreURL!,
+                source: .host
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.userInfoInHost
         }
         
         if let password = urlObject.components.userPassword, !password.isEmpty {
             urlObject.warnings.append(SecurityWarning(
                 message: "🚨 URL contains a password component.",
                 severity: .critical,
-                url: host,
-                source: .offlineAnalysis
+                penalty: PenaltySystem.Penalty.critical,
+                url: urlObject.components.coreURL!,
+                source: .host
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
         }
 
         // MARK: - Check for non-standard ports
@@ -55,10 +58,10 @@ struct HostAnalysis {
                 urlObject.warnings.append(SecurityWarning(
                     message: "🚨 URL uses port :\(port), non-standard https.",
                     severity: .critical,
-                    url: host,
-                    source: .offlineAnalysis
+                    penalty: PenaltySystem.Penalty.critical,
+                    url: urlObject.components.coreURL!,
+                    source: .host
                 ))
-                URLQueue.shared.LegitScore += PenaltySystem.Penalty.unusualPort
             }
         }
     }

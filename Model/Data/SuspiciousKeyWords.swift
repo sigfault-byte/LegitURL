@@ -73,5 +73,7 @@ struct SuspiciousKeywords {
         "datadome", "akamai-mpulse", "cloudflare_insights", "newrelic(",
         "optimizely(", "braze(", "webtrends(", "quantcast(", "pardot("
     ]
+    
+    static let dangerousExtensions: Set<String> = ["exe", "sh", "bat", "dll", "apk", "msi", "scr"]
 }
 

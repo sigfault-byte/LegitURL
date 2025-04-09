@@ -51,8 +51,9 @@ struct HeadersAnalyzer {
                 warnings.append(SecurityWarning(
                     message: warningMessage,
                     severity: severity,
+                    penalty: penalty,
                     url: urlOrigin,
-                    source: .onlineAnalysis
+                    source: .header
                 ))
             }
         }
@@ -60,12 +61,11 @@ struct HeadersAnalyzer {
             warnings.append(SecurityWarning(
                 message: "🔍 Detected Server Stack: \(detectedValues.map { "\($0.key): \($0.value)" }.joined(separator: ", "))",
                 severity: .info,
+                penalty: 0,
                 url: urlOrigin,
-                source: .onlineAnalysis
+                source: .header
                 ))
-                penalty -= 10
         }
-        URLQueue.shared.LegitScore += penalty
         return warnings
     }
 }

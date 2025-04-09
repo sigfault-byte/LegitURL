@@ -18,9 +18,10 @@ struct URLExtractComponents {
         guard !url.isEmpty else {
             warnings.append(SecurityWarning(
                 message: "⚠️ Error parsing the URL",
-                severity: .dangerous,
-                url: "",
-                source: .offlineAnalysis
+                severity: .critical,
+                penalty: PenaltySystem.Penalty.critical,
+                url: url,
+                source: .host
             ))
             return URLInfo(components: URLComponentsInfo(fullURL: url), warnings: warnings)
         }
@@ -30,8 +31,9 @@ struct URLExtractComponents {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to parse URL components",
                 severity: .critical,
-                url: "",
-                source: .offlineAnalysis
+                penalty: PenaltySystem.Penalty.critical,
+                url: url,
+                source: .host
             ))
             return URLInfo(components: URLComponentsInfo(fullURL: url), warnings: warnings)
         }
@@ -42,6 +44,7 @@ struct URLExtractComponents {
         // Build the initial URLComponentsInfo, prioritizing the manually decoded host
         var compInfo = URLComponentsInfo(
             fullURL: components.url?.absoluteString,
+            coreURL: decodedHost + (components.path.isEmpty ? "/" : components.path),
             scheme: components.scheme,
             userinfo: components.user,
             userPassword: components.password,
@@ -62,10 +65,10 @@ struct URLExtractComponents {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to extract host from URL components",
                 severity: .critical,
-                url: "",
-                source: .offlineAnalysis
+                penalty: PenaltySystem.Penalty.critical,
+                url: components.url?.absoluteString ?? url,
+                source: .host
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
             return URLInfo(components: compInfo, warnings: warnings)
         }
         
@@ -73,10 +76,10 @@ struct URLExtractComponents {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to encode host to punycode",
                 severity: .critical,
-                url: "",
-                source: .offlineAnalysis
+                penalty: PenaltySystem.Penalty.critical,
+                url: components.url?.absoluteString ?? "",
+                source: .host
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
             return URLInfo(components: compInfo, warnings: warnings)
         }
         
@@ -87,10 +90,10 @@ struct URLExtractComponents {
             warnings.append(SecurityWarning(
                 message: "⚠️ Host is malformed: \(host). No reason to analyze.",
                 severity: .critical,
-                url: "",
-                source: .offlineAnalysis
+                penalty: PenaltySystem.Penalty.critical,
+                url: components.url?.absoluteString ?? url,
+                source: .host
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
             return URLInfo(components: compInfo, warnings: warnings)
         }
         
@@ -105,10 +108,10 @@ struct URLExtractComponents {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to identify Domain and TLD from the PSL",
                 severity: .critical,
-                url: "",
-                source: .offlineAnalysis
+                penalty: PenaltySystem.Penalty.critical,
+                url: components.url?.absoluteString ?? "",
+                source: .host
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.unrecognizedTLD
             return URLInfo(components: compInfo, warnings: warnings)
         }
 
@@ -134,11 +137,11 @@ struct URLExtractComponents {
             warnings.append(SecurityWarning(
                 message: "URL: \(url) is not using TLS encryption. \nAnalysis aborded",
                 severity: .critical,
+                penalty: PenaltySystem.Penalty.critical,
                 url: components.url?.absoluteString ?? "",
-                source: .offlineAnalysis
+                source: .tls
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
-            return URLInfo(components: compInfo, warnings: warnings                   )
+            return URLInfo(components: compInfo, warnings: warnings)
         }
         
         return URLInfo(components: compInfo, warnings: warnings)

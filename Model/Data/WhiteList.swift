@@ -68,11 +68,11 @@ struct WhiteList {
         "about", "account", "admin", "assets", "api", "archive", "auth", "blog",
         "cart", "cdn", "checkout", "contact", "css", "dashboard", "docs", "download",
         "faq", "feed", "forum", "help", "home", "images", "index", "js", "legal",
-        "login", "logout", "media", "news", "notifications", "orders", "password",
+        "logout", "media", "news", "notifications", "orders",
         "payment", "pdf", "privacy", "profile", "public", "redirect", "register",
-        "reports", "robots.txt", "rss", "search", "secure", "settings", "signup",
-        "static", "store", "styles", "support", "terms", "tos", "uploads", "user",
-        "verify", "videos", "wp-admin", "wp-content", "wp-includes"
+        "reports", "robots", "rss", "search", "settings", "signup",
+        "static", "store", "styles", "terms", "tos", "uploads", "user",
+        "verify", "videos"
     ]
     
     static let commonSafeKeys: Set<String> = [

@@ -1,5 +1,5 @@
 import Foundation
-
+//Path and Domain Analysis: While the primary risks are often associated with the value and flags, analyzing the path and domain could provide additional context. For example, a cookie with a broad domain set on a specific path might be worth noting.
 func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int) -> CookieAnalysisResult {
     var flags: [String] = []
     var severity: CookieSeverity = .info
@@ -51,12 +51,17 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int) -> CookieAna
             flags.append("Secure flag missing (insecure transmission possible)")
         }
     }
+
+    if cookie.httpOnly == false {
+        flags.append("HttpOnly flag missing — may expose cookie to JavaScript access")
+    }
     
     if valueSize <= 10 && cookie.expire == nil && cookie.sameSite.lowercased() != "none" && cookie.secure != false {
         flags.append("Tiny sessionless cookie (\(valueSize)bytes) — likely benign (preference/flag)")
     }
 
     // Analyze value length in bytes and entropy for randomness
+//TODO double check    Missing secure flag on same site = none is red flag! +  httpOnly SHOULD alway be there -> yellow / orange flag!!!
     let valueSeverity = isHighEntropyValue ? 2 : valueSize >= 32 ? 1 : valueSize >= 16 ? 1 : 0
     let isPersistent = cookie.expire != nil
     let isCrossSite = cookie.sameSite.lowercased() == "none"

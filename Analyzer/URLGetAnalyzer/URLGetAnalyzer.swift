@@ -3,23 +3,28 @@ import Foundation
 struct URLGetAnalyzer {
     static func analyze(urlInfo: inout URLInfo) {
         let originalURL = urlInfo.components.fullURL ?? ""
-        let urlOrigin = urlInfo.components.host ?? ""
+        let urlOrigin = urlInfo.components.coreURL ?? ""
         
         // ✅ Retrieve OnlineURLInfo using the ID and guard for sanity check and sync mystery
         guard let onlineInfo = urlInfo.onlineInfo else {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ No online analysis found for this URL. Skipping further checks.",
                 severity: .critical,
+                penalty: -100,
                 url: urlOrigin,
-                source: .onlineAnalysis
+                source: .getError
             ))
             return
         }
 
         //Should be Done in urlgGetExtract, in the meantime ill rawdog it here
         let finalURL = onlineInfo.finalRedirectURL ?? originalURL
+        //TODO: Change this normalized header to a more friendly logic so its acutally readable!
+        
         let headers = onlineInfo.normalizedHeaders ?? [:]
+        
         let cookies = GetAnalyzerUtils.extract(HeaderExtractionType.setCookie, from: headers)
+        
         let responseCode = onlineInfo.serverResponseCode ?? 0
         
         //Http response handler
@@ -47,7 +52,7 @@ struct URLGetAnalyzer {
             TLSCertificateAnalyzer.analyze(certificate: tlsCertificate,
                                            host: host,
                                            domain: domainAndTLD,
-                                           warnings: &urlInfo.warnings )
+                                           warnings: &urlInfo.warnings, responseCode: responseCode )
         }
 
 //        Headers
@@ -72,8 +77,9 @@ struct URLGetAnalyzer {
             urlInfo.warnings.append(SecurityWarning(
                 message: "🚨 Hidden / Silent redirect detected.\nOriginal URL: \(originalURL)\nFinal URL: \(finalURL)\nThis is either bad practice or a scam attempt.",
                 severity: .suspicious,
+                penalty: PenaltySystem.Penalty.silentRedirect,
                 url: urlOrigin,
-                source: .onlineAnalysis
+                source: .header
             ))
         }
     }

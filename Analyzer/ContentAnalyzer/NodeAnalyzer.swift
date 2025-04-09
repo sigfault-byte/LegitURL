@@ -94,6 +94,45 @@ struct NodeAnalyzer {
         return nil
     }
     
+    static func detectBrandMatch(_ input: String) -> BrandMatch? {
+        let lowercasedInput = input.lowercased()
+        let parts = lowercasedInput.split(whereSeparator: { !$0.isLetter }).map(String.init)
+        let brands = KnownBrands.names // assumes brandList is [String] of lowercase known brands
+
+        for part in parts {
+            for brand in brands {
+                if part == brand {
+                    return .exact(brand)
+                }
+            }
+        }
+
+        for part in parts {
+            for brand in brands {
+                if part.contains(brand) {
+                    return .contained(brand)
+                }
+            }
+        }
+
+        for part in parts {
+            for brand in brands {
+                let levenshtein = LegitURLTools.levenshtein(part, brand)
+                let threshold = min(part.count, brand.count) <= 4 ? 1 : 2
+                if levenshtein <= threshold {
+                    return .similar(brand)
+                }
+
+                let ngramScore = LegitURLTools.twoGramSimilarity(part, brand)
+                if ngramScore > 0.6 {
+                    return .similar(brand)
+                }
+            }
+        }
+
+        return nil
+    }
+    
     // Detect JSON keys in a string
     static func detectJSONKeys(_ value: String) -> [String]? {
         // Try full string first
@@ -121,7 +160,7 @@ struct NodeAnalyzer {
     // Check if its a word in the dictionnary, if not, check its entropy
     static func checkIfRealWordAndEntropy(_ value: String) -> DecodedNode.NodeFinding? {
         if !LegitURLTools.isRealWord(value) {
-            let (isHighEntropy, entropyValue) = LegitURLTools.isHighEntropy(value)
+            let (isHighEntropy, entropyValue) = LegitURLTools.isHighEntropy(value, 4.3)
             if isHighEntropy, let entropy = entropyValue {
                 return .entropy(score: Double(entropy), value: value)
             }

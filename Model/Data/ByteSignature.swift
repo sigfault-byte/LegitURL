@@ -1,11 +1,12 @@
 import Foundation
 
-///windows.location!!! and other tricks to add
 struct ScamByteSignatures {
     static let documentGetElementById: [UInt8] = Array("document.getElementById(".utf8)
+    static let submitPattern: [UInt8] = Array(".submit".utf8)
 //    static let clientJS: [UInt8] = Array("ClientJS(".utf8)
     static let metaRefresh: [UInt8] = Array("<meta http-equiv=\"refresh\"".utf8)
-    static let metaRefreshURLStart: [UInt8] = Array("content=\"".utf8) // Added for URL extraction
+    // TODO Added for URL extraction but its a bit complicated. Lots of clocking can happen. We could catch explicit one. But lets just flag and bail depedning on other signals for now
+    static let metaRefreshURLStart: [UInt8] = Array("content=\"".utf8)
     
     static let evalCall: [UInt8] = Array("eval(".utf8)
     static let atobCall: [UInt8] = Array("atob(".utf8)
@@ -56,6 +57,19 @@ extension Data {
             return false
         }
     }
+    
+    func countsBytesInsensitive(of pattern: [UInt8]) -> Int {
+        guard pattern.count > 0, self.count >= pattern.count else { return 0 }
+        return self.withUnsafeBytes { dataPtr in
+            var count = 0
+            for i in 0...(self.count - pattern.count) {
+                let window = dataPtr[i..<i + pattern.count]
+                let windowLower = window.map { ($0 >= 65 && $0 <= 90) ? $0 + 32 : $0 }
+                if windowLower.elementsEqual(pattern) {
+                    count += 1
+                }
+            }
+            return count
+        }
+    }
 }
-
-

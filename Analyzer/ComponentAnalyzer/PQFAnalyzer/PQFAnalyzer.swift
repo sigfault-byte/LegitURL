@@ -2,28 +2,29 @@ struct PQFAnalyzer {
     
     static func analyze(urlInfo: inout URLInfo) -> String? {
         var newURL: String?
-        let urlOrigin = urlInfo.components.host ?? ""
+        let urlOrigin = urlInfo.components.coreURL ?? ""
         
         // Bad strict check of #? and ?#
+        //TODO -> send to lamai? Is it really necessary, this is obvious bait
         if let rawURL = urlInfo.components.fullURL {
             if rawURL.contains("#?") {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "The URL contains a fragment (`#`) before a query (`?`).\nThis is an obfuscation technique used by scammers to manipulate URL parsing and tracking systems.",
+                    message: "The URL contains a fragment (`#`) before a query (`?`). This is obfuscation by design.",
                     severity: .critical,
+                    penalty: PenaltySystem.Penalty.critical,
                     url: urlOrigin,
-                    source: .offlineAnalysis
-                    
+                    source: .fragment
                 ))
-                URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
                 return (nil)
+                
             } else if rawURL.contains("?#") {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "The URL contains a query (`?`) before a fragment (`#`).\nThis is an obfuscation technique used by scammers to manipulate URL parsing and tracking systems.",
+                    message: "The URL contains a query (`?`) before a fragment (`#`). This is obfuscation by design.",
                     severity: .critical,
+                    penalty: PenaltySystem.Penalty.critical,
                     url: urlOrigin,
-                    source: .offlineAnalysis
+                    source: .query
                 ))
-                URLQueue.shared.LegitScore += PenaltySystem.Penalty.critical
                 return (nil)
             }
         }
@@ -41,24 +42,24 @@ struct PQFAnalyzer {
             urlInfo.warnings.append(SecurityWarning(
                 message: "The URL contains an empty query section (i.e., nothing follows '?').",
                 severity: .suspicious,
+                penalty: PenaltySystem.Penalty.emptyQuery,
                 url: urlOrigin,
-                source: .offlineAnalysis
+                source: .query
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.emptyQueryString
         }
         
 //         Analyze Fragment:
 //         If the fragment is non-empty, process it; if it's present but empty, trigger a warning.
         if let fragment = urlInfo.components.fragment, !fragment.isEmpty {
-            (urlInfo, newURL) = FragmentAnalyzer.analyze(urlInfo: urlInfo)
+            (newURL) = FragmentAnalyzer.analyze(urlInfo: &urlInfo)
         } else if let rawFragment = urlInfo.components.fragment, rawFragment.isEmpty {
             urlInfo.warnings.append(SecurityWarning(
                 message: "The URL contains an empty fragment section (i.e., nothing follows '#').",
                 severity: .suspicious,
+                penalty: PenaltySystem.Penalty.emptyQuery,
                 url: urlOrigin,
-                source: .offlineAnalysis
+                source: .fragment
             ))
-            URLQueue.shared.LegitScore += PenaltySystem.Penalty.emptyFragment
         }
         
         return newURL

@@ -191,6 +191,25 @@ struct LegitURLTools {
         return matrix[aCount][bCount]
     }
     
+    static func twoGramSimilarity(_ aStr: String, _ bStr: String) -> Double {
+        func nGrams(_ str: String, size: Int) -> Set<String> {
+            let chars = Array(str)
+            guard chars.count >= size else { return [] }
+
+            var result = Set<String>()
+            for i in 0...(chars.count - size) {
+                result.insert(String(chars[i..<i+size]))
+            }
+            return result
+        }
+
+        let aGrams = nGrams(aStr, size: 2)
+        let bGrams = nGrams(bStr, size: 2)
+        let intersection = aGrams.intersection(bGrams)
+        let union = aGrams.union(bGrams)
+        return union.isEmpty ? 0.0 : Double(intersection.count) / Double(union.count)
+    }
+    
     static func detectEmailAddresses(in input: String) -> [String] {
         // Fast fail: skip processing if string doesn't even resemble an email
         let strictEmailRegex = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$"#

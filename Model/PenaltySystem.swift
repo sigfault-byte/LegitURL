@@ -2,71 +2,58 @@ struct PenaltySystem {
     public enum Penalty {
        // 🔴 CRITICAL ISSUES
         static let critical                            = -100
-
-       // 🌍 HOST-RELATED PENALTIES
-        static let unrecognizedTLD                     = -100
-        static let brandImpersonation                  = -70
-        static let hostIsIpAddress                     = -50
-        static let homoGraphAttack                     = -50
-        static let malformedURL                        = -50
-        static let passwordInHost                      = -30
+        
+       // HOST-RELATED PENALTIES
         static let highEntropyDomain                   = -30
-        static let unusualPort                         = -30
+        static let exactBrandImpersonation             = -25
         static let phishingWordsInHost                 = -20
         static let scamWordsInHost                     = -20
-        static let userInfoInHost                      = -20
-        static let brandLookaLike                      = -20
         static let tooManyHyphensInDomain              = -20
-        static let suspiciousTLD                       = -20
+        static let userInfoInHost                      = -20
         static let subdomainUnderscore                 = -20
-        static let highEntropySubDomain                = -20
-        static let shortSubdomain                      = -10
-        static let tooManySubdomain                    = -15
-        static let hostNonASCII                        = -10
+        static let brandImpersonation                  = -15
+        static let brandLookaLike                      = -10
+        static let underScoreInSubdomain               = -10
+        static let highEntropySubDomain                = -10
         static let domainNonASCII                      = -10
 
-       // 🔀 REDIRECTION & OBFUSCATION
-        static let hiddenRedirectFragment              = -40
+       // REDIRECTION & OBFUSCATION
+//        static let hiddenRedirectFragment              = -40
         static let hiddenRedirectQuery                 = -30
-        static let phpRedirect                         = -25
-        static let suspiciousRedirect                  = -10
+//        static let phpRedirect                         = -25
+//        static let suspiciousRedirect                  = -10
 
-       // 🛤 PATH-RELATED PENALTIES
+       // PATH-RELATED PENALTIES
+        static let executableInPath                    = -20
+        static let pathIsEndpointLike                  = -15
         static let highEntropyPathComponent            = -10
-        static let pathIsEndpointLike                  = -10
         static let scamWordsInPath                     = -10
-        static let phishingWordsInPath                 = -5
-        static let suspiciousPathSegment               = -5
-
-       // ❓ QUERY-RELATED PENALTIES
-        static let hiddenUUIDKey                       = -30
-        static let hiddenIP                            = -30 
-        static let hiddenEmail                         = -30
-        static let uuidInKey                           = -25
-        static let hiddenUUIDInFragment                = -25
-        static let longUnrecognisedValue               = -25
-        static let uuidInFragment                      = -20
-        static let urlInQueryValue                     = -20
-        static let urlInQueryKey                       = -20
-        static let trackingMonitoring                  = -20
-        static let malformedQuery                      = -20
-        static let hiddenUUIDinQueryValue              = -20
-        static let fragementLikeQuery                  = -20
-        static let malformedQueryPair                  = -20
-        static let uuidInQuery                         = -15
-        static let phishingWordsInKey                  = -15
-        static let phishingWordsInValue                = -15
-        static let scammingWordsInKey                  = -15
-        static let scammingWordsInValue                = -15
-        static let jsRedirectInKey                     = -15
-        static let jsRedirectInValue                   = -15
-        static let malformedFragment                   = -10
-        static let hiddenKeyValue                      = -15
-        static let queryNotRFCCompliant                = -10
-        static let emptyQueryString                    = -5
-        static let emptyFragment                       = -5
-        static let highEntropyKeyOrValue               = -5
-        static let longQuery                           = -5
+        static let phishingWordsInPath                 = -10
+        static let suspiciousPathSegment               = -10
+        static let exactBrandInPath                    = -5
+        static let containBrandInPath                  = -5
+        
+        // QUERIES & fragment ... Need granularity see lamai todo
+        static let malformedQueryPair                  = -40
+        static let highEntropyQuery                    = -30
+        static let queryKeyForbiddenCharacters         = -20
+        static let valueForbiddenCharacters            = -20
+        static let scamWordsInQuery                    = -20
+        static let phishingWordsInQuery                = -20
+        static let IpAddressInQuery                    = -20
+        static let emailInQuery                        = -20
+        static let exactBrandInQuery                   = -15
+        static let keyIsHighEntropy                    = -15
+        static let queryContainsBrand                  = -10
+        static let brandLookAlikeInQuery               = -10
+        static let uuidInQuery                         = -10
+        static let jsonInQuery                         = -10
+        static let emptyQuery                          = -5
+        
+        // Fragment
+        static let forbiddenChar                       = -20
+        static let malformedFragmentPair               = -20
+        static let malformedFragment                   = -15
         
         //JAVASCRIPT & SECURITY ISSUES
          static let javascriptXSS                       = -30
@@ -77,19 +64,42 @@ struct PenaltySystem {
         
 /////////////////////ONLINE ///////////////////////////////////////////
         ///Body
+        static let scriptIs80Percent                   = -30
+        static let jsEvalInBody                        = -30
+        static let jsFingerPrinting                    = -30
+        static let hotdogWaterDev                      = -30
+        static let metaRefreshInBody                   = -25
+        static let jsWindowsRedirect                   = -20
+        static let scriptIs50Percent                   = -20
+        static let scriptIs30Percent                   = -10
+        static let extScriptSrc                        = -10
         ///Cookie////
+        static let cookiesOnNon200                     = -20
+        static let moreThan16BofCookie                 = -15
+        ///TLS///
+        static let tksWeakKey                          = -20
+        static let unknownVL                           = -10
+        static let hotDogwaterCN                       = -10
+        static let tlsWillExpireSoon                   = -10
+        static let tlsIsNew                            = -10
+        static let tlsShortLifespan                    = -10
         
         //RESPONSE HEADER ISSUE
+        static let blockedByFirewall                   = -100
+        static let serverError                         = -100
+        static let missConfiguredOrScam                = -20
         static let hidden200Redirect                   = -20
+        static let suspiciousStatusCode                = -15
 
        
         
         // Redirect
+        static let silentRedirect                     = -20
         static let malformedRedirect                  = -20
         static let redirectToDifferentTLD             = -20
         static let redirectToDifferentDomain          = -10
 
-       // 🆗 INFORMATIVE (No penalty)
+       // INFORMATIVE (No penalty)
         static let informational                       = 0
        }
     
@@ -135,4 +145,32 @@ struct PenaltySystem {
         ".mov":         -20,
         ".live":        -20
     ]
+}
+extension PenaltySystem {
+    static func penaltyForCookieFlags(_ flags: [String]) -> Int {
+        var penalty = 0
+
+        for flag in flags {
+            if flag.contains("Secure flag missing on SameSite=None") {
+                penalty += 40
+            } else if flag.contains("High-entropy value") {
+                penalty += 20
+            } else if flag.contains("Large fingerprint-style") {
+                penalty += 25
+            } else if flag.contains("Persistent cookie") {
+                penalty += 10
+            } else if flag.contains("cross-site access") {
+                penalty += 10
+            } else if flag.contains("Secure flag missing") {
+                penalty += 15
+            } else if flag.contains("opaque identifier") || flag.contains("UUID") {
+                penalty += 10
+            }
+//                else if flag.contains("Tiny sessionless cookie") {
+//                penalty -= 10 // 🟢 possible bonus
+//            }
+        }
+
+        return min(max(penalty, -100), 100) // Clamp to avoid score abuse
+    }
 }
