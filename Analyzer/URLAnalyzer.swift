@@ -122,7 +122,6 @@ struct URLAnalyzer {
         URLQueue.shared.activeAsyncCount += 1
         Task {
             do {
-                print("123")
                 let onlineInfo = try await URLGetExtract.extractAsync(urlInfo: currentURLInfo)
                 
                 guard let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) else {

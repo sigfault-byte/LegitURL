@@ -83,6 +83,7 @@ struct CookiesAnalyzer {
                 url: url,
                 source: .cookie
             ))
+            //TODO: this is surely very wrong! it throwse on the setter. Need to fix ASAP
             urlInfo.onlineInfo?.cookiesForUI.append(result)
             
         }
