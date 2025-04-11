@@ -41,6 +41,7 @@ struct interestingPrefix {
 struct byteLetters {
     static let s: UInt8 = 115
     static let S: UInt8 = 83
+    static let r: UInt8 = 114
     static let endTag: UInt8 = 62
     static let openTag: UInt8 = 60
 }

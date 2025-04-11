@@ -82,9 +82,9 @@ struct BodyAnalyzerFast {
             // sort the header script to their origin
             assignScriptSrcOrigin(in: body, scripts: &confirmedScripts)
             let t7 = Date()
+            let duration = t7.timeIntervalSince(startTime)
             print("⏱️ Step 6 - Script origin classification took \(Int(t7.timeIntervalSince(t6) * 1000))ms")
             
-            let duration = Date().timeIntervalSince(startTime)
             print("✅ Total scan completed in \(Int(duration * 1000))ms")
             print("📦 Summary of Script Findings:")
             for script in confirmedScripts {
@@ -148,8 +148,12 @@ struct BodyAnalyzerFast {
                 bodyPos = pos
                 bodyFound = true
             } else {
-                let hint = DataSignatures.fastScriptByteHint(at: pos, in: body, hint: [byteLetters.s, byteLetters.S])
-                scriptCandidates[i].flag = hint
+                let hintPositions = DataSignatures.extractAllTagMarkers(in: body, within: pos..<min(pos + 8, body.count), tag: byteLetters.s)
+                let valid = hintPositions.contains {
+                    let nextIndex = $0 + 1
+                    return nextIndex < body.count && (body[nextIndex] == byteLetters.r || body[nextIndex] == UInt8(ascii: "R"))
+                }
+                scriptCandidates[i].flag = valid
             }
         }
     }
