@@ -82,17 +82,28 @@ struct BodyAnalyzerFast {
             // sort the header script to their origin
             assignScriptSrcOrigin(in: body, scripts: &confirmedScripts)
             let t7 = Date()
-            let duration = t7.timeIntervalSince(startTime)
             print("⏱️ Step 6 - Script origin classification took \(Int(t7.timeIntervalSince(t6) * 1000))ms")
             
+            let duration = Date().timeIntervalSince(startTime)
             print("✅ Total scan completed in \(Int(duration * 1000))ms")
-            print("📦 Summary of Script Findings:")
+            print("📦 Summary of the \(confirmedScripts.count) Script Findings:")
             for script in confirmedScripts {
                 let ctx = script.context?.rawValue ?? "N/A"
                 let origin = script.origin?.rawValue ?? "None"
                 let finding = script.findings.map { "\($0)" } ?? "None"
-                print("→ Script at \(script.start): context=\(ctx), origin=\(origin), findings=\(finding)")
+                let flag = script.flag.map { "\($0)" } ?? "nil"
+                let srcPos = script.srcPos.map { "\($0)" } ?? "nil"
+                let end = script.end.map { "\($0)" } ?? "nil"
+
+                print("→ Script at \(script.start):")
+                print("   • context: \(ctx)")
+                print("   • origin: \(origin)")
+                print("   • findings: \(finding)")
+                print("   • flag: \(flag)")
+                print("   • srcPos: \(srcPos)")
+                print("   • end: \(end)")
             }
+            
         }
     }
     
@@ -148,12 +159,8 @@ struct BodyAnalyzerFast {
                 bodyPos = pos
                 bodyFound = true
             } else {
-                let hintPositions = DataSignatures.extractAllTagMarkers(in: body, within: pos..<min(pos + 8, body.count), tag: byteLetters.s)
-                let valid = hintPositions.contains {
-                    let nextIndex = $0 + 1
-                    return nextIndex < body.count && (body[nextIndex] == byteLetters.r || body[nextIndex] == UInt8(ascii: "R"))
-                }
-                scriptCandidates[i].flag = valid
+                let hint = DataSignatures.fastScriptByteHint(at: pos, in: body, hint: [byteLetters.s, byteLetters.S])
+                scriptCandidates[i].flag = hint
             }
         }
     }
@@ -191,10 +198,11 @@ struct BodyAnalyzerFast {
             
             let earlyRange = start..<min(start + 32, body.count)
             let eqSigns = DataSignatures.extractAllTagMarkers(in: body, within: earlyRange, tag: UInt8(ascii: "="))
-            guard let eq = eqSigns.first else {
+            guard let eq = eqSigns.first, eq > 3 else {
                 scripts[i].findings = .inlineJS
                 continue
             }
+            // Look back 3 bytes for 'src'
             guard eq >= 3 else {
                 scripts[i].findings = .inlineJS
                 continue
