@@ -1,13 +1,16 @@
-//
-//  BodyAnalyzerFast.swift
-//  URLChecker
-//
-//  Created by Chief Hakka on 11/04/2025.
-//
-
 import Foundation
 
 struct BodyAnalyzerFast {
+    enum ScriptOrigin: String {
+        case relative = "relative"
+        case protocolRelative = "protocolRelative"
+        case dataURI = "dataURI"
+        case httpExternal = "http protocol"
+        case httpsExternal = "https External"
+        case unknown = "unknown"
+        case malformed = "malformed"
+    }
+
     struct ScriptScanTarget {
         let start: Int
         var end: Int?
@@ -15,6 +18,7 @@ struct BodyAnalyzerFast {
         var findings: ScanFlag?
         var context: ScriptContext?
         var srcPos: Int?
+        var origin: ScriptOrigin?
         
         enum ScriptContext: String {
             case inHead = "In Head"
@@ -24,7 +28,7 @@ struct BodyAnalyzerFast {
     }
     
     enum ScanFlag {
-        case scriptTag
+        case script
         case inlineJS
         case suspectedObfuscation
     }
@@ -54,41 +58,44 @@ struct BodyAnalyzerFast {
             var scriptCandidates: [ScriptScanTarget] = []
             //populate the array of candidates
             populateScriptTarget(&scriptCandidates, tagPositions: tagPositions)
+            let t1 = Date()
             //Look for body tag and pre filter the scriptCandidate
             checkForBodyAndHeadAndPreFilter(in: body, headerPos: &headPos, bodyPos: &bodyPos, scriptCandidates: &scriptCandidates)
+            let t2 = Date()
+            print("⏱️ Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
             // flag script findings
             var confirmedScripts = checkForScriptTags(body, scriptCandidates: &scriptCandidates, asciiToCompare: interestingPrefix.script, lookAhead: 8)
+            let t3 = Date()
+            print("⏱️ Step 2 - Script detection took \(Int(t3.timeIntervalSince(t2) * 1000))ms")
             // find the tag closure of the script
             lookForScriptTagEnd(in: body, confirmedScripts: &confirmedScripts, asciiToCompare: byteLetters.endTag, lookAhead: 256)
+            let t4 = Date()
+            print("⏱️ Step 3 - Tag closure detection took \(Int(t4.timeIntervalSince(t3) * 1000))ms")
             // primary school math to find context
             classifyContext(for: &confirmedScripts, headPos: headPos, bodyPos: bodyPos)
+            let t5 = Date()
+            print("⏱️ Step 4 - Context classification took \(Int(t5.timeIntervalSince(t4) * 1000))ms")
             // look for src
             headScriptSrcScan(in: body, scripts: &confirmedScripts)
-            let duration2 = Date().timeIntervalSince(startTime)
-            print("pre print Sacn completed in \(Int(duration2 * 1000))ms")
-            for script in confirmedScripts {
-                if let end = script.end {
-                    let previewEnd = min(end + 1, body.count)
-                    let preview = String(data: body[script.start..<previewEnd], encoding: .utf8) ?? "[unreadable]"
-                    print("Script at \(script.start): \(preview)")
-                } else {
-                    let fallbackEnd = min(script.start + 20, body.count)
-                    let preview = String(data: body[script.start..<fallbackEnd], encoding: .utf8) ?? "[unreadable]"
-                    print("Script at \(script.start): \(preview)")
-                }
-
-                print(" → Context: \(script.context?.rawValue ?? "unknown")")
-
-                if let srcPos = script.srcPos, srcPos != 0 {
-                    let srcEnd = min(srcPos + 64, body.count)
-                    let srcPreview = String(data: body[srcPos..<srcEnd], encoding: .utf8) ?? "[unreadable]"
-                    print(" → src= preview: \(srcPreview)")
-                }
-            }
+            let t6 = Date()
+            print("⏱️ Step 5 - Src position scan took \(Int(t6.timeIntervalSince(t5) * 1000))ms")
+            // sort the header script to their origin
+            assignScriptSrcOrigin(in: body, scripts: &confirmedScripts)
+            let t7 = Date()
+            print("⏱️ Step 6 - Script origin classification took \(Int(t7.timeIntervalSince(t6) * 1000))ms")
+            
             let duration = Date().timeIntervalSince(startTime)
-            print("post print Sacn completed in \(Int(duration * 1000))ms")
+            print("✅ Total scan completed in \(Int(duration * 1000))ms")
+            print("📦 Summary of Script Findings:")
+            for script in confirmedScripts {
+                let ctx = script.context?.rawValue ?? "N/A"
+                let origin = script.origin?.rawValue ?? "None"
+                let finding = script.findings.map { "\($0)" } ?? "None"
+                print("→ Script at \(script.start): context=\(ctx), origin=\(origin), findings=\(finding)")
+            }
         }
     }
+    
     private static func populateScriptTarget(_ target: inout [ScriptScanTarget], tagPositions: [Int]) -> Void {
         
         for pos in tagPositions {
@@ -172,11 +179,33 @@ struct BodyAnalyzerFast {
         }
     }
     
-    private static func headScriptSrcScan(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 64, respectTagEnd: Bool = true) {
+    private static func headScriptSrcScan(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 96, respectTagEnd: Bool = true) {
         for i in 0..<scripts.count {
             guard scripts[i].context == .inHead else { continue }
 
             let start = scripts[i].start
+            
+            let earlyRange = start..<min(start + 32, body.count)
+            let eqSigns = DataSignatures.extractAllTagMarkers(in: body, within: earlyRange, tag: UInt8(ascii: "="))
+            guard let eq = eqSigns.first else {
+                scripts[i].findings = .inlineJS
+                continue
+            }
+            guard eq >= 3 else {
+                scripts[i].findings = .inlineJS
+                continue
+            }
+
+            let s = body[eq - 3] | 0x20
+            let r = body[eq - 2] | 0x20
+            let c = body[eq - 1] | 0x20
+
+            guard s == UInt8(ascii: "s"),
+                  r == UInt8(ascii: "r"),
+                  c == UInt8(ascii: "c") else {
+                scripts[i].findings = .inlineJS
+                continue
+            }
 
             guard respectTagEnd, let tagEnd = scripts[i].end else {
                 let scanRange = start..<min(start + lookAhead, body.count)
@@ -191,8 +220,8 @@ struct BodyAnalyzerFast {
 
             let scanRange = start..<min(tagEnd + 1, body.count)
             let (found, position) = body.containsBytesCaseInsensitive(of: interestingPrefix.src, startIndex: scanRange.lowerBound)
-            if found {
-                scripts[i].srcPos = position
+            if found, let pos = position, pos > start, pos < tagEnd {
+                scripts[i].srcPos = pos
             } else {
                 scripts[i].findings = .inlineJS
             }
@@ -211,5 +240,53 @@ struct BodyAnalyzerFast {
                 confirmedScripts[i].findings = .suspectedObfuscation
             }
         }
+    }
+    
+    private static func assignScriptSrcOrigin(in body: Data, scripts: inout [ScriptScanTarget]) {
+        for i in 0..<scripts.count {
+            guard let srcPos = scripts[i].srcPos, let tagEnd = scripts[i].end else { continue }
+            let origin = classifyScriptSrc(in: body, from: srcPos, upTo: tagEnd)
+            scripts[i].origin = origin
+        }
+    }
+
+    private static func classifyScriptSrc(in body: Data, from srcPos: Int, upTo tagEnd: Int) -> ScriptOrigin {
+        let scanLimit = min(tagEnd, body.count)
+        let scanRange = srcPos..<scanLimit
+
+        let quoteCandidates = DataSignatures.extractAllTagMarkers(in: body, within: scanRange, tag: UInt8(ascii: "\"")) +
+                              DataSignatures.extractAllTagMarkers(in: body, within: scanRange, tag: UInt8(ascii: "'"))
+
+        let sortedQuotes = quoteCandidates.sorted()
+        guard sortedQuotes.count >= 2 else {
+            return .malformed
+        }
+
+        let qStart = sortedQuotes[0]
+        let qEnd = sortedQuotes[1]
+        guard qEnd > qStart + 1 else {
+            return .malformed
+        }
+
+        let valueRange = (qStart + 1)..<qEnd
+        let value = body[valueRange]
+
+        if value.starts(with: [UInt8(ascii: "/")]) {
+            return .relative
+        }
+        if value.starts(with: [UInt8(ascii: "/"), UInt8(ascii: "/")]) {
+            return .protocolRelative
+        }
+        if value.starts(with: Array("data:".utf8)) {
+            return .dataURI
+        }
+        if value.starts(with: Array("http://".utf8)) {
+            return .httpExternal
+        }
+        if value.starts(with: Array("https://".utf8)) {
+            return .httpsExternal
+        }
+
+        return .unknown
     }
 }
