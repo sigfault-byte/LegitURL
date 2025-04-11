@@ -9,9 +9,10 @@ import Foundation
 
 struct URLAnalyzer {
     private static var hasManuallyStopped = false
+    private static var hasFinalized = false
     
     // MARK: - Public Entry Point
-    public static func analyze(urlString: String) {
+    public static func analyze(urlString: String) async {
         resetQueue()
         
         let extractedInfo = extractComponents(from: urlString)
@@ -25,12 +26,12 @@ struct URLAnalyzer {
         
         if shouldStopAnalysis(atIndex: 0) { return }
         
-        processQueue()
+        await processQueue()
     }
     
     // MARK: - Offline Queue Processing
     
-    private static func processQueue() {
+    private static func processQueue() async {
         guard !hasManuallyStopped else {
             return
         }
@@ -45,13 +46,13 @@ struct URLAnalyzer {
             if hasManuallyStopped {
                 return
             }
-            processOnlineQueue()
+            await processOnlineQueue()
             return
         }
         
         // Process the current URLInfo and then recursively process the next one
         if processOfflineURL(at: currentIndex) {
-            processQueue()
+            await processQueue()
         }
     }
     
@@ -89,74 +90,82 @@ struct URLAnalyzer {
     
     // MARK: - Online Queue Processing
     
-    private static func processOnlineQueue() {
-        guard !hasManuallyStopped else {
-            print("🛑 processOnlineQueue aborted — analysis manually stopped.")
-            return
-        }
+    private static func processOnlineQueue() async {
+        let remaining = URLQueue.shared.offlineQueue.filter { !$0.processedOnline && !$0.processingNow }
+        print("🔍 Checking for next URL to process online...")
+        print("⏳ Remaining URLs: \(remaining.map { $0.components.fullURL ?? "unknown" })")
         
-        // Check if the online queue limit is reached
-        guard URLQueue.shared.onlineQueue.count < 5 else {
-            print("⛔ Online queue limit reached. Stopping further analysis.")
-            return
-        }
-        
-        // Find the first URLInfo that hasn't been processed online
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline && !$0.processingNow }) else {
+            print("✅ No more unprocessed URLs. Finalizing...")
             print("✅ All online checks complete.")
-            if URLQueue.shared.activeAsyncCount == 0 {
+            if !hasFinalized {
+                hasFinalized = true
                 URLAnalyzerUtils.finalizeAnalysis()
+                // Manually trigger an update to the score in URLAnalysisViewModel if needed
+                print("SCOREL :", URLQueue.shared.legitScore.score)
+                URLQueue.shared.legitScore.analysisCompleted = true
             }
-            
             return
         }
+
         if shouldStopAnalysis(atIndex: currentIndex) { return }
-        
-        // Work on a copy, the inout on the async call is somehow not stable, or maybe using the correct sync await cascade refactor can get rid of this copy.
+
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
+        URLQueue.shared.offlineQueue[currentIndex].processingNow = true
+        print("🚀 Starting online analysis for URL:", currentURLInfo.components.fullURL ?? "unknown")
         
-        // If there's no online info, add a placeholder to the online queue
-        if currentURLInfo.onlineInfo == nil {
+        if !URLQueue.shared.onlineQueue.contains(where: { $0.id == currentURLInfo.id }) {
             URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
         }
-        URLQueue.shared.activeAsyncCount += 1
-        Task {
-            do {
-                let onlineInfo = try await URLGetExtract.extractAsync(urlInfo: currentURLInfo)
-                
-                guard let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) else {
-                    print("❌ Could not find URLInfo to attach onlineInfo")
-                    return
-                }
-                
-                var updatedURLInfo = URLQueue.shared.offlineQueue[index]
-                updatedURLInfo.onlineInfo = onlineInfo
-                URLQueue.shared.offlineQueue[index] = updatedURLInfo
-                
-                URLGetAnalyzer.analyze(urlInfo: &updatedURLInfo)
-                URLQueue.shared.offlineQueue[index] = updatedURLInfo
-                URLQueue.shared.offlineQueue[index].processedOnline = true
-                
-                if let finalRedirect = updatedURLInfo.onlineInfo?.finalRedirectURL {
-                    handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect)
-                }
-                
-            } catch {
-                let warning = SecurityWarning(message: error.localizedDescription + "\nAnalysis is incomplete.",
-                                              severity: .fetchError,
-                                              penalty: PenaltySystem.Penalty.critical,
-                                              url: currentURLInfo.components.coreURL ?? "",
-                                              source: .getError)
-                URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
-                markURLInfoOnlineProcessed(for: currentURLInfo)
-                URLQueue.shared.offlineQueue[currentIndex].processingNow = true
-                URLQueue.shared.activeAsyncCount -= 1
-                processOnlineQueue()
+
+//        URLQueue.shared.activeAsyncCount += 1
+
+        do {
+            let onlineInfo = try await URLGetExtract.extractAsync(urlInfo: currentURLInfo)
+            print("✅ Finished GET extract for:", currentURLInfo.components.fullURL ?? "unknown")
+
+            guard let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) else {
+                print("❌ Could not find URLInfo to attach onlineInfo")
                 return
             }
-            URLQueue.shared.activeAsyncCount -= 1
-            // Always move to next item after success
-            processOnlineQueue()
+
+            let updatedURLInfo = URLQueue.shared.offlineQueue[index]
+            
+            let onlineIndex = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == currentURLInfo.id })
+            if let onlineIndex = onlineIndex {
+                URLQueue.shared.onlineQueue[onlineIndex] = onlineInfo
+            } else {
+                URLQueue.shared.onlineQueue.append(onlineInfo)
+            }
+            
+            URLQueue.shared.offlineQueue[index] = updatedURLInfo
+
+            let OnlineAnalysisURLInfo = await URLGetAnalyzer.analyze(urlInfo: updatedURLInfo)
+            URLQueue.shared.offlineQueue[index] = OnlineAnalysisURLInfo
+            print("✅ Online analysis complete for:", OnlineAnalysisURLInfo.components.fullURL ?? "unknown")
+            URLQueue.shared.offlineQueue[index].processedOnline = true
+
+            if let finalRedirect = OnlineAnalysisURLInfo.onlineInfo?.finalRedirectURL {
+                await handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect)
+            }
+
+        } catch {
+            print("❌ GET request failed for:", currentURLInfo.components.fullURL ?? "unknown")
+            let warning = SecurityWarning(
+                message: error.localizedDescription + "\nAnalysis is incomplete.",
+                severity: .fetchError,
+                penalty: PenaltySystem.Penalty.critical,
+                url: currentURLInfo.components.coreURL ?? "",
+                source: .getError
+            )
+            URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
+            markURLInfoOnlineProcessed(for: currentURLInfo)
+        }
+
+//        URLQueue.shared.activeAsyncCount -= 1
+        if !hasFinalized {
+            print("🔁 Re-entering processOnlineQueue due to more work...")
+            await processOnlineQueue()
         }
     }
     
@@ -176,6 +185,7 @@ struct URLAnalyzer {
         URLQueue.shared.onlineQueue.removeAll()
         URLQueue.shared.legitScore.score = 100
         hasManuallyStopped = false
+        hasFinalized = false
     }
     
     private static func sanitizeAndValidate(_ urlString: String, _ infoMessage: inout String?) -> (String?, String?) {
@@ -191,14 +201,12 @@ struct URLAnalyzer {
         
         if urlInfo.warnings.contains(where: { $0.severity == .critical }) {
             URLQueue.shared.offlineQueue[index].processed = true
-            URLQueue.shared.legitScore.score -= 100
             URLQueue.shared.legitScore.analysisCompleted = true
             hasManuallyStopped = true
             print("❌ Critical warning found. Stopping analysis.")
             return true
         } else if urlInfo.warnings.contains(where: { $0.severity == .fetchError }) {
             URLQueue.shared.offlineQueue[index].processed = true
-            URLQueue.shared.legitScore.score -= 100
             URLQueue.shared.legitScore.analysisCompleted = true
             hasManuallyStopped = true
             print("⚠️ URL GET request failed. Stopping analysis.")
@@ -207,12 +215,12 @@ struct URLAnalyzer {
         return false
     }
     
-    private static func handleFinalRedirect(from currentURLInfo: URLInfo, finalRedirect: String) {
+    private static func handleFinalRedirect(from currentURLInfo: URLInfo, finalRedirect: String) async {
         guard let originalURL = currentURLInfo.components.fullURL else { return }
         if finalRedirect.lowercased() == originalURL.lowercased() { return }
         
         let alreadyQueued = URLQueue.shared.offlineQueue.contains {
-            $0.components.fullURL?.lowercased() == finalRedirect.lowercased()
+            $0.components.coreURL?.lowercased() == finalRedirect.lowercased()
         }
         guard !alreadyQueued, URLQueue.shared.offlineQueue.count < 5 else { return }
         
@@ -226,6 +234,6 @@ struct URLAnalyzer {
         print("🔁 Adding redirect URL to offline queue:", cleanedRedirectURL)
         URLQueue.shared.offlineQueue.append(newURLInfo)
         
-        processQueue()
+        await processQueue()
     }
 }

@@ -15,6 +15,7 @@ struct OnlineURLInfo: Identifiable {
     var parsedHeaders: ParsedHeaders?  // ✅ Store structured headers
     var responseBody: Data?  // ✅ Store raw response body
     var humanReadableBody: String? = nil
+    var isBodyTooLarge: Bool = false
     var humanBodySize: Int? = 0
     var normalizedCertificate: [String:String] = [:]
     var parsedCertificate: ParsedCertificate?

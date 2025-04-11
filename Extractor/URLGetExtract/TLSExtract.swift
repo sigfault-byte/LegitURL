@@ -69,7 +69,7 @@ struct TLSExtract {
         }
         
         // ✅ Store extracted details globally
-        HTTPResponseExtract.sslCertificateDetails = sslCertificateDetails
+        HTTPResponseExtract.sharedInstance.sslCertificateDetails = sslCertificateDetails
         
         // Accept the SSL certificate, this is terrible but necessary
         completionHandler(.useCredential, URLCredential(trust: serverTrust))

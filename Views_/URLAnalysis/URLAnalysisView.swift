@@ -35,23 +35,15 @@ struct URLAnalysisView: View {
                 RedirectChainSection(viewModel: viewModel.urlComponentsVM)
                 
             }
+            .listStyle(.insetGrouped)
             .safeAreaInset(edge: .bottom) {
                 WarningBannerComponent(viewModel: viewModel)
             }
             .toolbar {
                 // Bottom bar for Home & Help
                 ToolbarItemGroup(placement: .bottomBar) {
-                    HStack {
-                        Spacer()
-                        Button("🏠 Home from analysis") {
-                            onExit()
-                        }
-                        Spacer()
-                        Button("❓ Help") {
-                            // TODO: Add help logic
-                        }
-                        Spacer()
-                    }
+                    BottomToolbar(lButtonIcon: "🏠", lButtonText: "Home", lButtonAction: {onExit()},
+                                  rButtonIcon: "❓", rButtonText: "Help", rButtonAction: {})
                 }
             }
             

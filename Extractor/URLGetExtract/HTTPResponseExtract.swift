@@ -17,7 +17,7 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
     static let sharedInstance = HTTPResponseExtract()
     
     // Store SSL certificate details globally
-    static var sslCertificateDetails: [String: Any] = [:]
+    var sslCertificateDetails: [String: Any] = [:]
     
     // It takes a URLInfo object and a completion handler, then returns an OnlineURLInfo and an updated URLInfo.
     static func extract(urlInfo: URLInfo, completion: @escaping (OnlineURLInfo?, Error?) -> Void) {
@@ -107,22 +107,47 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
             let parsedHeaders = parseHeaders(httpResponse.allHeaderFields)
             
             
-            let sslCertificateDetails = HTTPResponseExtract.sslCertificateDetails
+            let sslCertificateDetails = sharedInstance.sslCertificateDetails
             
-            // Create an OnlineURLInfo object that encapsulates the response details.
+            let maxSafeBodySize = 1_200_000 // 1200 KB
+            var processedBody: Data
+            var isBodyTooLarge = false
+
+            if let data = data {
+                if data.count > maxSafeBodySize {
+                    print("⚠️ Body too large: \(data.count) bytes. Truncating to \(maxSafeBodySize) bytes.")
+                    // Truncate the data
+                    processedBody = Data(data.prefix(maxSafeBodySize))
+                    isBodyTooLarge = true
+                } else {
+                    processedBody = data
+                }
+            } else {
+                // If no data was received, use an empty Data or any default value.
+                processedBody = Data()
+            }
+
+            let humanReadableBody = String(data: processedBody, encoding: .utf8) ?? "[Body not decodable]"
+
+            // Now, create your OnlineURLInfo using the processed data:
             var onlineInfo = OnlineURLInfo(
                 from: urlInfo,
                 responseCode: statusCode,
                 statusText: statusText,
-                normalizedHeaders: normalizedHeaders, // Keep raw headers
+                normalizedHeaders: normalizedHeaders,
                 parsedHeaders: parsedHeaders,
-                body: data,
+                body: processedBody,
                 certificateAuthority: sslCertificateDetails["Issuer"] as? String,
                 sslValidity: !(sslCertificateDetails["Warning"] != nil),
                 finalRedirectURL: parsedHeaders.otherHeaders["location"]
             )
+            // Set additional properties:
+            onlineInfo.humanReadableBody = humanReadableBody
+            onlineInfo.isBodyTooLarge = isBodyTooLarge
+            
             let parsedCert = sslCertificateDetails["ParsedCertificate"] as? ParsedCertificate
             onlineInfo.parsedCertificate = parsedCert
+            
             
             if let bodyData = data, let bodyText = String(data: bodyData, encoding: .utf8) {
                 onlineInfo.humanBodySize = bodyData.count
@@ -132,11 +157,7 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
             }
             
             // Pass the response and updated URLInfo to the completion handler.
-            if let error = error {
-                completion(nil, error)
-            } else {
-                completion(onlineInfo, nil)
-            }
+            completion(onlineInfo, nil)
         }
         // Start the data task.
         task.resume()

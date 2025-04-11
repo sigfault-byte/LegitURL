@@ -8,8 +8,6 @@ import SwiftUI
 
 struct ScoreSummaryView: View {
     @ObservedObject var viewModel: ScoreSummaryViewModel
-    @State private var localDisplayScore: String = "••"
-    @State private var localDisplayScoreText: String = "Analysing ... \n00101010"
     
     var body: some View {
         Section {
@@ -26,15 +24,15 @@ struct ScoreSummaryView: View {
                     
                     dividerView
                     
-                    Text(viewModel.displayScore.isEmpty ? localDisplayScore : viewModel.displayScore)
+                    Text(viewModel.displayScore)
                         .frame(maxWidth: viewModel.shouldShowDivider ? .infinity : nil)
                         .animation(.easeOut(duration: 0.25), value: viewModel.shouldShowDivider)
                         .font(.system(size: 70, weight: .black, design: .monospaced))
-                        .foregroundColor(viewModel.isSynchIsOver ? viewModel.scoreColor : viewModel.flickerColor)
+                        .foregroundColor(viewModel.legitScore.analysisCompleted ? viewModel.scoreColor : viewModel.flickerColor)
                 Spacer()
                 }
                 
-                Text(viewModel.displayScoreText.isEmpty ? localDisplayScoreText : viewModel.displayScoreText)
+                Text(viewModel.displayScoreText)
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
                 
@@ -52,5 +50,3 @@ struct ScoreSummaryView: View {
         }
     }
 }
-
-

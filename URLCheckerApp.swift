@@ -9,9 +9,6 @@ import SwiftUI
 
 @main
 struct URLCheckerApp: App {
-    @State private var rootScreen: RootScreen = .input
-    
-    
     var body: some Scene {
         WindowGroup {
             NavigationStack {

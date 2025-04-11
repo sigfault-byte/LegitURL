@@ -65,14 +65,17 @@ struct PenaltySystem {
 /////////////////////ONLINE ///////////////////////////////////////////
         ///Body
         static let scriptIs80Percent                   = -30
+        static let extHttpScriptSrc                    = -40
         static let jsEvalInBody                        = -30
         static let jsFingerPrinting                    = -30
         static let hotdogWaterDev                      = -30
         static let metaRefreshInBody                   = -25
         static let jsWindowsRedirect                   = -20
+        static let extScriptSrc                        = -20
         static let scriptIs50Percent                   = -20
+        static let unusualScritSrcFormat               = -30
+        static let sameDomainCookie                    = -10
         static let scriptIs30Percent                   = -10
-        static let extScriptSrc                        = -10
         ///Cookie////
         static let cookiesOnNon200                     = -20
         static let moreThan16BofCookie                 = -15

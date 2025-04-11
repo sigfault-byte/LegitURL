@@ -13,8 +13,8 @@ class URLQueue: ObservableObject {
     @Published var legitScore = ScoreUpdateModel()
 //    @Published var finalSnapshot: FinalAnalysisSnapshot? = nil
     
-    // i am sorry alan turing
-    @Published var activeAsyncCount: Int = 0
+//    // i am sorry alan turing
+//    @Published var activeAsyncCount: Int = 0
     
     /// Dynamically updates with all warnings from `offlineQueue`
     var allWarnings: [SecurityWarning] {
@@ -48,12 +48,10 @@ final class ScoreUpdateModel: ObservableObject {
 extension URLQueue {
     // Ensure safe update from the background
     func addWarning(to urlID: UUID, warning: SecurityWarning) {
-        DispatchQueue.main.async {
-            if let index = self.offlineQueue.firstIndex(where: { $0.id == urlID }) {
-                self.offlineQueue[index].warnings.append(warning)
-            } else {
-                print("❌ Could not find URLInfo with ID \(urlID) to add warning")
-            }
+        if let index = self.offlineQueue.firstIndex(where: { $0.id == urlID }) {
+            self.offlineQueue[index].warnings.append(warning)
+        } else {
+            print("❌ Could not find URLInfo with ID \(urlID) to add warning")
         }
     }
 }

@@ -1,20 +1,24 @@
 import Foundation
 
 struct URLGetAnalyzer {
-    static func analyze(urlInfo: inout URLInfo) {
+    static func analyze(urlInfo: URLInfo) async -> URLInfo {
+        
+        var urlInfo = urlInfo
+        
         let originalURL = urlInfo.components.fullURL ?? ""
         let urlOrigin = urlInfo.components.coreURL ?? ""
         
-        // ✅ Retrieve OnlineURLInfo using the ID and guard for sanity check and sync mystery
-        guard let onlineInfo = urlInfo.onlineInfo else {
-            urlInfo.warnings.append(SecurityWarning(
-                message: "⚠️ No online analysis found for this URL. Skipping further checks.",
+        // Retrieve OnlineURLInfo using the ID and guard for sanity check and sync mystery
+        guard let onlineInfo = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id }) else {
+            var modified = urlInfo
+            modified.warnings.append(SecurityWarning(
+                message: "⚠️ No online analysis found for this URL. Analysis will be halted.",
                 severity: .critical,
                 penalty: -100,
-                url: urlOrigin,
+                url: urlInfo.components.coreURL ?? "",
                 source: .getError
             ))
-            return
+            return modified
         }
 
         //Should be Done in urlgGetExtract, in the meantime ill rawdog it here
@@ -37,11 +41,20 @@ struct URLGetAnalyzer {
            let contentType = headers["content-type"]?.lowercased(),
            let responseCode = onlineInfo.serverResponseCode {
             
-            BodyAnalyzer.analyze(bodyData: rawbody,
-                                 contentType: contentType,
-                                 responseCode: responseCode,
-                                 urlOrigin: urlOrigin,
-                                 warnings: &urlInfo.warnings)
+            BodyAnalyzerFast.analyze(body: rawbody,
+                                     contentType: contentType,
+                                     responseCode: responseCode,
+                                     origin: urlOrigin,
+                                     domainAndTLD: urlInfo.domain! + "." + urlInfo.tld!,
+                                     into: &urlInfo.warnings
+            )
+            
+//            BodyAnalyzer.analyze(bodyData: rawbody,
+//                                 contentType: contentType,
+//                                 responseCode: responseCode,
+//                                 urlOrigin: urlOrigin,
+//                                 warnings: &urlInfo.warnings,
+//                                 domainAndTLD: urlInfo.domain! + "." + urlInfo.tld!)
         }
 
 //        Then TLS
@@ -82,5 +95,6 @@ struct URLGetAnalyzer {
                 source: .header
             ))
         }
+        return urlInfo
     }
 }

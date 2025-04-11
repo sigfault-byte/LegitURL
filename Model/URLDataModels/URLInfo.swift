@@ -21,15 +21,6 @@ struct URLInfo: Identifiable {
     
     var onlineInfo: OnlineURLInfo? {
         get { URLQueue.shared.onlineQueue.first { $0.id == self.id } }
-        set {
-            if let newValue = newValue {
-                if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == newValue.id }) {
-                    URLQueue.shared.onlineQueue[index] = newValue
-                } else {
-                    URLQueue.shared.onlineQueue.append(newValue)
-                }
-            }
-        }
     }
 }
 

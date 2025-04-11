@@ -16,6 +16,7 @@ struct CookieViewModel: Identifiable {
     let flags: [String]
     let sameSite: String?
     let secure: Bool
+    let httpOnly: Bool
 
     init(from result: CookieAnalysisResult) {
         self.id = result.id
@@ -27,6 +28,7 @@ struct CookieViewModel: Identifiable {
         self.flags = result.flags
         self.sameSite = result.cookie.sameSite
         self.secure = result.cookie.secure
+        self.httpOnly = result.cookie.httpOnly
     }
 
     var displayedSameSitePolicy: String {
@@ -35,6 +37,14 @@ struct CookieViewModel: Identifiable {
 
     var displayedSecureStatus: String {
         if secure {
+            return "Yes"
+        } else {
+            return "Missing"
+        }
+    }
+    
+    var displayHttpOnly: String {
+        if httpOnly {
             return "Yes"
         } else {
             return "Missing"

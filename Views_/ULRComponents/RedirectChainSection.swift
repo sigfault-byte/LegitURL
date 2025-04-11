@@ -18,7 +18,7 @@ struct RedirectChainSection: View {
                         onlineInfo: viewModel.onlineInfo.first(where: { $0.id == url.id })
                     )
                 ) {
-                    Label(url.components.host ?? "Unknown Host", systemImage: "network")
+                    Label(url.components.coreURL ?? "Unknown Host", systemImage: "network")
                 }
             }
         }

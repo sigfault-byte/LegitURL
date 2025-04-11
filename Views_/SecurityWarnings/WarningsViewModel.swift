@@ -20,10 +20,6 @@ class WarningsViewModel: ObservableObject {
         self.groupedWarnings = Self.buildGroupedWarnings(from: groupedByURL)
     }
     
-    static var allSeverityLevels: [SecurityWarning.SeverityLevel] {
-        return [.critical, .dangerous, .scam, .suspicious, .tracking, .info, .fetchError]
-    }
-    
     func sourceDescription(_ source: SecurityWarning.SourceType) -> String {
         switch source {
         case .host: return "Host"

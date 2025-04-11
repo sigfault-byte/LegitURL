@@ -6,31 +6,27 @@
 //
 import SwiftUI
 
+@MainActor
 class URLAnalysisViewModel: ObservableObject {
-    var urlQueue = URLQueue.shared
-    @Published var analysisStarted: Bool = false
-    @Published var isAnalysisComplete = URLQueue.shared.legitScore.analysisCompleted
     
-    var allSecurityWarningsCount: Int {
-        warningsGroupedByURL.reduce(0) { $0 + $1.warnings.count }
-    }
-    @Published var isSynchIsOver: Bool = false
-    
-    @Published var warningsGroupedByURL: [URLWarningGroup] = []
-    
+    // Core Inputs:
     var urlInput: String
     var infoMessage: String
     
+    // Analysis State:
+    @Published var analysisStarted: Bool = false
+    
+    // UI State:
     @Published var showInfoMessage = true
     @Published var infoOpacity: Double = 1.0
-    @Published var liveLegitScore: Int = 0
-    
     @Published var showingWarningsSheet : Bool = false
     
-    //ModelViews to populate
+    // Data Models:
+    @Published var warningsGroupedByURL: [URLWarningGroup] = []
+    
+    // Child ViewModels:
     @Published var scoreSummaryVM = ScoreSummaryViewModel(
-        score: 100,
-        isSynchIsOver: false,
+        legitScore: URLQueue.shared.legitScore,
         errorMessage: nil
     )
     @Published var urlComponentsVM = URLComponentsViewModel(
@@ -48,89 +44,81 @@ class URLAnalysisViewModel: ObservableObject {
         tldLabel: ""
     )
     
-    func populateDestinationVM() -> Void {
-        self.destinationInfoVM.inputDomain = self.urlQueue.offlineQueue.first?.components.host ?? ""
-        self.destinationInfoVM.finalHost = self.urlQueue.offlineQueue.last?.components.host ?? ""
-        self.destinationInfoVM.finalHostPunycode = self.urlQueue.offlineQueue.last?.components.punycodeHostEncoded ?? ""
-        self.destinationInfoVM.hopCount = self.urlQueue.offlineQueue.count
-        self.destinationInfoVM.domainLabel = self.urlQueue.offlineQueue.last?.components.extractedDomain ?? ""
-        self.destinationInfoVM.tldLabel = self.urlQueue.offlineQueue.last?.components.extractedTLD ?? ""
-    }
+    var urlQueue = URLQueue.shared
     
+    var allSecurityWarningsCount: Int {
+        warningsGroupedByURL.reduce(0) { $0 + $1.warnings.count }
+    }
+
     // Timer for pooling
     private var timer: Timer?
     
     init(urlInput: String, infoMessage: String) {
         self.urlInput = urlInput
         self.infoMessage = infoMessage
-        self.startAnalysis()
+        Task {
+            await self.startAnalysis()
+        }
     }
     
-    func filterErrorMessage() -> Void {
+    func filterErrorMessageAndPopulateScoreSummaryVM() -> Void {
         let filteredWarnings = urlQueue.criticalAndFetchErrorWarnings
         self.scoreSummaryVM.errorMessage = filteredWarnings.map { $0.message }
     }
     
-    func startAnalysis() {
+    func startAnalysis() async {
         if !analysisStarted {
             analysisStarted = true
-            URLAnalyzer.analyze(urlString: urlInput)
+            await URLAnalyzer.analyze(urlString: urlInput)
         }
+        self.scoreSummaryVM.startFlicker()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            withAnimation(.easeInOut(duration: 1)) {
-                self.infoOpacity = 0.3
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                withAnimation(.easeInOut(duration: 1)) {
-                    self.showInfoMessage = false
-                }
-            }
+        // Info banner delay animation
+        try? await Task.sleep(nanoseconds: 3 * 1_000_000_000)
+        withAnimation(.easeInOut(duration: 1)) {
+            self.infoOpacity = 0.3
         }
-        
-        // Pooling data, this is ugly but necessary before refactoring struct to class, there is a "lag" when pooling data, defering the stop is necessary
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
+        try? await Task.sleep(nanoseconds: 1 * 1_000_000_000)
+        withAnimation(.easeInOut(duration: 1)) {
+            self.showInfoMessage = false
+        }
+
+        // Final analysis update
+        while !self.urlQueue.legitScore.analysisCompleted {
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
             self.updateAnalysisState()
-            
-            if self.isAnalysisComplete {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    self.updateAnalysisState()
-                    self.filterErrorMessage()
-                    self.populateDestinationVM()
-                    self.isSynchIsOver = true
-                    self.stopAnalysis()
-                }
-            }
         }
+
+        try? await Task.sleep(nanoseconds: 500_000_000) // final defer
+
+        self.updateAnalysisState()
+        self.populateDestinationVM()
+         // Call startFlicker after initialization
     }
     
     //Assigning pooled data
     private func updateAnalysisState() {
-        self.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
         let structuredGroups = self.urlQueue.offlineQueue.map {
             URLWarningGroup(urlInfo: $0, warnings: $0.warnings)
         }
         self.warningsGroupedByURL = structuredGroups
         
-        
-        self.scoreSummaryVM.score = self.urlQueue.legitScore.score
-        self.scoreSummaryVM.isSynchIsOver = self.urlQueue.legitScore.analysisCompleted
-        
         self.urlComponentsVM.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
         self.urlComponentsVM.urlInfo = self.urlQueue.offlineQueue
         self.urlComponentsVM.onlineInfo = self.urlQueue.onlineQueue
-        print("Score in view: ",self.scoreSummaryVM.score)
         
-    }
-    
-    func stopAnalysis() {
-        self.timer?.invalidate()
-        self.timer = nil
     }
     
     func showWarningsSheet() -> Void {
         self.showingWarningsSheet = true
     }
     
+    func populateDestinationVM() -> Void {
+        self.destinationInfoVM.inputDomain = self.urlQueue.offlineQueue.first?.components.fullURL ?? ""
+        self.destinationInfoVM.finalHost = self.urlQueue.offlineQueue.last?.components.coreURL ?? ""
+        self.destinationInfoVM.finalHostPunycode = self.urlQueue.offlineQueue.last?.components.punycodeHostEncoded ?? ""
+        self.destinationInfoVM.hopCount = self.urlQueue.offlineQueue.count
+        self.destinationInfoVM.domainLabel = self.urlQueue.offlineQueue.last?.components.extractedDomain ?? ""
+        self.destinationInfoVM.tldLabel = self.urlQueue.offlineQueue.last?.components.extractedTLD ?? ""
+    }
 }

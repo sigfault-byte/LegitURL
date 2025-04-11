@@ -12,51 +12,15 @@ struct URLInputView: View {
     
     var body: some View {
         VStack {
-            // Big Title (1/3 screen height)
-            VStack {
-                Text("URLChecker")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.top, 40)
-            }
+            // 1/3 screen height
+            AppHeaderView()
             .frame(maxHeight: .infinity, alignment: .center)
             .frame(height: UIScreen.main.bounds.height / 3)
             
-            // Input & Button Section
-            VStack(spacing: 16) {
-                TextField("Enter URL", text: $viewModel.urlInput)
-                    .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(uiColor: .systemGray6))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color(uiColor: .separator), lineWidth: 1)
-                    )
-                    .padding(.horizontal)
-                
-                Button(action: {
-                    if viewModel.analyzeURL() {
-                        onAnalyze(viewModel.urlInput, viewModel.infoMessage)
-                    }
-                }) {
-                    Text("Check URL")
-                        .frame(maxWidth: .infinity)
+            // input & Button Section
+            URLInputForm(viewModel: viewModel) {
+                    onAnalyze(viewModel.urlInput, viewModel.infoMessage)
                 }
-                .buttonStyle(.borderedProminent)
-                .padding(.horizontal)
-                .disabled(!viewModel.isInputValid)
-                
-                if !viewModel.errorMessage.isEmpty {
-                    Text(viewModel.errorMessage)
-                        .foregroundColor(.red)
-                        .padding(.horizontal)
-                }
-            }
             .padding(.vertical)
             
             Spacer()
@@ -64,17 +28,75 @@ struct URLInputView: View {
         .background(Color(uiColor: .systemBackground))
         .toolbar {
             ToolbarItemGroup(placement: .bottomBar) {
-                HStack {
-                    Spacer()
-                    Button("⚙️ Settings") {
-                        // Add settings action
+                BottomToolbar(
+                    lButtonIcon: "⚙️",
+                    lButtonText: "Settings",
+                    lButtonAction: {
+                        // settings action
+                    },
+                    rButtonIcon: "❓",
+                    rButtonText: "Help",
+                    rButtonAction: {
+                        // help action
                     }
-                    Spacer()
-                    Button("❓ Help") {
-                        // Add help action
+                )
+            }
+        }
+    }
+}
+
+struct AppHeaderView: View {
+    var body: some View {
+        Text("URLChecker")
+            .font(.largeTitle)
+            .fontWeight(.bold)
+            .padding(.top, 40)
+    }
+}
+
+struct URLInputForm: View {
+    @ObservedObject var viewModel: URLInputViewModel
+    var onAnalyze: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            TextField("Enter URL", text: $viewModel.urlInput)
+                .keyboardType(.URL)
+                .submitLabel(.go)
+                .onSubmit {
+                    if viewModel.analyzeURL() {
+                        onAnalyze()
                     }
-                    Spacer()
                 }
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(uiColor: .systemGray6))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(uiColor: .separator), lineWidth: 1)
+                )
+                .padding(.horizontal)
+            
+            Button(action: {
+                if viewModel.analyzeURL() {
+                    onAnalyze()
+                }
+            }) {
+                Text("Check URL")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal)
+            .disabled(!viewModel.isInputValid)
+            
+            if !viewModel.errorMessage.isEmpty {
+                Text(viewModel.errorMessage)
+                    .foregroundColor(.red)
+                    .padding(.horizontal)
             }
         }
     }

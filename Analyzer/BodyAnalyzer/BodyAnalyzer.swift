@@ -1,7 +1,12 @@
 import Foundation
 //TODO : create a generic function for the call of the various script byte check
 struct BodyAnalyzer {
-    static func analyze(bodyData: Data, contentType: String, responseCode: Int, urlOrigin: String, warnings: inout [SecurityWarning]) {
+    static func analyze(bodyData: Data,
+                        contentType: String,
+                        responseCode: Int,
+                        urlOrigin: String,
+                        warnings: inout [SecurityWarning],
+                        domainAndTLD: String) -> Void {
         var scriptRatio = 0.0
         guard responseCode == 200 else {
             return
@@ -11,8 +16,8 @@ struct BodyAnalyzer {
         if contentType.contains("text/html") /*|| contentType.contains("text/plain")*/{
             // gotta check i am not converting to string and converting back to bytes....!
             /// Initial prefix was 40, but some website ( hello www.apple.com pad the html before the current code ? need to thinke about a cleaning logic )
-            let htmlStartIsNearTop = bodyData.prefix(512).containsBytesCaseInsensitive(of: HTMLEntities.htmlOpen)
-            let htmlCloseIsNearEnd = bodyData.suffix(512).containsBytesCaseInsensitive(of: HTMLEntities.htmlClose)
+            let (htmlStartIsNearTop, _) = bodyData.prefix(512).containsBytesCaseInsensitive(of: HTMLEntities.htmlOpen)
+            let (htmlCloseIsNearEnd, _) = bodyData.suffix(512).containsBytesCaseInsensitive(of: HTMLEntities.htmlClose)
             
             switch (htmlStartIsNearTop, htmlCloseIsNearEnd) {
             case (true, true):
@@ -92,7 +97,7 @@ struct BodyAnalyzer {
             }
             //        Switch case end
             // proceed with generic checks
-            let checkExternalScriptTag = checkExternalScriptTag(bodyData: bodyData, urlOrigin: urlOrigin, warnings: &warnings)
+            let checkExternalScriptTag = checkExternalScriptTag(bodyData: bodyData, urlOrigin: urlOrigin, warnings: &warnings, domainAndTLD: domainAndTLD)
             let checkMetaRefresh = checkMetaRefresh(bodyData: bodyData, responseCode: responseCode, urlOrigin: urlOrigin, warnings: &warnings)
             let checkClientMinJs = checkClientMinJS(bodyData: bodyData, urlOrigin: urlOrigin, warnings: &warnings)
             let checkAutosubmitForm = checkAutoSubmittingForm(bodyData: bodyData, urlOrigin: urlOrigin, warnings: &warnings)
@@ -117,25 +122,136 @@ struct BodyAnalyzer {
         } else { /*other content type*/}
     }
     
+    //    // Helper function to check for an external script tag
+    //    private static func checkExternalScriptTag(bodyData: Data, urlOrigin: String, warnings: inout [SecurityWarning]) -> Bool {
+    //        let (scriptFound, pos) = bodyData.containsBytesCaseInsensitive(of: ScamByteSignatures.scriptSrc)
+    //        let coreURL = convertToBytes(of: urlOrigin)
+    //        if scriptFound {
+    ////            let numberOfScritpsrs = bodyData.countsBytesInsensitive(of: ScamByteSignatures.scriptSrc)
+    //
+    //
+    //            warnings.append(SecurityWarning(
+    //                message: " '\(numberOfScritpsrs)' External script tag found (<script src=...).",
+    //                severity: .suspicious,
+    //                penalty: PenaltySystem.Penalty.extScriptSrc * numberOfScritpsrs,
+    //                url: urlOrigin,
+    //                source: .body
+    //            ))
+    //            return true
+    //        }
+    //        return false
+    //    }
+    
     // Helper function to check for an external script tag
-    private static func checkExternalScriptTag(bodyData: Data, urlOrigin: String, warnings: inout [SecurityWarning]) -> Bool {
-        if bodyData.containsBytesCaseInsensitive(of: ScamByteSignatures.scriptSrc) {
-            let numberOfScritpsrs = bodyData.countsBytesInsensitive(of: ScamByteSignatures.scriptSrc)
-            warnings.append(SecurityWarning(
-                message: " '\(numberOfScritpsrs)' External script tag found (script src=...).",
-                severity: .suspicious,
-                penalty: PenaltySystem.Penalty.extScriptSrc * numberOfScritpsrs,
-                url: urlOrigin,
-                source: .body
-            ))
-            return true
-        }
+    private static func checkExternalScriptTag(bodyData: Data, urlOrigin: String, warnings: inout [SecurityWarning], domainAndTLD: String) -> Bool {
+    if bodyData.count > 100_000 {
+        warnings.append(SecurityWarning(
+            message: "Body too large for deep script tag scan (over 100KB). Skipping detailed analysis.",
+            severity: .info,
+            penalty: 0,
+            url: urlOrigin,
+            source: .body
+        ))
         return false
+    }
+        let scriptSrcPattern = ScamByteSignatures.scriptSrc
+        
+        var scriptFoundCount = 0
+        var currentIndex = 0
+        
+        while currentIndex < bodyData.count {
+            let pos = bodyData.containsBytesCaseInsensitive(of: ScamByteSignatures.scriptSrc, startIndex: currentIndex).position
+            if let scriptPos = pos {
+                scriptFoundCount += 1
+                
+                // Analyze the URL after "src="
+                let urlStartPos = scriptPos + ScamByteSignatures.scriptSrc.count
+                if urlStartPos < bodyData.count {
+                    let lookaheadLimit = min(urlStartPos + 50, bodyData.count)
+                    let urlBytes = bodyData[urlStartPos..<lookaheadLimit]
+                    
+                    if let range = urlBytes.range(of: Data(interestingPrefix.http)) {
+                        let urlStart = range.lowerBound + interestingPrefix.http.count
+                        let endIndex = min(urlStart + 15, urlBytes.count)
+                        if urlStart < endIndex {
+                            let urlSnippetData = urlBytes[urlStart..<endIndex]
+                            let urlSnippet = String(data: urlSnippetData, encoding: .utf8) ?? ""
+                            warnings.append(SecurityWarning(
+                                message: "External HTTP script tag found (<script src=http:\(urlSnippet)...).",
+                                severity: .dangerous,
+                                penalty: PenaltySystem.Penalty.extHttpScriptSrc,
+                                url: urlOrigin,
+                                source: .body
+                            ))
+                        }
+                    } else if let range = urlBytes.range(of: Data(interestingPrefix.https)) {
+                        let urlStart = range.lowerBound + interestingPrefix.https.count
+                        let endIndex = min(urlStart + 15, urlBytes.count)
+                        if urlStart < endIndex {
+                            let urlSnippetData = urlBytes[urlStart..<endIndex]
+                            let urlSnippet = String(data: urlSnippetData, encoding: .utf8) ?? ""
+                            if let domainTldBytes = domainAndTLD.data(using: .utf8),
+                               urlBytes.range(of: Data(domainTldBytes)) != nil {
+                                warnings.append(SecurityWarning(
+                                    message: "External HTTPS script tag found (likely same domain: \(urlSnippet)...).",
+                                    severity: .suspicious,
+                                    penalty: PenaltySystem.Penalty.sameDomainCookie,
+                                    url: urlOrigin,
+                                    source: .body
+                                ))
+                            } else {
+                                warnings.append(SecurityWarning(
+                                    message: "External HTTPS script tag found (different domain: \(urlSnippet)...).",
+                                    severity: .suspicious,
+                                    penalty: PenaltySystem.Penalty.extScriptSrc,
+                                    url: urlOrigin,
+                                    source: .body
+                                ))
+                            }
+                        }
+                    } else if let slashIndexWithinUrlBytes = urlBytes.firstIndex(of: interestingPrefix.slash[0]) {
+                        let relativeSlashIndex = urlBytes.distance(from: urlBytes.startIndex, to: slashIndexWithinUrlBytes)
+                        let relativeEnd = min(relativeSlashIndex + 15, urlBytes.count)
+                        let startIndex = urlBytes.index(urlBytes.startIndex, offsetBy: relativeSlashIndex)
+                        let endIndex = urlBytes.index(urlBytes.startIndex, offsetBy: relativeEnd)
+                        print("Found '/':")
+                        print("  urlBytes.count: \(urlBytes.count)")
+                        print("  relativeSlashIndex: \(relativeSlashIndex)")
+                        print("  relativeEnd: \(relativeEnd)")
+                        let urlSnippetData = urlBytes[startIndex..<endIndex]
+                        let urlSnippet = String(data: urlSnippetData, encoding: .utf8) ?? ""
+                        warnings.append(SecurityWarning(
+                            message: "Internal script tag found (<script src=\(urlSnippet)...).",
+                            severity: .info,
+                            penalty: 0,
+                            url: urlOrigin,
+                            source: .body
+                        ))
+                    } else if !urlBytes.isEmpty {
+                        warnings.append(SecurityWarning(
+                            message: "Unusual script source format found (<script src=...).",
+                            severity: .suspicious,
+                            penalty: PenaltySystem.Penalty.unusualScritSrcFormat,
+                            url: urlOrigin,
+                            source: .body
+                        ))
+                    }
+                }
+                
+                currentIndex = scriptPos + scriptSrcPattern.count // Move past the found tag
+                
+            } else {
+                break // No more script tags found
+            }
+        }
+        
+        return scriptFoundCount > 0
     }
     
     // Helper function to check for meta refresh redirect
     private static func checkMetaRefresh(bodyData: Data, responseCode: Int, urlOrigin: String, warnings: inout [SecurityWarning]) -> Bool {
-        if responseCode == 200 && bodyData.containsBytesCaseInsensitive(of: ScamByteSignatures.metaRefresh) {
+        let (isMetaRefresh, _) = bodyData.containsBytesCaseInsensitive(of: ScamByteSignatures.metaRefresh)
+        if responseCode == 200 && isMetaRefresh {
             warnings.append(SecurityWarning(
                 message: "Meta refresh redirect found in body on 200 OK page.",
                 severity: .dangerous,
@@ -150,7 +266,8 @@ struct BodyAnalyzer {
     
     // Helper function to check for 'client.min.js' script
     private static func checkClientMinJS(bodyData: Data, urlOrigin: String, warnings: inout [SecurityWarning]) -> Bool {
-        if bodyData.containsBytesCaseInsensitive(of: ScamByteSignatures.clientMinJS) {
+        let (clientMinJS, _) = bodyData.containsBytesCaseInsensitive(of: ScamByteSignatures.clientMinJS)
+        if clientMinJS {
             warnings.append(SecurityWarning(
                 message: "Known suspicious script file 'client.min.js' found. Known fingerprinting js library.",
                 severity: .scam,
