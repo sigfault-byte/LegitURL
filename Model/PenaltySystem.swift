@@ -69,13 +69,18 @@ struct PenaltySystem {
         static let jsEvalInBody                        = -30
         static let jsFingerPrinting                    = -30
         static let hotdogWaterDev                      = -30
+        static let scriptIs70Percent                   = -30
+        static let scriptDataURI                       = -30
+        static let scriptUnknownOrigin                 = -30
+        static let scriptMalformed                     = -30
         static let metaRefreshInBody                   = -25
+        static let scriptIsMoreThan512                 = -20
         static let jsWindowsRedirect                   = -20
+        static let badJSCallInline                     = -20
         static let extScriptSrc                        = -20
-        static let scriptIs50Percent                   = -20
         static let unusualScritSrcFormat               = -30
         static let sameDomainCookie                    = -10
-        static let scriptIs30Percent                   = -10
+        static let scriptIs5070Percent                 = -10
         ///Cookie////
         static let cookiesOnNon200                     = -20
         static let moreThan16BofCookie                 = -15
@@ -155,19 +160,19 @@ extension PenaltySystem {
 
         for flag in flags {
             if flag.contains("Secure flag missing on SameSite=None") {
-                penalty += 40
+                penalty -= 40
             } else if flag.contains("High-entropy value") {
-                penalty += 20
+                penalty -= 20
             } else if flag.contains("Large fingerprint-style") {
-                penalty += 25
+                penalty -= 25
             } else if flag.contains("Persistent cookie") {
-                penalty += 10
+                penalty -= 10
             } else if flag.contains("cross-site access") {
-                penalty += 10
+                penalty -= 10
             } else if flag.contains("Secure flag missing") {
-                penalty += 15
+                penalty -= 15
             } else if flag.contains("opaque identifier") || flag.contains("UUID") {
-                penalty += 10
+                penalty -= 10
             }
 //                else if flag.contains("Tiny sessionless cookie") {
 //                penalty -= 10 // 🟢 possible bonus

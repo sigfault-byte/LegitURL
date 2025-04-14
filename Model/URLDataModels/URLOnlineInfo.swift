@@ -24,6 +24,7 @@ struct OnlineURLInfo: Identifiable {
     var finalRedirectURL: String?
     var cookies: [String: String] = [:]
     var cookiesForUI: [CookieAnalysisResult?] = []
+    var scriptSourcesForCSP: ScriptSourceToMatchCSP? = nil
     
 //    //    Need to be either analysed, or cleaned because it can be way too big!
 //    var formattedBody: String {
@@ -67,4 +68,9 @@ struct ParsedHeaders {
     var trackingHeaders: [String: String] = [:]
     var serverHeaders: [String: String] = [:]
     var otherHeaders: [String: String] = [:]
+}
+
+struct ScriptSourceToMatchCSP {
+    var nonceList: [String]
+    var externalSources: [String]
 }

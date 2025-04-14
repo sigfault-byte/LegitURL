@@ -35,28 +35,43 @@ struct URLGetAnalyzer {
         HandleHTTPResponse.cases(responseCode: responseCode, urlInfo: &urlInfo)
         
 
-        // Analyze body response Body first
+        // Analyze body response Body first, returns "script" found in the html, if it's perfect
         // TODO : multi check the final url, there can be only one! -> we do not extract final url from the body for now
+        var findings: ScriptExtractionResult?
         if let rawbody = onlineInfo.responseBody,
            let contentType = headers["content-type"]?.lowercased(),
            let responseCode = onlineInfo.serverResponseCode {
             
-            BodyAnalyzerFast.analyze(body: rawbody,
+            findings = BodyAnalyzerFast.analyze(body: rawbody,
                                      contentType: contentType,
                                      responseCode: responseCode,
                                      origin: urlOrigin,
                                      domainAndTLD: urlInfo.domain! + "." + urlInfo.tld!,
                                      into: &urlInfo.warnings
             )
-            
-//            BodyAnalyzer.analyze(bodyData: rawbody,
-//                                 contentType: contentType,
-//                                 responseCode: responseCode,
-//                                 urlOrigin: urlOrigin,
-//                                 warnings: &urlInfo.warnings,
-//                                 domainAndTLD: urlInfo.domain! + "." + urlInfo.tld!)
         }
+        
+        var scriptValueToCheck: ScriptSourceToMatchCSP? = nil
+        if let result = findings, !result.scripts.isEmpty {
+            if let rawbody = onlineInfo.responseBody {
+                scriptValueToCheck = ScriptSecurityAnalyzer.analyze(scripts: result.scripts,
+                                               body: rawbody,
+                                               origin: urlOrigin,
+                                               htmlRange: result.htmlRange,
+                                               into: &urlInfo.warnings)
+            }
+        }
+        if let scriptData = scriptValueToCheck {
+            print("🔐 Nonce list (\(scriptData.nonceList.count)):")
+            for (index, nonce) in scriptData.nonceList.enumerated() {
+                print("  [\(index)] \(nonce)")
+            }
 
+            print("🌍 External script sources (\(scriptData.externalSources.count)):")
+            for (index, src) in scriptData.externalSources.enumerated() {
+                print("  [\(index)] \(src)")
+            }
+        }
 //        Then TLS
 
         if let tlsCertificate = onlineInfo.parsedCertificate {

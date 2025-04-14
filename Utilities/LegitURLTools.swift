@@ -245,4 +245,41 @@ struct LegitURLTools {
             return []
         }
     }
+    
+    /// Calculates Shannon entropy over the byte content of a Data buffer (1-gram).
+    /// Useful for detecting randomness or obfuscation in inline scripts or encoded blobs.
+    /// - Parameter data: The raw Data to analyze.
+    /// - Returns: The entropy value as a Float.
+    static func byteEntropy(_ data: Data) -> Float {
+        guard !data.isEmpty else { return 0.0 }
+
+        let length = Float(data.count)
+        var frequency: [UInt8: Float] = [:]
+
+        for byte in data {
+            frequency[byte, default: 0] += 1
+        }
+
+        let entropy: Float = frequency.values.reduce(0) { result, count in
+            let probability = count / length
+            return result - (probability * log2(probability))
+        }
+
+        return entropy
+    }
+
+    /// Calculates the proportion of structural JavaScript symbols in a script.
+    /// Used to differentiate real code from encoded blobs.
+    /// - Parameter input: The JS content as a String.
+    /// - Returns: Float value representing the density of symbols.
+    static func jsSymbolDensity(in input: String) -> Float {
+        guard !input.isEmpty else { return 0.0 }
+
+        let structuralSymbols: Set<Character> = ["{", "}", "(", ")", ";", "=", ",", "\"", "'", ".", ":", "[", "]", "\\"]
+        let matchCount = input.reduce(0) { count, char in
+            structuralSymbols.contains(char) ? count + 1 : count
+        }
+
+        return Float(matchCount) / Float(input.count)
+    }
 }

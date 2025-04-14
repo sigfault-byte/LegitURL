@@ -1,4 +1,3 @@
-//
 //  DataSignatures.swift
 //  URLChecker
 //
