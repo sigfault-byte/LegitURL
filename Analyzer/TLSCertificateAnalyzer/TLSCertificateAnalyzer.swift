@@ -99,11 +99,11 @@ struct TLSCertificateAnalyzer {
 
             switch certificate.inferredValidationLevel {
             case .ev:
-                addWarning("✅ Certificate is Extended Validation (EV)", .info, penalty: 0)
+                addWarning("✅ Certificate is Extended Validation (EV)", .info, penalty: 10)
             case .ov:
-                addWarning("✅ Certificate is Organization Validated (OV)", .info, penalty: 0)
+                addWarning("✅ Certificate is Organization Validated (OV)", .info, penalty: 10)
             case .dv:
-                addWarning("✅ Certificate is Domain Validated (OV)", .info, penalty: 0)
+                addWarning("✅ Certificate is Domain Validated (DV)", .info, penalty: 0)
                 if certificate.issuerCommonName == "WE1"{
                     // TODO: Replace with real label before release
                     addWarning("✅ DV Cert issued by a Hotdogwater CN (WE1)", .info, penalty: PenaltySystem.Penalty.hotDogwaterCN)

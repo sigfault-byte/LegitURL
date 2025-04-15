@@ -27,6 +27,9 @@ class URLQueue: ObservableObject {
             .map { "• [\($0.severity.rawValue.uppercased())] \($0.message)" }
             .joined(separator: "\n")
     }
+  
+//    seen cookies set to not double penalyze same cookie keys because we have a fresh get each time
+    var cookiesSeenByRedirectChain: [UUID: Set<String>] = [:]
     
     var criticalAndFetchErrorWarnings: [SecurityWarning] {
         allWarnings.filter { $0.severity == .critical || $0.severity == .fetchError }

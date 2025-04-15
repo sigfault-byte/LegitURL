@@ -13,10 +13,11 @@ struct CookieViewModel: Identifiable {
     let isCrossSite: Bool
     let humanReadableExpiry: String
     let severity: CookieSeverity
-    let flags: [String]
+    let flags: CookieFlagBits
     let sameSite: String?
     let secure: Bool
     let httpOnly: Bool
+    let entropy: Float?
 
     init(from result: CookieAnalysisResult) {
         self.id = result.id
@@ -29,6 +30,7 @@ struct CookieViewModel: Identifiable {
         self.sameSite = result.cookie.sameSite
         self.secure = result.cookie.secure
         self.httpOnly = result.cookie.httpOnly
+        self.entropy = result.entropy
     }
 
     var displayedSameSitePolicy: String {
@@ -49,6 +51,10 @@ struct CookieViewModel: Identifiable {
         } else {
             return "Missing"
         }
+    }
+    
+    var readableFlags: [String] {
+        flags.descriptiveReasons(entropyScore: entropy)
     }
 
     private static func humanizeExpiry(_ date: Date?) -> String {
@@ -72,3 +78,5 @@ struct CookieViewModel: Identifiable {
         }
     }
 }
+
+

@@ -118,7 +118,7 @@ struct PathAnalyzer {
                     analysis.isPhishing = true
                     analysis.phishingTerms.append(part)
                 }
-                
+                // TODO: add levenshtein + n gram check!!
                 for brand in KnownBrands.names {
                     if brand == part.lowercased() {
                         urlInfo.warnings.append(SecurityWarning(

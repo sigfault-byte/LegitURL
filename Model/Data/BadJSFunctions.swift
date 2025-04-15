@@ -12,8 +12,6 @@ struct BadJSFunctions {
         "eval",
         "atob",
         "btoa",
-        "settimeout",
-        "setinterval",
         "document.write",
         "location.replace",
         "location.assign",
@@ -37,8 +35,6 @@ struct BadJSFunctions {
     static let eval: [UInt8] = Array("eval".utf8)
     static let atob: [UInt8] = Array("atob".utf8)
     static let btoa: [UInt8] = Array("btoa".utf8)
-    static let settimeout: [UInt8] = Array("settimeout".utf8)
-    static let setinterval: [UInt8] = Array("setinterval".utf8)
     static let documentWrite: [UInt8] = Array("document.write".utf8)
     static let locationReplace: [UInt8] = Array("location.replace".utf8)
     static let locationAssign: [UInt8] = Array("location.assign".utf8)
@@ -64,8 +60,6 @@ struct BadJSFunctions {
             eval,
             atob,
             btoa,
-            settimeout,
-            setinterval,
             documentWrite,
             locationReplace,
             locationAssign,
@@ -92,8 +86,6 @@ struct BadJSFunctions {
             eval,
             atob,
             btoa,
-            settimeout,
-            setinterval,
             documentWrite,
             locationReplace,
             locationAssign,
@@ -114,4 +106,39 @@ struct BadJSFunctions {
             getELementById,
         ].compactMap { $0.dropLast().last }.reduce(into: Set<UInt8>()) { $0.insert($1) }
     }
+}
+
+struct SuspiciousJSAccessors {
+    static let dotCookie: [UInt8] = Array("cookie".utf8)
+    static let dotLocalStorage: [UInt8] = Array("localStorage".utf8)
+    static let dotSetItem: [UInt8] = Array("setItem".utf8)
+    static let dotWebAssembly: [UInt8] = Array("WebAssembly".utf8)
+
+    static let all: [(name: String, bytes: [UInt8])] = [
+        ("cookie", dotCookie),
+        ("localStorage", dotLocalStorage),
+        ("setItem", dotSetItem),
+        ("WebAssembly", dotWebAssembly),
+    ]
+    
+    static let accessorsFirstBytes: Set<UInt8> = [
+        UInt8(ascii: "c"), // cookie
+        UInt8(ascii: "l"), // localStorage
+        UInt8(ascii: "s"), // setItem
+        UInt8(ascii: "W"), // WebAssembly
+    ]
+
+    static let accessorsSecondBytes: Set<UInt8> = [
+        UInt8(ascii: "o"), // co
+        UInt8(ascii: "o"), // lo
+        UInt8(ascii: "e"), // se
+        UInt8(ascii: "e"), // We
+    ]
+    
+    static let accessorsThirdBytes: Set<UInt8> = [
+        UInt8(ascii: "o"), // co
+        UInt8(ascii: "c"), // lo
+        UInt8(ascii: "t"), // se
+        UInt8(ascii: "b"), // We
+    ]
 }

@@ -58,3 +58,61 @@ func parseCookies(from headers: [String], for url: String) -> [CookieMetadata] {
 
     return allCookies
 }
+
+struct CookieFlagBits: OptionSet, Hashable {
+    let rawValue: Int
+
+    static let highEntropyValue = CookieFlagBits(rawValue: 1 << 0)
+    static let largeValue = CookieFlagBits(rawValue: 1 << 1)
+    static let fingerprintStyle = CookieFlagBits(rawValue: 1 << 2)
+    static let expired = CookieFlagBits(rawValue: 1 << 3)
+    static let persistent = CookieFlagBits(rawValue: 1 << 4)
+    static let shortLivedPersistent = CookieFlagBits(rawValue: 1 << 5)
+    static let samesiteNone = CookieFlagBits(rawValue: 1 << 6)
+    static let secureMissing = CookieFlagBits(rawValue: 1 << 7)
+    static let httpOnlyMissing = CookieFlagBits(rawValue: 1 << 8)
+    static let benignTiny = CookieFlagBits(rawValue: 1 << 9)
+    static let cookieOnRedirect = CookieFlagBits(rawValue: 1 << 10)
+    static let smallCookie = CookieFlagBits(rawValue: 1 << 11)
+    static let reusedAccrossRedirect = CookieFlagBits(rawValue: 1 << 12)
+
+}
+
+struct CookieAnalysisResult: Identifiable, Hashable {
+    let id = UUID()
+    let cookie: CookieMetadata
+    let severity: CookieSeverity
+    let flags: CookieFlagBits
+    let entropy: Float?
+}
+
+extension CookieFlagBits {
+    func descriptiveReasons(entropyScore: Float? = nil) -> [String] {
+        var reasons: [String] = []
+
+        if contains(.highEntropyValue) {
+            if let score = entropyScore {
+                reasons.append("High-entropy value (H ≈ \(String(format: "%.2f", score)))")
+            } else {
+                reasons.append("High-entropy value")
+            }
+        }
+        if contains(.smallCookie) && (contains(.httpOnlyMissing) || contains(.secureMissing)) {
+            reasons.append("Small cookie missing security flags")
+        }
+        if contains(.largeValue)            { reasons.append("Large value") }
+        if contains(.fingerprintStyle)      { reasons.append("Fingerprint-style pattern") }
+        if contains(.expired)               { reasons.append("Expired cookie") }
+        if contains(.persistent)            { reasons.append("Persistent cookie") }
+        if contains(.shortLivedPersistent)  { reasons.append("Short-lived persistent cookie") }
+        if contains(.samesiteNone)          { reasons.append("SameSite=None") }
+        if contains(.secureMissing)         { reasons.append("Secure flag missing") }
+        if contains(.httpOnlyMissing)       { reasons.append("HttpOnly flag missing") }
+        if contains(.benignTiny)            { reasons.append("Benign tiny cookie") }
+        if contains(.cookieOnRedirect)      { reasons.append("Cookie on redirect") }
+        if contains(.smallCookie)           { reasons.append("Small Cookie (less than 10 bytes)")}
+        if contains(.reusedAccrossRedirect) { reasons.append("Cookie was already set previously, and penalyzed")}
+
+        return reasons
+    }
+}

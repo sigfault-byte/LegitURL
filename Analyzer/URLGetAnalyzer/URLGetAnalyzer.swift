@@ -61,19 +61,8 @@ struct URLGetAnalyzer {
                                                into: &urlInfo.warnings)
             }
         }
-        if let scriptData = scriptValueToCheck {
-            print("🔐 Nonce list (\(scriptData.nonceList.count)):")
-            for (index, nonce) in scriptData.nonceList.enumerated() {
-                print("  [\(index)] \(nonce)")
-            }
-
-            print("🌍 External script sources (\(scriptData.externalSources.count)):")
-            for (index, src) in scriptData.externalSources.enumerated() {
-                print("  [\(index)] \(src)")
-            }
-        }
+        
 //        Then TLS
-
         if let tlsCertificate = onlineInfo.parsedCertificate {
             let domainAndTLD = [urlInfo.domain, urlInfo.tld].compactMap { $0 }.joined(separator: ".")
             let host = urlInfo.host ?? ""

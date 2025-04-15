@@ -4,13 +4,16 @@ struct ScriptInlineAnalyzer {
     static func analyze(scripts: [ScriptScanTarget], body: Data, origin: String, into warnings: inout [SecurityWarning]) {
         let start = Date()
         var hotDogWaterJSSoup: String?
-//        join all inline to a js soup
+        var setterDetected = false
+        //        join all inline to a js soup
         hotDogWaterJSSoup = generateInlineSoup(from: scripts, in: body)
-//        print("soup is :", hotDogWaterJSSoup!.count)
-        // fin all possible funtion call by locating the (
+        //        print("soup is :", hotDogWaterJSSoup!.count)
+        // fin all possible funtion call by locating the ( find all js accessor looking for .
         guard let soup = hotDogWaterJSSoup else { return }
         let soupData = Data(soup.utf8)
         let parenPositions = DataSignatures.extractAllTagMarkers(in: soupData, within: 0..<soupData.count, tag: UInt8(ascii: "("))
+        let dotPositions = DataSignatures.extractAllTagMarkers(in: soupData, within: 0..<soupData.count, tag: UInt8(ascii: "."))
+        
         // pre filter by looking at the ( position -1 is its a letter of the bad js function
         // TODO: Optimize by analyzing leading bytes before `(` to narrow down which keywords can still be matched
         let suspiciousCalls = filterSuspiciousJSCalls(
@@ -19,30 +22,46 @@ struct ScriptInlineAnalyzer {
             offset: -1,
             suspiciousBytes: BadJSFunctions.suspiciousLastBytes
         )
+        let suspiciousAncestors = filterSuspiciousAncestor(
+            in: soupData,
+            dotPositions: dotPositions,
+            offset: 1,
+            suspiciousBytes: SuspiciousJSAccessors.accessorsFirstBytes
+        )
         // second pass with pos -2 on the second letter of bad js function
-        print("\(suspiciousCalls.count) Suspicious JS calls found from \(parenPositions.count) ")
+//        print("\(suspiciousCalls.count) Suspicious JS calls found from \(parenPositions.count) ")
+//        print("\(suspiciousAncestors.count) Suspicious JS accessors calls found from \(dotPositions.count) ")
+        
         let suspiciousCalls2 = filterSuspiciousJSCalls(
             in: soupData,
             parenPositions: suspiciousCalls,
             offset: -2,
             suspiciousBytes: BadJSFunctions.suspiciousSecondLastBytes
         )
-        print("\(suspiciousCalls2.count) Suspicious JS calls found from \(suspiciousCalls.count)")
-//        for pos in suspiciousCalls2 {
-//            let previewStart = max(pos - 10, 0)
-//            let preview = soupData[previewStart..<pos]
-//            let context = String(decoding: preview, as: UTF8.self)
-//            print("...before `(` at \(pos): \(context)")
-//        }
+        let suspiciousAncestors2 = filterSuspiciousAncestor(
+            in: soupData,
+            dotPositions: suspiciousAncestors,
+            offset: 2,
+            suspiciousBytes: SuspiciousJSAccessors.accessorsSecondBytes
+        )
+//        third pass because lots of .co .lo .se
+        let suspiciousAncestors3 = filterSuspiciousAncestor(
+            in: soupData,
+            dotPositions: suspiciousAncestors2,
+            offset: 3,
+            suspiciousBytes: SuspiciousJSAccessors.accessorsThirdBytes
+        )
         
         let start1 = Date()
-        matchConfirmedBadJSCalls(in: soupData, positions: suspiciousCalls2, origin: origin, into: &warnings)
-
+        matchConfirmedBadJSCalls(in: soupData, positions: suspiciousCalls2, origin: origin, into: &warnings, setterDetected: &setterDetected)
+        matchConfirmedJsAccessors(in: soupData, position: suspiciousAncestors3, origin: origin, into: &warnings, setterDetected: setterDetected)
+        
+        
         let timing = Date().timeIntervalSince(start1)
         let duration = Date().timeIntervalSince(start)
         print("gather the data took: ", duration, "filtering took: ", timing)
     }
-
+    
     private static func generateInlineSoup(from scripts: [ScriptScanTarget], in body: Data) -> String {
         let inlineChunks = scripts.compactMap { script -> String? in
             guard script.findings == .inlineJS,
@@ -67,21 +86,37 @@ struct ScriptInlineAnalyzer {
         }
         return matches
     }
-
-    private static func matchConfirmedBadJSCalls(in soupData: Data, positions: [Int], origin: String, into warnings: inout [SecurityWarning]) {
+    
+    static func filterSuspiciousAncestor( in soupData: Data, dotPositions: [Int], offset: Int = 1,suspiciousBytes: Set<UInt8>) -> [Int] {
+        var matches = [Int]()
+        for pos in dotPositions {
+            let checkPos = pos + offset
+            guard checkPos <= soupData.count else { continue }
+            let byte = soupData[checkPos] | 0x20
+            if suspiciousBytes.contains(byte) {
+                matches.append(pos)
+            }
+        }
+        return matches
+    }
+    
+    private static func matchConfirmedBadJSCalls(in soupData: Data, positions: [Int], origin: String, into warnings: inout [SecurityWarning], setterDetected: inout Bool) {
         let knownPatterns: [(name: String, bytes: [UInt8])] = BadJSFunctions.suspiciousJsFunction.map {
             ($0, Array($0.utf8))
         }
         var matchCounts: [String: Int] = [:]
-
+        
         for pos in positions {
             for (name, bytes) in knownPatterns {
                 let start = pos - bytes.count
                 let end = pos
                 guard start >= 0, end <= soupData.count else { continue }
-
+                
                 let slice = soupData[start..<end]
                 if slice.elementsEqual(bytes) {
+                    if ["eval", "atob", "setItem", "btoa"].contains(name) {
+                        setterDetected = true
+                    }
                     if name == "getElementById" {
                         let submit = DataSignatures.matchesAsciiTag(at: pos, in: soupData, asciiToCompare: BadJSFunctions.submit, lookAheadWindow: 32)
                         if submit {
@@ -95,22 +130,71 @@ struct ScriptInlineAnalyzer {
                         }
                         continue
                     }
-
+                    
                     matchCounts[name, default: 0] += 1
-                    break
                 }
             }
         }
-
+        
         for (name, count) in matchCounts {
+            let (penalty, severity) = PenaltySystem.getPenaltyAndSeverity(name: name)
             warnings.append(SecurityWarning(
                 message: "Suspicious JS function: \(name)(...) detected inline \(count)x.",
-                severity: .dangerous,
-                penalty: count * PenaltySystem.Penalty.badJSCallInline,
+                severity: severity,
+                penalty: penalty,
                 url: origin,
                 source: .body
             ))
         }
     }
+    
+    private static func matchConfirmedJsAccessors(in soupData: Data, position: [Int], origin: String, into warnings: inout [SecurityWarning], setterDetected: Bool) {
+        var matchCounts: [String: Int] = [:]
 
+        for pos in position {
+            for (name, bytes) in SuspiciousJSAccessors.all {
+                guard pos + bytes.count <= soupData.count else { continue }
+                //                add 1 for the .
+                let slice = soupData[pos + 1..<pos + 1 + bytes.count]
+                if slice.elementsEqual(bytes) {
+                    let displayName = (name == "cookie") ? "document.cookie" : name
+                    matchCounts[displayName, default: 0] += 1
+                }
+            }
+        }
+
+        for (displayName, count) in matchCounts {
+            let baseName = displayName.replacingOccurrences(of: "document.", with: "")
+            let (penalty, severity): (Int, SecurityWarning.SeverityLevel) = {
+                switch baseName {
+                case "cookie":
+                    return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
+                case "localStorage":
+                    return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)
+                case "setItem":
+                    return (PenaltySystem.Penalty.jsSetItemAccess, .suspicious)
+                case "WebAssembly":
+                    return (PenaltySystem.Penalty.jsWebAssembly, .dangerous)
+                default:
+                    return (-10, .suspicious)
+                }
+            }()
+            
+            let adjustedPenalty = setterDetected ? PenaltySystem.Penalty.critical : penalty
+            let adjustedSeverity = setterDetected ? SecurityWarning.SeverityLevel.critical : severity
+            
+            var message: String = "Suspicious JS accessor: .\(displayName) detected inline \(count)x."
+            if setterDetected {
+                message =  "Suspicious JS setter fuction with \(displayName) detected inline. Strong signal of obfuscation."
+            }
+            warnings.append(SecurityWarning(
+                message: message,
+                severity: adjustedSeverity,
+                penalty: /*count * */adjustedPenalty,
+                url: origin,
+                source: .body
+            ))
+        }
+    }
+    
 }

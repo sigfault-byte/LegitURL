@@ -148,11 +148,18 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
             let parsedCert = sslCertificateDetails["ParsedCertificate"] as? ParsedCertificate
             onlineInfo.parsedCertificate = parsedCert
             
-            
-            if let bodyData = data, let bodyText = String(data: bodyData, encoding: .utf8) {
-                onlineInfo.humanBodySize = bodyData.count
+            // TODO: Detect and respect encoding using BOM or <meta charset="..."> in the first 500 bytes
+            // Example: <!DOCTYPE html><html lang="fr"><head><meta charset="iso-8859-1"> -> french website living in 1980
+            let bodyText: String? =
+                String(data: processedBody, encoding: .utf8) ??
+                String(data: processedBody, encoding: .isoLatin1) ??
+                String(data: processedBody, encoding: .utf16)
+
+            if let bodyText = bodyText {
                 onlineInfo.humanReadableBody = bodyText
+                onlineInfo.humanBodySize = processedBody.count
             } else {
+                print("🪵 Raw body bytes prefix: \(processedBody.prefix(100).map { String(format: "%02X", $0) }.joined(separator: " "))")
                 onlineInfo.humanReadableBody = "⚠️ Unable to decode body"
             }
             

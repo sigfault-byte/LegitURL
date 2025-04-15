@@ -115,8 +115,8 @@ class URLAnalysisViewModel: ObservableObject {
     
     func populateDestinationVM() -> Void {
         self.destinationInfoVM.inputDomain = self.urlQueue.offlineQueue.first?.components.fullURL ?? ""
-        self.destinationInfoVM.finalHost = self.urlQueue.offlineQueue.last?.components.coreURL ?? ""
-        self.destinationInfoVM.finalHostPunycode = self.urlQueue.offlineQueue.last?.components.punycodeHostEncoded ?? ""
+        self.destinationInfoVM.finalHost = self.urlQueue.offlineQueue.last?.components.host ?? ""
+        self.destinationInfoVM.finalHostPunycode = self.urlQueue.offlineQueue.last?.components.host?.idnaEncoded ?? ""
         self.destinationInfoVM.hopCount = self.urlQueue.offlineQueue.count
         self.destinationInfoVM.domainLabel = self.urlQueue.offlineQueue.last?.components.extractedDomain ?? ""
         self.destinationInfoVM.tldLabel = self.urlQueue.offlineQueue.last?.components.extractedTLD ?? ""

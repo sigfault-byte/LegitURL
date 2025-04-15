@@ -84,12 +84,24 @@ struct ScriptExtractor {
             ))
             return nil
         }
-        ScriptHelperFunction.lookForScriptTagEnd(in: body, confirmedScripts: &initialScripts, asciiToCompare: byteLetters.endTag, lookAhead: 512)
+        ScriptHelperFunction.lookForScriptTagEnd(in: body, confirmedScripts: &initialScripts, asciiToCompare: byteLetters.endTag, lookAhead: 2048)
         // Step 2.5 - Match confirmed scripts with closing </script> tags
 //            Ensure the pair are correct! If the closing tag is not found in 512 byt the dev is hotdogwater or a scam
+//        instgram closing tag is farther than 1024 fucking bytes
+//        for script in initialScripts where script.end == nil {
+//            let previewStart = script.start
+//            let previewEnd = min(previewStart + 1024, body.count)
+//            let previewData = body[previewStart..<previewEnd]
+//            if let previewString = String(data: previewData, encoding: .utf8) {
+//                print("⚠️ Unclosed script tag at \(previewStart). First 1024 bytes:\n\(previewString)")
+//            } else {
+//                print("⚠️ Unclosed script tag at \(previewStart). Unable to decode preview.")
+//            }
+//        }
+
         guard initialScripts.allSatisfy({ $0.end != nil }) && !closingScriptPositions.isEmpty else {
             warnings.append(SecurityWarning(
-                message: "Script tag could not be closed within 512 bytes. This is highly unusual and may indicate malformed or suspicious HTML.",
+                message: "Script tag could not be closed within 2048 bytes. This is highly unusual and may indicate malformed or suspicious HTML.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.scriptIsMoreThan512,
                 url: origin,
@@ -119,22 +131,20 @@ struct ScriptExtractor {
         let t8 = Date()
         print("⏱️ Step 7 - Script find nonce took \(Int(t8.timeIntervalSince(t7) * 1000))ms")
         
-        
-        
         let duration = Date().timeIntervalSince(startTime)
         print("✅ Total scan completed in \(Int(duration * 1000))ms")
-        print("📦 Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
+//        print("📦 Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
 //        for script in confirmedScripts {
 //            guard let endTag = script.endTagPos else { continue }
-//            
+//
 //            let fullRange = script.start..<endTag
 //            let fullSnippet = body[fullRange]
 //            let type = script.findings == .inlineJS ? "Inline" : "External"
 //            let context = script.context
 //            let origin = script.origin?.rawValue ?? "unknown"
-//            
+//
 //            print("📍 Script [\(type)] from \(script.start) to \(endTag) — origin: \(origin) in \(context?.rawValue)")
-//            
+//
 //            if let fullDecoded = String(data: fullSnippet, encoding: .utf8) {
 //                print("🔹 Full tag preview:")
 //                if fullDecoded.count > 60 {
@@ -143,7 +153,7 @@ struct ScriptExtractor {
 //                    print(fullDecoded)
 //                }
 //            }
-//            
+//
 //            if script.findings == .inlineJS, let start = script.end {
 //                let jsStart = start
 //                let jsEnd = endTag
@@ -168,12 +178,10 @@ struct ScriptExtractor {
 //                    print("🔗 External tag preview:\n...\(preview)...")
 //                }
 //            }
-//            
+//
 //            print("---")
 //        }
         return ScriptExtractionResult(scripts: confirmedScripts, htmlRange: htmlRange)
 
     }
 }
-    
-    

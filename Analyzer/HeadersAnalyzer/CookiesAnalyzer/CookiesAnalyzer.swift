@@ -41,49 +41,55 @@ struct CookiesAnalyzer {
         let numberOfCookies: Int = parsedCookies.count
         let coreURL = urlInfo.components.coreURL ?? ""
         
-        //        The size of the cookie is tied to the granularity of info it stores.
-        //        let suspicionIndex = (avgCookieSize * Double(numberOfCookies)) / (httpResponseCode != 200 ? 1.5 : 3.0)
-        //        let totalSize = headersCookies.reduce(0) { $0 + $1.utf8.count }
         let totalValueSize = parsedCookies.reduce(0) {$0 + $1.value.utf8.count}
         let avgCookieSize = Double(totalValueSize) / Double(numberOfCookies)
-        //        Google = grandma of internet, they do not give cookies on a 3xx. If even Google doesn’t do it, no one should.
+
         if httpResponseCode != 200 {
+            let severity: SecurityWarning.SeverityLevel
+            let extraNote: String
+
+            switch totalValueSize {
+            case 0...200:
+                severity = .info
+                extraNote = " (small total size, might be harmless)"
+            case 201...500:
+                severity = .suspicious
+                extraNote = " (moderate cookie volume)"
+            case 501...1000:
+                severity = .tracking
+                extraNote = " (high volume — may indicate tracking)"
+            default:
+                severity = .dangerous
+                extraNote = " (extremely high volume — likely tracking/fingerprinting)"
+            }
+
             urlInfo.warnings.append(SecurityWarning(
-                message: "Cookies averaging \(avgCookieSize) bytes set during a redirect or error (code \(httpResponseCode)). \(totalValueSize) bytes total of cookies.",
-                severity: .suspicious,
-                penalty: PenaltySystem.Penalty.cookiesOnNon200,
+                message: "Cookies set during a non-200 response (code \(httpResponseCode)), totaling \(totalValueSize) bytes across \(numberOfCookies) cookies.\(extraNote)",
+                severity: severity,
+                penalty:  avgCookieSize > 20 ? PenaltySystem.Penalty.cookiesOnNon200 : 0,
                 url: coreURL,
                 source: .cookie
             ))
-            //Todo => scoring logic and penalty: suspicionIndex ?
         }
-        
-        //tracking but on a 200 is Okayish
-        if httpResponseCode == 200 && avgCookieSize >= 16 {
-            urlInfo.warnings.append(SecurityWarning(
-                message: "Cookies averaging \(avgCookieSize) bytes. \(totalValueSize) bytes total of cookies.",
-                severity: .tracking,
-                penalty: PenaltySystem.Penalty.moreThan16BofCookie,
-                url: coreURL,
-                source: .cookie
-            ))
-        }
-        //Todo => scoring logic and penalty: suspicionIndex
         
         // Per-cookie analysis
         for cookie in parsedCookies {
-            let result = analyzeCookie(cookie, httpResponseCode: httpResponseCode)
-            let combinedFlags = result.flags.joined(separator: ", ")
-            let penalty = PenaltySystem.penaltyForCookieFlags(result.flags)
-
+            let globalSeenCookies = URLQueue.shared.cookiesSeenByRedirectChain.values.reduce(into: Set<String>()) { $0.formUnion($1) }
+            let result = analyzeCookie(cookie,
+                                       httpResponseCode: httpResponseCode,
+                                       seenCookie: globalSeenCookies)
+            let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
+            let reasons = result.flags.descriptiveReasons().joined(separator: ", ")
+            
             urlInfo.warnings.append(SecurityWarning(
-                message: "Cookie `\(cookie.name)` flagged as \(result.severity). Reasons: \(combinedFlags).",
+                message: "Cookie `\(cookie.name)` flagged as \(result.severity). Reasons: \(reasons).",
                 severity: result.severity,
                 penalty: penalty,
                 url: url,
                 source: .cookie
             ))
-
+            
+            URLQueue.shared.cookiesSeenByRedirectChain[urlInfo.id, default: Set<String>()].insert(cookie.name)
             if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == urlInfo.id }) {
                 URLQueue.shared.onlineQueue[index].cookiesForUI.append(result)
             }

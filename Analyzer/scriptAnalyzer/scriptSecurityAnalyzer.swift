@@ -11,7 +11,18 @@ struct ScriptSecurityAnalyzer {
         //Cpmpute html to script ratio
         computeScriptsToHtmlRation(scriptSize: totalInlineScriptBytes, htmlRange: htmlRange, originURL: origin, into: &warnings)
         // Flag abnormal script origin
-        checkingScriptOrigin(originURL: origin, scripts: scripts, warnings: &warnings)
+        let dataURICount = checkingScriptOrigin(originURL: origin, scripts: scripts, warnings: &warnings)
+        
+        print("ICI: ", dataURICount)
+        if dataURICount > 0 {
+            warnings.append(SecurityWarning(
+                message: "⚠️ This page includes \(dataURICount) script(s) using data: URIs. These are often used for obfuscation or tracking.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.scriptDataURI,
+                url: origin,
+                source: .body
+            ))
+        }
         
         let (nonceList, srcList, internalCount) = extractScriptAttributes(from: scripts)
         
@@ -24,13 +35,14 @@ struct ScriptSecurityAnalyzer {
     
     //MARK --- Helper
     
-    private static func checkingScriptOrigin(originURL: String, scripts: [ScriptScanTarget], warnings: inout [SecurityWarning]) {
+    private static func checkingScriptOrigin(originURL: String, scripts: [ScriptScanTarget], warnings: inout [SecurityWarning]) -> Int {
+        var dataUriCounter = 0
+
         for script in scripts {
             guard let origin = script.origin else { continue }
 
             switch origin {
             case .httpExternal:
-                // 🚨 Insecure HTTP script
                 warnings.append(SecurityWarning(
                     message: "❌ External script loaded over HTTP. This is insecure and exposes users to injection risks.",
                     severity: .critical,
@@ -40,13 +52,7 @@ struct ScriptSecurityAnalyzer {
                 ))
 
             case .dataURI:
-                warnings.append(SecurityWarning(
-                    message: "⚠️ Script uses a data: URI. This is highly suspicious and often used for obfuscation.",
-                    severity: .dangerous,
-                    penalty: PenaltySystem.Penalty.scriptDataURI,
-                    url: originURL,
-                    source: .body
-                ))
+                dataUriCounter += 1
 
             case .unknown:
                 warnings.append(SecurityWarning(
@@ -67,10 +73,11 @@ struct ScriptSecurityAnalyzer {
                 ))
 
             default:
-                // Other origins are not flagged (inline, relative, https, etc.)
                 break
             }
         }
+
+        return dataUriCounter
     }
     
     private static func computeInlineScriptBytes(_ scripts: [ScriptScanTarget]) -> Int {

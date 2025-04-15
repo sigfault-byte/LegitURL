@@ -1,3 +1,5 @@
+import Foundation
+
 struct PenaltySystem {
     public enum Penalty {
        // 🔴 CRITICAL ISSUES
@@ -67,23 +69,34 @@ struct PenaltySystem {
         static let scriptIs80Percent                   = -30
         static let extHttpScriptSrc                    = -40
         static let jsEvalInBody                        = -30
+        static let badJSCallInline                     = -30
         static let jsFingerPrinting                    = -30
         static let hotdogWaterDev                      = -30
         static let scriptIs70Percent                   = -30
         static let scriptDataURI                       = -30
         static let scriptUnknownOrigin                 = -30
         static let scriptMalformed                     = -30
+        static let unusualScritSrcFormat               = -30
         static let metaRefreshInBody                   = -25
         static let scriptIsMoreThan512                 = -20
         static let jsWindowsRedirect                   = -20
-        static let badJSCallInline                     = -20
+        static let jsWebAssembly                       = -20
         static let extScriptSrc                        = -20
-        static let unusualScritSrcFormat               = -30
+        static let jsCookieAccess                      = -20
         static let sameDomainCookie                    = -10
+        static let jsStorageAccess                     = -10
+        static let jsSetItemAccess                     = -10
         static let scriptIs5070Percent                 = -10
+        
+        //InlineSpecific JS penalty
+        static let hightPenaltyForInlineJS            = -30
+        static let mediumPenaltyForInlineJS           = -15
+        static let lowPenaltyForInlineJS              = -5
+        
         ///Cookie////
         static let cookiesOnNon200                     = -20
-        static let moreThan16BofCookie                 = -15
+        static let moreThan64BofCookie                 = -15
+        static let moreThan16BofCookie                 = -5
         ///TLS///
         static let tksWeakKey                          = -20
         static let unknownVL                           = -10
@@ -153,32 +166,96 @@ struct PenaltySystem {
         ".mov":         -20,
         ".live":        -20
     ]
-}
-extension PenaltySystem {
-    static func penaltyForCookieFlags(_ flags: [String]) -> Int {
-        var penalty = 0
-
-        for flag in flags {
-            if flag.contains("Secure flag missing on SameSite=None") {
-                penalty -= 40
-            } else if flag.contains("High-entropy value") {
-                penalty -= 20
-            } else if flag.contains("Large fingerprint-style") {
-                penalty -= 25
-            } else if flag.contains("Persistent cookie") {
-                penalty -= 10
-            } else if flag.contains("cross-site access") {
-                penalty -= 10
-            } else if flag.contains("Secure flag missing") {
-                penalty -= 15
-            } else if flag.contains("opaque identifier") || flag.contains("UUID") {
-                penalty -= 10
-            }
-//                else if flag.contains("Tiny sessionless cookie") {
-//                penalty -= 10 // 🟢 possible bonus
-//            }
+    static func penaltyForCookieBitFlags(_ flags: CookieFlagBits) -> Int {
+        // full exposure
+        if flags.contains([.samesiteNone, .secureMissing, .httpOnlyMissing]) {
+            return Penalty.critical
+        }
+        
+        if flags.contains(.reusedAccrossRedirect) {
+            return 0
         }
 
-        return min(max(penalty, -100), 100) // Clamp to avoid score abuse
+        if flags.contains(.benignTiny) {
+            if flags.contains(.httpOnlyMissing) || flags.contains(.secureMissing){
+                return -10
+            }
+            return 0 // early return to skip other penalties for small harmless cookies
+        }
+        
+        // Dangerous handoff-style pattern
+        if flags.contains([.cookieOnRedirect, .fingerprintStyle]) {
+            return -25
+        }
+
+        // Insecure flags — but small
+        if flags.contains([.secureMissing, .httpOnlyMissing]) {
+            return -20
+        }
+        
+        // Large + secure + persistent = fingerprint blob
+        if flags.contains([.highEntropyValue, .persistent, .largeValue]) {
+            return -15
+        }
+
+        // Short-lived opaque tracking (big but short-lived)
+        if flags.contains(.fingerprintStyle) {
+            return -10
+        }
+
+        // Tracking combo: entropy + persistent
+        if flags.contains([.highEntropyValue, .persistent]) {
+            return -10
+        }
+
+        // 🧱 Individual signals
+        var penalty = 0
+        
+        if flags.contains(.samesiteNone)         { penalty += -15 }
+        if flags.contains(.secureMissing)        { penalty += -15 }
+        if flags.contains(.httpOnlyMissing)      { penalty += -15 }
+        if flags.contains(.largeValue)           { penalty += -10 }
+        if flags.contains(.highEntropyValue)     { penalty += -5 }
+        if flags.contains(.persistent)           { penalty += -5 }
+        if flags.contains(.shortLivedPersistent) { penalty += -5 }
+
+        // armless
+        if flags.contains(.expired)              { penalty += 0 }
+
+        // ositive scoring for good practices
+//        if !flags.contains(.secureMissing)       { penalty += 5 }
+//        if !flags.contains(.httpOnlyMissing)     { penalty += 5 }
+//        if !flags.contains(.samesiteNone)        { penalty += 5 }
+
+        return max(penalty, -100)
     }
+    
+    static func getPenaltyAndSeverity(name: String) -> (penalty: Int, severity: SecurityWarning.SeverityLevel) {
+        switch name {
+            case "eval", "window[\"eval\"]":
+            return (PenaltySystem.Penalty.critical, .critical)
+            case "atob", "btoa", "fetch", "xmlhttprequest", "window.open", "document.write":
+                return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)
+            case "location.href":
+                return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)
+            case "location.replace", "location.assign", "getElementById":
+                return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
+            case "innerhtml", "outerhtml", "unescape", "escape":
+                return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
+            case "console.log":
+                return (PenaltySystem.Penalty.lowPenaltyForInlineJS, .info)
+            case "cookie":
+                return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
+            case "localStorage":
+                return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)
+            case "setItem":
+                return (PenaltySystem.Penalty.jsSetItemAccess, .suspicious)
+            case "WebAssembly":
+                return (PenaltySystem.Penalty.jsWebAssembly, .dangerous)
+            default:
+                return (-10, .suspicious)
+        }
+    }
+
+    
 }

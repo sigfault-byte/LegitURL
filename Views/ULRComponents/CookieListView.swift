@@ -36,10 +36,10 @@ struct CookieListView: View {
                             }
                         }
 
-                    if !cookie.flags.isEmpty {
+                    if !cookie.readableFlags.isEmpty {
                         Section(header: Text("Flags")) {
-                            ForEach(cookie.flags, id: \.self) { flag in
-                                Text("• \(flag)")
+                            ForEach(cookie.readableFlags, id: \.self) { reason in
+                                Text("• \(reason)")
                                     .foregroundStyle(color(for: cookie.severity))
                             }
                         }

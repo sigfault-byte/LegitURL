@@ -1,4 +1,3 @@
-//
 //  URLOnlineInfo.swift
 //  URLChecker
 //
