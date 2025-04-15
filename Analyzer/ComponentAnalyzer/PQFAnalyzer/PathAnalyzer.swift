@@ -17,7 +17,7 @@ struct PathAnalyzer {
         guard let rawPath = urlInfo.components.pathEncoded else {
             return
         }
-
+        
         if !rawPath.hasSuffix("/"), urlInfo.components.query != nil {
             urlInfo.warnings.append(SecurityWarning(
                 message: "🧠 Suspicious endpoint-like path followed by query.",
@@ -27,7 +27,7 @@ struct PathAnalyzer {
                 source: .path
             ))
         }
-
+        
         let pathRegex = #"^\/(?:[A-Za-z0-9\-._~!$&'()*+,;=:@%]+\/?)*$"#
         if !rawPath.matches(regex: pathRegex) {
             urlInfo.warnings.append(SecurityWarning(
@@ -39,7 +39,7 @@ struct PathAnalyzer {
             ))
             return
         }
-
+        
         if rawPath.contains("//") {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ Suspicious double slashes in path",
@@ -50,7 +50,7 @@ struct PathAnalyzer {
             ))
             return
         }
-
+        
         let pathSegmentsToCheck = rawPath.split(separator: "/").map(String.init)
         for segment in pathSegmentsToCheck {
             if segment.rangeOfCharacter(from: .alphanumerics) == nil {
@@ -64,18 +64,18 @@ struct PathAnalyzer {
                 return
             }
         }
-
+        
         let trimmedPath = rawPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let pathSegments = trimmedPath.split(separator: "/").map(String.init)
-
+        
         for segment in pathSegments {
             guard !segment.isEmpty else { continue }
-
+            
             // This needs more thinking
             if WhiteList.safePaths.contains(segment.lowercased()) {
                 continue
             }
-
+            
             var parts: [String]
             if segment.count > 64 {
                 urlInfo.warnings.append(SecurityWarning(
@@ -91,10 +91,10 @@ struct PathAnalyzer {
             } else {
                 parts = [segment]
             }
-
+            
             for part in parts {
                 var analysis = TokenAnalysis(part: part)
-
+                
                 if SuspiciousKeywords.scamTerms.contains(part.lowercased()) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "🚩 Scam-related word detected in path segment: '\(part)'",
@@ -106,7 +106,7 @@ struct PathAnalyzer {
                     analysis.isPhishing = true
                     analysis.phishingTerms.append(part)
                 }
-
+                
                 if SuspiciousKeywords.phishingWords.contains(part.lowercased()) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "🚩 Phishing-related word detected in path segment: '\(part)'",
@@ -122,12 +122,12 @@ struct PathAnalyzer {
                 for brand in KnownBrands.names {
                     if brand == part.lowercased() {
                         urlInfo.warnings.append(SecurityWarning(
-                        message: "ℹ️ Exact Brand reference found in path segment: '\(part)'",
-                        severity: .suspicious,
-                        penalty: PenaltySystem.Penalty.exactBrandInPath,
-                        url: urlOrigin,
-                        source: .path
-                    ))
+                            message: "ℹ️ Exact Brand reference found in path segment: '\(part)'",
+                            severity: .suspicious,
+                            penalty: PenaltySystem.Penalty.exactBrandInPath,
+                            url: urlOrigin,
+                            source: .path
+                        ))
                         analysis.isBrand = true
                         analysis.brands.append(brand)
                         
@@ -141,9 +141,35 @@ struct PathAnalyzer {
                         ))
                         analysis.isBrand = true
                         analysis.brands.append(brand)
+                    }else if part.count >= 3 {
+                        let levenshtein = LegitURLTools.levenshtein(part.lowercased(), brand)
+                        if levenshtein == 1 {
+                            urlInfo.warnings.append(SecurityWarning(
+                                message: "⚠️ Path segment '\(part)' is a likely typo of brand '\(brand)' (Levenshtein = 1).",
+                                severity: .suspicious,
+                                penalty: PenaltySystem.Penalty.brandLookaLike,
+                                url: urlOrigin,
+                                source: .path
+                            ))
+                            analysis.isBrand = true
+                            analysis.brands.append(brand)
+                        }
+                        let ngram = LegitURLTools.twoGramSimilarity(part.lowercased(), brand)
+                        if ngram > 0.6 {
+                            urlInfo.warnings.append(SecurityWarning(
+                                message: "⚠️ Path segment '\(part)' is structurally similar to brand '\(brand)' (2-gram similarity = \(String(format: "%.2f", ngram))).",
+                                severity: .suspicious,
+                                penalty: PenaltySystem.Penalty.brandLookaLike,
+                                url: urlOrigin,
+                                source: .path
+                            ))
+                            analysis.isBrand = true
+                            analysis.brands.append(brand)
+                        }
                     }
+                    
                 }
-
+                
                 if part.contains(".") {
                     let pieces = part.split(separator: ".")
                     if let ext = pieces.last?.lowercased(),
@@ -157,7 +183,7 @@ struct PathAnalyzer {
                         ))
                     }
                 }
-
+                
                 if !LegitURLTools.isRealWord(part) {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "ℹ️ Path segment '\(part)' is not recognized by the dictionary.",
@@ -166,7 +192,7 @@ struct PathAnalyzer {
                         url: urlOrigin,
                         source: .path
                     ))
-
+                    
                     let (isHighEntropy, score) = LegitURLTools.isHighEntropy(part)
                     if isHighEntropy, let entropy = score {
                         urlInfo.warnings.append(SecurityWarning(
@@ -182,7 +208,7 @@ struct PathAnalyzer {
                 tokenResults.append(analysis)
             }
         }
-
+        
         if tokenResults.contains(where: { $0.isRelevant }) {
             urlInfo.components.pathTokenAnalysis = tokenResults
         }
