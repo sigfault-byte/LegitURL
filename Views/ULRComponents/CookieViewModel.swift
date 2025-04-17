@@ -62,9 +62,10 @@ struct CookieViewModel: Identifiable {
         let interval = expiry.timeIntervalSinceNow
         if interval <= 0 { return "Expired" }
 
+        let secondsInMinute: Double = 60
+        let secondsInHour: Double = 3600
         let secondsInDay: Double = 86400
         let secondsInYear: Double = 31536000
-        let secondsInHour: Double = 3600
 
         if interval >= secondsInYear {
             let years = Int(round(interval / secondsInYear))
@@ -72,9 +73,12 @@ struct CookieViewModel: Identifiable {
         } else if interval >= secondsInDay {
             let days = Int(round(interval / secondsInDay))
             return "\(days) day\(days > 1 ? "s" : "")"
-        } else {
+        } else if interval >= secondsInHour {
             let hours = Int(round(interval / secondsInHour))
             return "\(hours) hour\(hours > 1 ? "s" : "")"
+        } else {
+            let minutes = Int(round(interval / secondsInMinute))
+            return "\(minutes) min"
         }
     }
 }

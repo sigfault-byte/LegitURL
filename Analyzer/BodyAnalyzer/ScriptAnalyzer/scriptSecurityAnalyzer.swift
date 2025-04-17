@@ -10,17 +10,32 @@ struct ScriptSecurityAnalyzer {
         let totalInlineScriptBytes = computeInlineScriptBytes(scripts)
         //Cpmpute html to script ratio
         computeScriptsToHtmlRation(scriptSize: totalInlineScriptBytes, htmlRange: htmlRange, originURL: origin, into: &warnings)
+        
+//        for script in scripts {
+//            let previewStart = script.start
+//            let previewEnd = script.endTagPos ?? previewStart + 40
+//            let previewData = body[previewStart..<previewEnd + 7]
+//            if let previewString = String(data: previewData, encoding: .utf8) {
+//                if script.endTagPos == nil {
+//                    print("NO END")
+//                }
+//                print("⚠️Preview for \(script.origin?.rawValue): \(previewStart). First 1024 bytes:\n\(previewString)")
+//            } else {
+//                print("⚠️ Unclosed script tag at \(previewStart). Unable to decode preview.")
+//            }
+//        }
+        
         // Flag abnormal script origin
         let dataURICount = checkingScriptOrigin(originURL: origin, scripts: scripts, warnings: &warnings)
-        
-        print("ICI: ", dataURICount)
+        //TODO Double check the script possibilities
         if dataURICount > 0 {
             warnings.append(SecurityWarning(
                 message: "⚠️ This page includes \(dataURICount) script(s) using data: URIs. These are often used for obfuscation or tracking.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.scriptDataURI,
                 url: origin,
-                source: .body
+                source: .body,
+                bitFlags: WarningFlags.BODY_SCRIPT_DATAURI
             ))
         }
         
@@ -60,7 +75,8 @@ struct ScriptSecurityAnalyzer {
                     severity: .dangerous,
                     penalty: PenaltySystem.Penalty.scriptUnknownOrigin,
                     url: originURL,
-                    source: .body
+                    source: .body,
+                    bitFlags: WarningFlags.BODY_SCRIPT_UNKNOWN_ORIGIN
                 ))
 
             case .malformed:
@@ -69,7 +85,8 @@ struct ScriptSecurityAnalyzer {
                     severity: .dangerous,
                     penalty: PenaltySystem.Penalty.scriptMalformed,
                     url: originURL,
-                    source: .body
+                    source: .body,
+                    bitFlags: WarningFlags.BODY_SCRIPT_UNKNOWN_ORIGIN
                 ))
 
             default:
@@ -92,6 +109,16 @@ struct ScriptSecurityAnalyzer {
     private static func computeScriptsToHtmlRation(scriptSize: Int, htmlRange: Range<Int>, originURL: String, into warnings: inout [SecurityWarning]) {
         let htmlSize = htmlRange.count
         guard htmlSize > 0 else { return }
+        var smallHTMLBonus: Int
+
+        // Need to consider that the higher the in a small html is suspicious
+        if htmlSize < 896 {
+            smallHTMLBonus = 15
+        } else if htmlSize < 1408 {
+            smallHTMLBonus = 10
+        } else {
+            smallHTMLBonus = 0
+        }
         
         let ratio = Double(scriptSize) / Double(htmlSize)
         let percent = Int(ratio * 100)
@@ -106,25 +133,28 @@ struct ScriptSecurityAnalyzer {
             warnings.append(SecurityWarning(
                 message: "⚠️ Inline JS makes up \(percent)% of the HTML content. This may indicate excessive inline scripting.",
                 severity: .info,
-                penalty: PenaltySystem.Penalty.informational,
+                penalty: PenaltySystem.Penalty.informational + smallHTMLBonus,
                 url: originURL,
-                source: .body
+                source: .body,
+                bitFlags: smallHTMLBonus == 0 ? nil : WarningFlags.BODY_HIGH_JS_RATIO_SMALL_HTML
             ))
         case 50..<70:
             warnings.append(SecurityWarning(
                 message: "🚨 Inline JS dominates \(percent)% of the HTML content. This suggests heavy client-side scripting.",
                 severity: .suspicious,
-                penalty: PenaltySystem.Penalty.scriptIs5070Percent,
+                penalty: PenaltySystem.Penalty.scriptIs5070Percent + smallHTMLBonus,
                 url: originURL,
-                source: .body
+                source: .body,
+                bitFlags: smallHTMLBonus == 0 ? nil : WarningFlags.BODY_HIGH_JS_RATIO_SMALL_HTML
             ))
         case 70...:
             warnings.append(SecurityWarning(
                 message: "🛑 Inline JS makes up \(percent)% of the HTML. This is highly suspicious and may indicate obfuscation or cloaking.",
                 severity: .dangerous,
-                penalty: PenaltySystem.Penalty.scriptIs70Percent,
+                penalty: PenaltySystem.Penalty.scriptIs70Percent + smallHTMLBonus,
                 url: originURL,
-                source: .body
+                source: .body,
+                bitFlags: smallHTMLBonus == 0 ? nil : WarningFlags.BODY_HIGH_JS_RATIO_SMALL_HTML
             ))
         default:
             break
@@ -136,17 +166,16 @@ struct ScriptSecurityAnalyzer {
 
         let totalCount = internalCount + externalCount
         let ratio = Double(totalCount) / Double(htmlSize)
+//        scripts per 1000 bytes, a kind of “density per KB"
         let normalized = ratio * 1000
         let rounded = String(format: "%.3f", normalized)
-
-        print("📏 Total script density: \(rounded) (total: \(totalCount), html size: \(htmlSize) bytes)")
 
         switch normalized {
         case 0..<0.05:
             break
         case 0.05..<0.1:
             warnings.append(SecurityWarning(
-                message: "ℹ️ Script density is \(rounded). This may be typical of apps using moderate scripting.",
+                message: "ℹ️ Script density is \(rounded) script per 1000 bytes. This may be typical of apps using moderate scripting.",
                 severity: .info,
                 penalty: 0,
                 url: originURL,
@@ -154,19 +183,21 @@ struct ScriptSecurityAnalyzer {
             ))
         case 0.1..<0.2:
             warnings.append(SecurityWarning(
-                message: "⚠️ Script density is \(rounded). This could indicate heavy client-side logic or potential cloaking.",
+                message: "⚠️ Script density is \(rounded) script per 1000 bytes. This could indicate heavy client-side logic or potential cloaking.",
                 severity: .suspicious,
-                penalty: 10,
+                penalty: PenaltySystem.Penalty.mediumScritpDensity,
                 url: originURL,
-                source: .body
+                source: .body,
+                bitFlags: WarningFlags.BODY_HIGH_SCRIPT_DENSITY
             ))
         case 0.2...:
             warnings.append(SecurityWarning(
-                message: "🚨 High script density detected (\(rounded)). This is abnormal and may signal obfuscation or cloaked logic.",
+                message: "🚨 High script density detected (\(rounded)) script per 1000 bytes. This is abnormal and may signal obfuscation or cloaked logic.",
                 severity: .dangerous,
-                penalty: 20,
+                penalty: PenaltySystem.Penalty.highScriptDensity,
                 url: originURL,
-                source: .body
+                source: .body,
+                bitFlags: WarningFlags.BODY_HIGH_SCRIPT_DENSITY
             ))
         default:
             break

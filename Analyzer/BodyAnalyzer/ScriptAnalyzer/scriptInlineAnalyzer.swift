@@ -1,4 +1,8 @@
 import Foundation
+
+
+
+////TODO d.innerHTML = "window.__CF$cv$params={ -> detet fake cloudfare challenge injectedin inline js
 struct ScriptInlineAnalyzer {
     
     static func analyze(scripts: [ScriptScanTarget], body: Data, origin: String, into warnings: inout [SecurityWarning]) {
@@ -139,7 +143,7 @@ struct ScriptInlineAnalyzer {
         for (name, count) in matchCounts {
             let (penalty, severity) = PenaltySystem.getPenaltyAndSeverity(name: name)
             warnings.append(SecurityWarning(
-                message: "Suspicious JS function: \(name)(...) detected inline \(count)x.",
+                message: "Suspicious JS function: \(name)(...) detected inline \(count) time(s).",
                 severity: severity,
                 penalty: penalty,
                 url: origin,
@@ -183,7 +187,7 @@ struct ScriptInlineAnalyzer {
             let adjustedPenalty = setterDetected ? PenaltySystem.Penalty.critical : penalty
             let adjustedSeverity = setterDetected ? SecurityWarning.SeverityLevel.critical : severity
             
-            var message: String = "Suspicious JS accessor: .\(displayName) detected inline \(count)x."
+            var message: String = "Suspicious JS accessor: .\(displayName) detected inline \(count) time(s)."
             if setterDetected {
                 message =  "Suspicious JS setter fuction with \(displayName) detected inline. Strong signal of obfuscation."
             }

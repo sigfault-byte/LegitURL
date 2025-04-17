@@ -68,12 +68,21 @@ struct ScriptExtractor {
         }
         let t2 = Date()
         print("⏱️ Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
-        // flag script findings -> this need to be refactor, we only need to copy no need to check script again
 //            var confirmedScripts = checkForScriptTags(body, scriptCandidates: &scriptCandidates, asciiToCompare: interestingPrefix.script, lookAhead: 8)
+//        Can safely force unwrap there is a guard !
+//        collect all start var from each scriptCandidate and store them in the [Int]
+//        let headRange = 0..<headEndPos!
         var initialScripts = scriptCandidates.filter { $0.flag == true }
+//        let tagToDismiss: [Int] = initialScripts.map { $0.start }
+//        Todo: Finish the function, the goal is to retrive meta-http that override CSP to match again the CSP. And compare title to the domain
+//        let headFindings = HTMLHeadAnalyzer.analyze(headContent: body[headRange], tagPos: tagPositions, tagPosToDismiss: tagToDismiss, warnings: &warnings, origin: origin)
+        // guard if there are no script to analyze
+        guard !initialScripts.isEmpty else { return nil }
+        
         let t3 = Date()
         print("⏱️ Step 2 - Script detection took \(Int(t3.timeIntervalSince(t2) * 1000))ms")
         // find the tag closure of the script and check if there is a self closing slash
+        
         if initialScripts.count != closingScriptPositions.count {
             warnings.append(SecurityWarning(
                 message: "Mismatch in script open/close tag count. HTML might be malformed or cloaked.",
@@ -85,7 +94,7 @@ struct ScriptExtractor {
             return nil
         }
         ScriptHelperFunction.lookForScriptTagEnd(in: body, confirmedScripts: &initialScripts, asciiToCompare: byteLetters.endTag, lookAhead: 2048)
-        // Step 2.5 - Match confirmed scripts with closing </script> tags
+//         Step 2.5 - Match confirmed scripts with closing </script> tags
 //            Ensure the pair are correct! If the closing tag is not found in 512 byt the dev is hotdogwater or a scam
 //        instgram closing tag is farther than 1024 fucking bytes
 //        for script in initialScripts where script.end == nil {
@@ -101,11 +110,12 @@ struct ScriptExtractor {
 
         guard initialScripts.allSatisfy({ $0.end != nil }) && !closingScriptPositions.isEmpty else {
             warnings.append(SecurityWarning(
-                message: "Script tag could not be closed within 2048 bytes. This is highly unusual and may indicate malformed or suspicious HTML.",
+                message: "Script tag could not be closed within 2048 bytes. This is highly unusual and may indicate malformed or suspicious HTML. HTML body was not analyzed",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.scriptIsMoreThan512,
                 url: origin,
-                source: .body
+                source: .body,
+                bitFlags: WarningFlags.BODY_SCRIPT_END_NOT_FOUND
             ))
             return nil
         }

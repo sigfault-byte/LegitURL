@@ -132,6 +132,11 @@ struct LegitURLTools {
 
         return UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: word)
     }
+    // Attempt to normlaized non latin to latin. This depends on the char, some are normalized, some arnt.
+    static func normalize(_ input: String) -> String {
+        return input.applyingTransform(.toLatin, reverse: false)?
+                    .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current) ?? input
+    }
     
     /// Calculates Shannon entropy of a given string.
     /// - Parameters:

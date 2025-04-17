@@ -16,7 +16,7 @@ struct TLSExtract {
                     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
               let serverTrust = challenge.protectionSpace.serverTrust else {
-            print("❌ No valid server trust found.")
+//            print("❌ No valid server trust found.")
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }
@@ -64,7 +64,7 @@ struct TLSExtract {
                 )
                 sslCertificateDetails["ParsedCertificate"] = parsedCert
             } else {
-                print("❌ Failed to decode certificate using ASN1Decoder")
+//                print("❌ Failed to decode certificate using ASN1Decoder")
             }
         }
         

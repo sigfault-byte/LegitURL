@@ -36,6 +36,8 @@ struct interestingPrefix {
     static let head: [UInt8] = Array("head".utf8)
     static let body: [UInt8] = Array("body".utf8)
     static let src: [UInt8] = Array("src=".utf8)
+    static let title: [UInt8] = Array("title".utf8)
+    static let httpEquiv: [UInt8] = Array("meta http-equiv=".utf8)
 }
 
 struct byteLetters {
@@ -44,6 +46,8 @@ struct byteLetters {
     static let r: UInt8 = 114
     static let endTag: UInt8 = 62
     static let openTag: UInt8 = 60
+    static let t: UInt8 = 116
+    static let m: UInt8 = 109
 }
 
 // Helper function to convert a string to Data (bytes)

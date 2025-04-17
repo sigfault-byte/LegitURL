@@ -26,7 +26,7 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
         // Ensure that both scheme (e.g., "https") and host (e.g., "example.com") are available.
         guard let scheme = urlInfo.components.scheme,
               let host = urlInfo.components.host else {
-            print("❌ Invalid URL components for GET request:", urlInfo.components.fullURL ?? "nil")
+//            print("❌ Invalid URL components for GET request:", urlInfo.components.fullURL ?? "nil")
             return
         }
         
@@ -36,7 +36,7 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
         let sanitizedURLString = "\(scheme.lowercased())://\(host.lowercased())\(path)"
         // Convert the sanitized URL string into a URL object.
         guard let url = URL(string: sanitizedURLString) else {
-            print("❌ Failed to construct valid URL:", sanitizedURLString)
+//            print("❌ Failed to construct valid URL:", sanitizedURLString)
             return
         }
         
@@ -109,13 +109,14 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
             
             let sslCertificateDetails = sharedInstance.sslCertificateDetails
             
-            let maxSafeBodySize = 1_200_000 // 1200 KB
+            let maxSafeBodySize = 1_500_000 // 1500 KB
             var processedBody: Data
             var isBodyTooLarge = false
 
             if let data = data {
                 if data.count > maxSafeBodySize {
-                    print("⚠️ Body too large: \(data.count) bytes. Truncating to \(maxSafeBodySize) bytes.")
+                    print(" Body too large: \(data.count) bytes. Truncating to \(maxSafeBodySize) bytes.")
+//                   TODO: Need to warn user that the body was truncated
                     // Truncate the data
                     processedBody = Data(data.prefix(maxSafeBodySize))
                     isBodyTooLarge = true
@@ -159,7 +160,7 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
                 onlineInfo.humanReadableBody = bodyText
                 onlineInfo.humanBodySize = processedBody.count
             } else {
-                print("🪵 Raw body bytes prefix: \(processedBody.prefix(100).map { String(format: "%02X", $0) }.joined(separator: " "))")
+//                print("🪵 Raw body bytes prefix: \(processedBody.prefix(100).map { String(format: "%02X", $0) }.joined(separator: " "))")
                 onlineInfo.humanReadableBody = "⚠️ Unable to decode body"
             }
             
@@ -186,7 +187,7 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
                     willPerformHTTPRedirection response: HTTPURLResponse,
                     newRequest request: URLRequest,
                     completionHandler: @escaping (URLRequest?) -> Void) {
-        print("🔄 Redirect cancelled. Returning original response.")
+//        print("🔄 Redirect cancelled. Returning original response.")
         completionHandler(nil)
     }
     

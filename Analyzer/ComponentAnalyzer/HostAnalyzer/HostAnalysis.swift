@@ -25,11 +25,29 @@ struct HostAnalysis {
             return
         }
         
-        AnalyzeDomain.analyze(in: &urlObject, domain: domainRoot, tld: tld)
-        AnalyzeSubdomains.analyze(urlInfo: &urlObject, subdomains: subdomains)
+        // skip domain and tld analysis if it was already encoutered
+        let shouldSkipDomainAnalysis: Bool = {
+            guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == urlObject.id }),
+                  currentIndex > 0 else { return false }
+
+            let previous = URLQueue.shared.offlineQueue[currentIndex - 1]
+            return previous.domain == domainRoot && previous.tld == tld
+        }()
+
+        if shouldSkipDomainAnalysis {
+            urlObject.warnings.append(SecurityWarning(
+                message: "Same domain and TLD as previous request, skipping domain and tld analysis",
+                severity: .info,
+                penalty: PenaltySystem.Penalty.informational,
+                url: urlObject.components.coreURL!,
+                source: .host
+            ))
+        } else {
+            AnalyzeDomain.analyze(in: &urlObject, domain: domainRoot, tld: tld)
+            AnalyzeTLD.analyze(tld, urlInfo: &urlObject)
+        }
         
-        // Check for suspicious TLD
-        AnalyzeTLD.analyze(tld, urlInfo: &urlObject)
+        AnalyzeSubdomains.analyze(urlInfo: &urlObject, subdomains: subdomains)
         
         // MARK: - Check for suspicious user info
         if let userInfo = urlObject.components.userinfo, !userInfo.isEmpty {
@@ -38,7 +56,8 @@ struct HostAnalysis {
                 severity: .dangerous,
                 penalty: PenaltySystem.Penalty.userInfoInHost,
                 url: urlObject.components.coreURL!,
-                source: .host
+                source: .host,
+                bitFlags: WarningFlags.ABNORMAL_URL_STRUCTURE
             ))
         }
         
@@ -51,7 +70,7 @@ struct HostAnalysis {
                 source: .host
             ))
         }
-
+        
         // MARK: - Check for non-standard ports
         if let port = urlObject.components.port {
             if port != "443" {

@@ -13,12 +13,11 @@ struct BodyAnalyzerFast {
                                             source: .body))
             return nil
         }
-        if bodySize > 900_000 {
-            warnings.append(SecurityWarning(message: "Body too large for fast scan.", severity: .info, penalty: 0, url: origin, source: .body))
+        if bodySize > 1_500_000 {
+            warnings.append(SecurityWarning(message: "Body too large for fast scan.", severity: .suspicious, penalty: -20 , url: origin, source: .body))
             return nil
         }
         else {
-            
             let scripts = ScriptExtractor.extract(body: body,
                                     origin: origin,
                                     domainAndTLD: domainAndTLD,

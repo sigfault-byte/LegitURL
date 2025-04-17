@@ -7,8 +7,8 @@
 struct KnownBrands {
     static let names: Set<String> = [
         // 🔹 Tech Giants & Software
-        "apple", "microsoft", "google", "amazon", "openai", "adobe", "oracle", "ibm",
-        "intel", "nvidia", "amd", "samsung", "huawei", "lenovo", "dell", "hp", "wetransfer",
+        "apple", "microsoft", "google", "amazon", "openai", "adobe", "oracle",
+        "intel", "nvidia", "samsung", "huawei", "lenovo", "dell", "wetransfer",
         
         // 🔹 Social Media & Communication
         "facebook", "twitter", "instagram", "linkedin", "whatsapp", "tiktok",
@@ -16,7 +16,7 @@ struct KnownBrands {
         
         // 🔹 Video & Streaming
         "youtube", "netflix", "spotify", "twitch", "disney", "hulu", "primevideo",
-        "paramount", "hbo", "peacock", "applemusic", "soundcloud", "deezer",
+        "paramount", "peacock", "applemusic", "soundcloud", "deezer",
         
         // 🔹 E-Commerce & Retail
         "ebay", "walmart", "target", "alibaba", "aliexpress", "rakuten", "shopify",
@@ -38,7 +38,7 @@ struct KnownBrands {
         "ford", "volkswagen", "nissan",
         
         // 🔹 Food & Beverages
-        "mcdonalds", "starbucks", "burgerking", "dominos", "kfc", "subway",
+        "mcdonalds", "starbucks", "burgerking", "dominos", "subway",
         "chipotle", "pizza", "dunkindonuts", "pepsi", "cocacola", "nestle",
         
         // 🔹 Security & VPN
@@ -47,18 +47,18 @@ struct KnownBrands {
         
         // 🔹 Gaming & Consoles
         "steam","steampowered", "epicgames", "playstation", "xbox", "nintendo", "rockstargames",
-        "blizzard", "ea", "riotgames", "bethesda", "squareenix", "ubisoft",
+        "blizzard", "riotgames", "bethesda", "squareenix", "ubisoft",
         
         // 🔹 Healthcare & Pharma
-        "who", "cdc", "nih", "pfizer", "moderna", "johnsonandjohnson",
+        "pfizer", "moderna", "johnsonandjohnson",
         "roche", "astrazeneca", "sanofi", "bayer", "novartis",
         
         // 🔹 Education & Research
-        "harvard", "mit", "stanford", "cambridge", "oxford", "berkeley",
+        "harvard","stanford", "cambridge", "oxford", "berkeley",
         "columbia", "princeton", "yale", "coursera", "udemy", "khanacademy",
         
         // 🔹 News & Media
-        "bbc", "cnn", "nytimes", "forbes", "reuters", "bloomberg", "wsj",
+        "nytimes", "forbes", "reuters", "bloomberg",
         "guardian", "aljazeera", "lemonde", "washingtonpost", "time"
     ]
 }

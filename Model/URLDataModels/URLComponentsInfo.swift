@@ -35,23 +35,8 @@ struct URLComponentsInfo {
     var punycodeEncodedExtractedTLD: String?
     var subdomain: String?
     
-    var domainTokenAnalysis: [TokenAnalysis] = []
-    var subdomainTokenAnalysis: [TokenAnalysis] = []
-    var pathTokenAnalysis: [TokenAnalysis] = []
-    var queryTokenAnalysis: [TokenAnalysis] = []
-    var fragmentTokenAnalysis: [TokenAnalysis] = []
-    
     
     var lamaiTrees: [TreeType: [DecodedNode]] = [:]
-    
-    mutating func appendToken(comp: String, _ token: TokenAnalysis) {
-        let lowerComp = comp.lowercased()
-        if lowerComp == "query" {
-            queryTokenAnalysis.append(token)
-        } else if lowerComp == "fragment" {
-            fragmentTokenAnalysis.append(token)
-        }
-    }
     
     enum TreeType: String {
         case queryKey

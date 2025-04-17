@@ -19,7 +19,7 @@ struct LamaiAnalyzerHub {
             speculativeSplitStrategies(from: value, under: child, maxDepth: maxDepth)
         }
         
-        // If still not relevant AND no good children → fallback to entropy
+        // If still not relevant AND no good children -> fallback to entropy
         if !child.wasRelevant, child.children.isEmpty {
                 child.checkEntropy()
         }

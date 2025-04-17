@@ -25,6 +25,7 @@ struct KeyValuePairAnalyzer {
             if let key = keys[index], !key.isEmpty {
                 let keyNode = LamaiDecoding.decode(input: key, maxDepth: 4)
                 if keyNode.hasDeepDescendant() {
+                    // store lamai findings for the view
                     if comp == "query" {
                         urlInfo.components.lamaiTrees[.queryKey, default: []].append(keyNode)
                     } else {
@@ -35,13 +36,14 @@ struct KeyValuePairAnalyzer {
                 if let url = WalkTheNode.analyze(node: keyNode, urlInfo: &urlInfo, comp: "comp", label: "key"), !url.isEmpty{
                     foundURL.append(url)
                 }
-                
             }
             
             // Process the value if available.
             if let value = values[index] {
+//                deeper because value are supposedly more obfuscated
                 let valueNode = LamaiDecoding.decode(input: value, maxDepth: 6)
                 if valueNode.hasDeepDescendant() {
+                    // store lamai findings for the view
                     if comp == "query" {
                         urlInfo.components.lamaiTrees[.queryValue, default: []].append(valueNode)
                     } else {
@@ -53,14 +55,15 @@ struct KeyValuePairAnalyzer {
                 }
             }
         }
+        // If multiple urls are found halt analysis
         if checkMultipleURLs(foundURL, urlInfo: &urlInfo, comp: comp) {
-            return (urlInfo, nil)  // Halt analysis, do not return any URLs for further processing
+            return (urlInfo, nil)
         }
         return (urlInfo, foundURL.first)
     }
     
     private static func checkMultipleURLs(_ foundURLs: [String?], urlInfo: inout URLInfo, comp: String) -> Bool {
-        let nonNilURLs = foundURLs.compactMap { $0 } // Remove nil values
+        let nonNilURLs = foundURLs.compactMap { $0 } // emove nil values
         let urlOrigin = urlInfo.components.coreURL ?? ""
         var source = SecurityWarning.SourceType.query
         if nonNilURLs.count > 1 {

@@ -3,7 +3,7 @@
 //  LegitURL
 //
 //  Created by Chief Hakka on 12/03/2025.
-//TODO NORMAL FRAGMENT
+//TODO NORMAL FRAGMENT -> Check if its a small string, with entropy less than 4.2, if higher -> lamai
 
 import Foundation
 
@@ -21,7 +21,7 @@ struct FragmentAnalyzer {
                 urlInfo.components.fragmentValues = [fragment]
             } else {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "Fragment is not a normal UI string fragment.",
+                    message: "Fragment is not a UI string fragment.",
                     severity: .info,
                     penalty: 0,
                     url: urlOrigin,
@@ -39,7 +39,8 @@ struct FragmentAnalyzer {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.malformedQueryPair,
                             url: urlOrigin,
-                            source: .fragment
+                            source: .fragment,
+                            bitFlags: WarningFlags.QUERY_OBFUSCATED_STRUCTURE
                         ))
                         malformedPairFound = true
                         continue
@@ -51,7 +52,8 @@ struct FragmentAnalyzer {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.malformedQueryPair,
                             url: urlOrigin,
-                            source: .fragment
+                            source: .fragment,
+                            bitFlags: WarningFlags.QUERY_OBFUSCATED_STRUCTURE
                         ))
                         malformedPairFound = true
                     }
@@ -65,10 +67,11 @@ struct FragmentAnalyzer {
                         url: urlOrigin,
                         source: .fragment
                     ))
+//                    Same as query, this should be send to lamai.
 //                    let deepWarnings = DeepScamHellCheck.analyze(queryOrFragment: fragment, isFragment: true, urlOrigin: urlOrigin)
 //                    urlInfo.warnings.append(contentsOf: deepWarnings)
 //                    URLQueue.shared.LegitScore += PenaltySystem.Penalty.malformedQueryPair
-//                    return (nil)
+                    return (nil)
                 } else {
                     // If it's a valid query-like fragment, extract key-value pairs and analyze further.
                     urlInfo.warnings.append(SecurityWarning(

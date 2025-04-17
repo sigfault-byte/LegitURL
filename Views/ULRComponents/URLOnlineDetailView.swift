@@ -73,7 +73,8 @@ private func bodyNavigationLink(for info: OnlineURLInfo) -> some View {
 private struct RawToFormated: View {
     var title: String
     var content: String
-    
+    @State private var copied = false
+
     var body: some View {
         List {
             Section {
@@ -81,6 +82,18 @@ private struct RawToFormated: View {
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundColor(.primary)
                     .padding(.vertical, 8)
+
+                Button(action: {
+                    UIPasteboard.general.string = content
+                    copied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        copied = false
+                    }
+                }) {
+                    Label(copied ? "Copied!" : "Copy", systemImage: copied ? "checkmark.circle.fill" : "doc.on.doc")
+                }
+                .buttonStyle(.bordered)
+                .foregroundColor(copied ? .green : .blue)
             }
         }
         .listStyle(InsetGroupedListStyle())
@@ -141,5 +154,3 @@ private func formatParsedHeaders(_ headers: ParsedHeaders) -> String {
     
     return output.isEmpty ? "No Headers Available" : output
 }
-
-

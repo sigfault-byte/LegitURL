@@ -48,25 +48,25 @@ struct CookiesAnalyzer {
             let severity: SecurityWarning.SeverityLevel
             let extraNote: String
 
-            switch totalValueSize {
-            case 0...200:
+            switch avgCookieSize {
+            case 0...20:
                 severity = .info
-                extraNote = " (small total size, might be harmless)"
-            case 201...500:
+                extraNote = " (small average cookie size)"
+            case 21...60:
                 severity = .suspicious
-                extraNote = " (moderate cookie volume)"
-            case 501...1000:
+                extraNote = " (moderate avg cookie size)"
+            case 61...100:
                 severity = .tracking
-                extraNote = " (high volume — may indicate tracking)"
+                extraNote = " (large avg size — may indicate tracking)"
             default:
                 severity = .dangerous
-                extraNote = " (extremely high volume — likely tracking/fingerprinting)"
+                extraNote = " (extremely large avg size — likely tracking/fingerprinting)"
             }
 
             urlInfo.warnings.append(SecurityWarning(
-                message: "Cookies set during a non-200 response (code \(httpResponseCode)), totaling \(totalValueSize) bytes across \(numberOfCookies) cookies.\(extraNote)",
+                message: "Cookies set during a non-200 response (code \(httpResponseCode)), averaging \(String(format: "%.1f", avgCookieSize)) bytes across \(numberOfCookies) cookies.\(extraNote)",
                 severity: severity,
-                penalty:  avgCookieSize > 20 ? PenaltySystem.Penalty.cookiesOnNon200 : 0,
+                penalty:  0, /*Penalzised on individual cookie*/
                 url: coreURL,
                 source: .cookie
             ))

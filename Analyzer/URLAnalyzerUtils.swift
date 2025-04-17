@@ -25,6 +25,6 @@ struct URLAnalyzerUtils {
     static func finalizeAnalysis() {
         let finalScore = computeFinalScore(for: URLQueue.shared.offlineQueue)
         URLQueue.shared.legitScore.score = finalScore
-//        URLQueue.shared.legitScore.analysisCompleted = true
+        URLQueue.shared.legitScore.analysisCompleted = true
     }
 }

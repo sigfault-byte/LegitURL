@@ -37,15 +37,15 @@ struct HeadersAnalyzer {
                 if HeadersKeyWords.commonWebServers.contains(value) {
                     warningMessage += "It's a notorious web server."
                     severity = .suspicious
-                    penalty -= 5
+                    penalty -= 0
                 } else if HeadersKeyWords.frameworksAndPaaS.contains(value) {
                     severity = .dangerous
                     warningMessage += " 🚨 Detected a framework/PaaS"
-                    penalty -= 15
+                    penalty -= 0
                 } else {
                     severity = .suspicious
                     warningMessage += " Unknown or unclassified server type."
-                    penalty -= 10
+                    penalty -= 0
                 }
 
                 warnings.append(SecurityWarning(

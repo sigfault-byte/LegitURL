@@ -11,10 +11,13 @@ class URLQueue: ObservableObject {
     @Published var offlineQueue: [URLInfo] = []
     @Published var onlineQueue: [OnlineURLInfo] = []
     @Published var legitScore = ScoreUpdateModel()
-//    @Published var finalSnapshot: FinalAnalysisSnapshot? = nil
+    
+    //    seen cookies set to not double penalyze same cookie keys because we have a fresh get each time
+    var cookiesSeenByRedirectChain: [UUID: Set<String>] = [:]
     
 //    // i am sorry alan turing
 //    @Published var activeAsyncCount: Int = 0
+    
     
     /// Dynamically updates with all warnings from `offlineQueue`
     var allWarnings: [SecurityWarning] {
@@ -28,8 +31,6 @@ class URLQueue: ObservableObject {
             .joined(separator: "\n")
     }
   
-//    seen cookies set to not double penalyze same cookie keys because we have a fresh get each time
-    var cookiesSeenByRedirectChain: [UUID: Set<String>] = [:]
     
     var criticalAndFetchErrorWarnings: [SecurityWarning] {
         allWarnings.filter { $0.severity == .critical || $0.severity == .fetchError }

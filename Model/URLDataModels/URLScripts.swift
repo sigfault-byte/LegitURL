@@ -17,8 +17,8 @@ enum ScriptOrigin: String {
 
 struct ScriptScanTarget {
     let start: Int
-    var end: Int?
-    var endTagPos: Int?
+    var end: Int?   /*End like <scritp content here>*/
+    var endTagPos: Int? // End of the like <script>content here</script>
     var flag: Bool?
     var findings: ScanFlag?
     var context: ScriptContext?

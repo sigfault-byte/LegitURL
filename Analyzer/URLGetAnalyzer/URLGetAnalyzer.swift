@@ -7,12 +7,14 @@ struct URLGetAnalyzer {
         
         let originalURL = urlInfo.components.fullURL ?? ""
         let urlOrigin = urlInfo.components.coreURL ?? ""
+        let domain = urlInfo.domain
+        let tld = urlInfo.tld
         
         // Retrieve OnlineURLInfo using the ID and guard for sanity check and sync mystery
         guard let onlineInfo = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id }) else {
             var modified = urlInfo
             modified.warnings.append(SecurityWarning(
-                message: "⚠️ No online analysis found for this URL. Analysis will be halted.",
+                message: "⚠️ No online analysis found for this URL. Analysis is halted.",
                 severity: .critical,
                 penalty: -100,
                 url: urlInfo.components.coreURL ?? "",
@@ -20,7 +22,7 @@ struct URLGetAnalyzer {
             ))
             return modified
         }
-
+        
         //Should be Done in urlgGetExtract, in the meantime ill rawdog it here
         let finalURL = onlineInfo.finalRedirectURL ?? originalURL
         //TODO: Change this normalized header to a more friendly logic so its acutally readable!
@@ -34,20 +36,20 @@ struct URLGetAnalyzer {
         //Http response handler
         HandleHTTPResponse.cases(responseCode: responseCode, urlInfo: &urlInfo)
         
-
+        
         // Analyze body response Body first, returns "script" found in the html, if it's perfect
-        // TODO : multi check the final url, there can be only one! -> we do not extract final url from the body for now
+        // TODO : multi check the final url, there can be only one! -> we do not extract final url from the body for now... But we should!
         var findings: ScriptExtractionResult?
         if let rawbody = onlineInfo.responseBody,
            let contentType = headers["content-type"]?.lowercased(),
            let responseCode = onlineInfo.serverResponseCode {
             
             findings = BodyAnalyzerFast.analyze(body: rawbody,
-                                     contentType: contentType,
-                                     responseCode: responseCode,
-                                     origin: urlOrigin,
-                                     domainAndTLD: urlInfo.domain! + "." + urlInfo.tld!,
-                                     into: &urlInfo.warnings
+                                                contentType: contentType,
+                                                responseCode: responseCode,
+                                                origin: urlOrigin,
+                                                domainAndTLD: urlInfo.domain! + "." + urlInfo.tld!,
+                                                into: &urlInfo.warnings
             )
         }
         
@@ -55,40 +57,60 @@ struct URLGetAnalyzer {
         if let result = findings, !result.scripts.isEmpty {
             if let rawbody = onlineInfo.responseBody {
                 scriptValueToCheck = ScriptSecurityAnalyzer.analyze(scripts: result.scripts,
-                                               body: rawbody,
-                                               origin: urlOrigin,
-                                               htmlRange: result.htmlRange,
-                                               into: &urlInfo.warnings)
+                                                                    body: rawbody,
+                                                                    origin: urlOrigin,
+                                                                    htmlRange: result.htmlRange,
+                                                                    into: &urlInfo.warnings)
             }
         }
         
-//        Then TLS
-        if let tlsCertificate = onlineInfo.parsedCertificate {
-            let domainAndTLD = [urlInfo.domain, urlInfo.tld].compactMap { $0 }.joined(separator: ".")
-            let host = urlInfo.host ?? ""
-            TLSCertificateAnalyzer.analyze(certificate: tlsCertificate,
-                                           host: host,
-                                           domain: domainAndTLD,
-                                           warnings: &urlInfo.warnings, responseCode: responseCode )
+        // skip domain and tld analysis if it was already encoutered
+        let shouldSkipDomainAnalysis: Bool = {
+            guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == urlInfo.id }),
+                  currentIndex > 0 else { return false }
+            
+            let previous = URLQueue.shared.offlineQueue[currentIndex - 1]
+            return previous.domain == domain && previous.tld == tld
+        }()
+        
+        
+        //        Then TLS Only if not already encountered
+        if shouldSkipDomainAnalysis {
+            urlInfo.warnings.append(SecurityWarning(
+                message: "Same domain and TLD as previous request, skipping tls analysis",
+                severity: .info,
+                penalty: PenaltySystem.Penalty.informational,
+                url: urlOrigin,
+                source: .tls
+            ))
+        } else {
+            if let tlsCertificate = onlineInfo.parsedCertificate {
+                let domainAndTLD = [urlInfo.domain, urlInfo.tld].compactMap { $0 }.joined(separator: ".")
+                let host = urlInfo.host ?? ""
+                TLSCertificateAnalyzer.analyze(certificate: tlsCertificate,
+                                               host: host,
+                                               domain: domainAndTLD,
+                                               warnings: &urlInfo.warnings, responseCode: responseCode )
+            }
         }
-
-//        Headers
-//        Cookie first
+        
+        //        Headers
+        //        Cookie first
         CookiesAnalyzer.analyzeAll(from: cookies,
                                    httpResponseCode: responseCode,
                                    url: urlOrigin,
                                    urlInfo: &urlInfo)
         
-
+        
         //  Analyze headers for content security policy
         let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin)
         urlInfo.warnings.append(contentsOf: headerWarnings)
-
+        
         
         //  Detect silent redirect (200 OK but URL changed)
         let normalizedOriginalURL = originalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let normalizedFinalURL = finalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-
+        
         // This shouldnt happen anymore, but in case it happens it's VERY BAD???
         if onlineInfo.serverResponseCode == 200, normalizedFinalURL != normalizedOriginalURL {
             urlInfo.warnings.append(SecurityWarning(

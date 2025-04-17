@@ -15,6 +15,7 @@ struct WalkTheNode {
         }
         
         func walk(_ node: DecodedNode) {
+            //Warn in the view that lamai find some "things"
             if !didWarnForDepth && node.depth > 1 {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "👁️ Decoded value detected by Lamai in \(comp) \(label). This was found through recursive decoding. Check the URLComponent tree for decoding layers.",
@@ -27,7 +28,6 @@ struct WalkTheNode {
             }
             if node.wasRelevant {
                 let fromDecodedmessage: String? = decodingOrigin(for: node)
-                var tokenResults: [TokenAnalysis] = []
 
                 for finding in node.findings {
                     switch finding {
@@ -38,7 +38,8 @@ struct WalkTheNode {
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.hiddenRedirectQuery,
                             url: urlOrigin,
-                            source: source
+                            source: source,
+                            bitFlags: WarningFlags.QUERY_URL
                         ))
                         
                     case .uuid(let result):
@@ -48,7 +49,8 @@ struct WalkTheNode {
                             severity: .tracking,
                             penalty: PenaltySystem.Penalty.uuidInQuery,
                             url: urlOrigin,
-                            source: source
+                            source: source,
+                            bitFlags: WarningFlags.QUERY_UUID
                         ))
                         
                     case .scamWord(let word):
@@ -57,9 +59,9 @@ struct WalkTheNode {
                             severity: .scam,
                             penalty: PenaltySystem.Penalty.scamWordsInQuery,
                             url: urlOrigin,
-                            source: source
+                            source: source,
+                            bitFlags: WarningFlags.QUERY_SCAM_PHISHYNG
                         ))
-                        tokenResults.append(TokenAnalysis(part: word, isPhishing: true, phishingTerms: [word]))
 
                     case .phishingWord(let word):
                         urlInfo.warnings.append(SecurityWarning(
@@ -67,9 +69,9 @@ struct WalkTheNode {
                             severity: .scam,
                             penalty: PenaltySystem.Penalty.phishingWordsInQuery,
                             url: urlOrigin,
-                            source: source
+                            source: source,
+                            bitFlags: WarningFlags.QUERY_SCAM_PHISHYNG
                         ))
-                        tokenResults.append(TokenAnalysis(part: word, isPhishing: true, phishingTerms: [word]))
 
 //                        Might duplicate key penalty, this is intended
                     case .entropy(let score, let value):
@@ -78,7 +80,9 @@ struct WalkTheNode {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.highEntropyQuery,
                             url: urlOrigin,
-                            source: source
+                            source: source,
+                            bitFlags: WarningFlags.QUERY_HIGH_ENTROPY
+                            
                         ))
 //TODO:                        double check if this is still running
                     case .longEntropyLike(let value):
@@ -135,9 +139,9 @@ struct WalkTheNode {
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.exactBrandInQuery,
                             url: urlOrigin,
-                            source: source
+                            source: source,
+                            bitFlags: WarningFlags.QUERY_CONTAINS_BRAND
                         ))
-                        tokenResults.append(TokenAnalysis(part: brand, isBrand: true, brands: [brand]))
 
                     case .brandContained(let brand):
                         urlInfo.warnings.append(SecurityWarning(
@@ -145,24 +149,20 @@ struct WalkTheNode {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.queryContainsBrand,
                             url: urlOrigin,
-                            source: source
+                            source: source,
+                            bitFlags: WarningFlags.QUERY_CONTAINS_BRAND
                         ))
-                        tokenResults.append(TokenAnalysis(part: brand, isBrand: true, brands: [brand]))
 
                     case .brandSimilar(let brand):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "🔍 Brand similar (obfuscated) match in \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "🔍 Brand similar match in \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.brandLookAlikeInQuery,
                             url: urlOrigin,
-                            source: source
+                            source: source,
+                            bitFlags: WarningFlags.QUERY_LOOKALIKE_BRAND
                         ))
-                        tokenResults.append(TokenAnalysis(part: brand, isBrand: true, brands: [brand]))
                     }
-                }
-
-                for token in tokenResults where token.isRelevant {
-                    urlInfo.components.appendToken(comp: comp, token)
                 }
             }
             for child in node.children {

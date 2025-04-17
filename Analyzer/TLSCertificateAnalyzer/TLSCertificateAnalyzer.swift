@@ -9,6 +9,10 @@ import Foundation
 //•    Custom certificate policies (you log them, and they’ll be useful down the line)
 //•    Certificate transparency / OCSP (not offline-friendly but future ideas)
 
+//Because TLS Certificate is both highly important and not important, its easy for folks to get a "good" certificate, with with strong keys.
+//The only signal i see here, is the fresh certificate, the CN that is distributing certificate without seconds thoughts and
+//the wildcard san where user can create content sharing the certificate
+
 struct TLSCertificateAnalyzer {
     static func analyze(certificate: ParsedCertificate,
                         host: String,
@@ -16,13 +20,14 @@ struct TLSCertificateAnalyzer {
                         warnings: inout [SecurityWarning],
                         responseCode: Int) {
         
-        func addWarning(_ message: String, _ severity: SecurityWarning.SeverityLevel, penalty: Int) {
+        func addWarning(_ message: String, _ severity: SecurityWarning.SeverityLevel, penalty: Int, bitFlags: WarningFlags? = nil) {
             warnings.append(SecurityWarning(
                 message: message,
                 severity: severity,
                 penalty: penalty,
                 url: host,
-                source: .tls
+                source: .tls,
+                bitFlags: bitFlags
             ))
         }
 
@@ -55,8 +60,8 @@ struct TLSCertificateAnalyzer {
         }
 
         if let notBefore = certificate.notBefore {
-            if let daysOld = Calendar.current.dateComponents([.day], from: notBefore, to: now).day, daysOld <= 1 {
-                addWarning("TLS Certificate was issued recently on \(TLSHeuristics.formattedDate(notBefore))", .suspicious, penalty: PenaltySystem.Penalty.tlsIsNew)
+            if let daysOld = Calendar.current.dateComponents([.day], from: notBefore, to: now).day, daysOld <= 7 {
+                addWarning("TLS Certificate was issued recently on \(TLSHeuristics.formattedDate(notBefore))", .suspicious, penalty: PenaltySystem.Penalty.tlsIsNew, bitFlags: WarningFlags.TLS_IS_FRESH )
             }
 
             if let notAfter = certificate.notAfter {
@@ -104,11 +109,12 @@ struct TLSCertificateAnalyzer {
                 addWarning("✅ Certificate is Organization Validated (OV)", .info, penalty: 10)
             case .dv:
                 addWarning("✅ Certificate is Domain Validated (DV)", .info, penalty: 0)
-                if certificate.issuerCommonName == "WE1"{
-                    // TODO: Replace with real label before release
-                    addWarning("✅ DV Cert issued by a Hotdogwater CN (WE1)", .info, penalty: PenaltySystem.Penalty.hotDogwaterCN)
-//                    swift autocompletion proposed: Certificate is Domain Validated (DV) by a bullshit CA.
-                }
+//                This either need more digging into the shaddy world of CN, or womething was missed on the TLS logic
+//                if certificate.issuerCommonName == "WE1"{
+//                    // TODO: Replace with real label before release
+//                    addWarning("✅ DV Cert issued by a Hotdogwater CN (WE1)", .info, penalty: PenaltySystem.Penalty.hotDogwaterCN)
+////                    swift autocompletion proposed: Certificate is Domain Validated (DV) by a bullshit CA.
+//                }
                     
                 break // DV is the default, nothing to reward
             case .unknown:

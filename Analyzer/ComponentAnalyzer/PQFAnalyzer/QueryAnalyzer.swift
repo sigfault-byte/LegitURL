@@ -46,7 +46,8 @@ struct QueryAnalyzer {
                     severity: .suspicious,
                     penalty: PenaltySystem.Penalty.malformedQueryPair,
                     url: urlOrigin,
-                    source: .query
+                    source: .query,
+                    bitFlags: WarningFlags.QUERY_OBFUSCATED_STRUCTURE
                 ))
                 malformedPairFound = true
                 continue
@@ -61,7 +62,8 @@ struct QueryAnalyzer {
                     severity: .suspicious,
                     penalty: PenaltySystem.Penalty.queryKeyForbiddenCharacters,
                     url: urlOrigin,
-                    source: .query
+                    source: .query,
+                    bitFlags: WarningFlags.QUERY_OBFUSCATED_STRUCTURE
                 ))
                 malformedPairFound = true
             }
@@ -74,7 +76,8 @@ struct QueryAnalyzer {
                         severity: .suspicious,
                         penalty: PenaltySystem.Penalty.keyIsHighEntropy,
                         url: urlOrigin,
-                        source: .query
+                        source: .query,
+                        bitFlags: WarningFlags.QUERY_OBFUSCATED_STRUCTURE
                     ))
                 }
                 
@@ -84,7 +87,8 @@ struct QueryAnalyzer {
                         severity: .suspicious,
                         penalty: PenaltySystem.Penalty.valueForbiddenCharacters,
                         url: urlOrigin,
-                        source: .query
+                        source: .query,
+                        bitFlags: WarningFlags.QUERY_OBFUSCATED_STRUCTURE
                     ))
                     malformedPairFound = true
                 }
@@ -92,16 +96,16 @@ struct QueryAnalyzer {
             
             if malformedPairFound {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "Query does not fully conform to expected key value pair format or character set.",
+                    message: "Query does not fully conform to expected key value pair format or character set. No further Query Analysis performed",
                     severity: .dangerous,
                     penalty: PenaltySystem.Penalty.malformedQueryPair,
                     url: urlOrigin,
-                    source: .query
+                    source: .query,
+                    bitFlags: WarningFlags.QUERY_OBFUSCATED_STRUCTURE
                 ))
                 
                 //            // TODO: This is useless, we all ready know this failed the key=value contract. See later!
-                //            let deepWarnings = DeepScamHellCheck.analyze(queryOrFragment: rawQuery, isFragment: false, urlOrigin: urlOrigin)
-                //            urlInfo.warnings.append(contentsOf: deepWarnings)
+                //            Send to lamai!
                 
                 return (nil)
             }

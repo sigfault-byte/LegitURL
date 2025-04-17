@@ -2,7 +2,7 @@ import Foundation
 
 struct PenaltySystem {
     public enum Penalty {
-       // 🔴 CRITICAL ISSUES
+       // CRITICAL ISSUES
         static let critical                            = -100
         
        // HOST-RELATED PENALTIES
@@ -27,17 +27,18 @@ struct PenaltySystem {
 
        // PATH-RELATED PENALTIES
         static let executableInPath                    = -20
-        static let pathIsEndpointLike                  = -15
+        static let pathHasExecutable                   = -20
+        static let pathIsEndpointLike                  = -10
         static let highEntropyPathComponent            = -10
         static let scamWordsInPath                     = -10
         static let phishingWordsInPath                 = -10
         static let suspiciousPathSegment               = -10
-        static let exactBrandInPath                    = -5
         static let containBrandInPath                  = -5
+        static let brandLookaLikeInPath                = -5
         
         // QUERIES & fragment ... Need granularity see lamai todo
         static let malformedQueryPair                  = -40
-        static let highEntropyQuery                    = -30
+        static let highEntropyQuery                    = -15
         static let queryKeyForbiddenCharacters         = -20
         static let valueForbiddenCharacters            = -20
         static let scamWordsInQuery                    = -20
@@ -72,21 +73,26 @@ struct PenaltySystem {
         static let badJSCallInline                     = -30
         static let jsFingerPrinting                    = -30
         static let hotdogWaterDev                      = -30
-        static let scriptIs70Percent                   = -30
-        static let scriptDataURI                       = -30
-        static let scriptUnknownOrigin                 = -30
-        static let scriptMalformed                     = -30
         static let unusualScritSrcFormat               = -30
         static let metaRefreshInBody                   = -25
+        static let scriptMalformed                     = -20
         static let scriptIsMoreThan512                 = -20
+        static let scriptUnknownOrigin                 = -20
         static let jsWindowsRedirect                   = -20
         static let jsWebAssembly                       = -20
         static let extScriptSrc                        = -20
-        static let jsCookieAccess                      = -20
+        static let highScriptDensity20                 = -20
+        static let scriptDataURI                       = -20
+        static let scriptIs70Percent                   = -10
+        static let jsCookieAccess                      = -10
+        static let smallHTMLless896                    = -10
+        static let highScriptDensity                   = -10
         static let sameDomainCookie                    = -10
         static let jsStorageAccess                     = -10
         static let jsSetItemAccess                     = -10
-        static let scriptIs5070Percent                 = -10
+        static let mediumScritpDensity                 = -5
+        static let scriptIs5070Percent                 = -5
+        static let smallhtmllessthan1408               = -5
         
         //InlineSpecific JS penalty
         static let hightPenaltyForInlineJS            = -30
@@ -167,65 +173,105 @@ struct PenaltySystem {
         ".live":        -20
     ]
     static func penaltyForCookieBitFlags(_ flags: CookieFlagBits) -> Int {
-        // full exposure
+        var penalty = 0
+        if flags.contains(.cookieOnRedirect) {
+            penalty -= 5
+        }
+        if flags.contains(.samesiteNone)         { penalty += -15 }
+        
+//         full exposure -> terrible cookie, critical score
         if flags.contains([.samesiteNone, .secureMissing, .httpOnlyMissing]) {
             return Penalty.critical
         }
-        
+//        if already seen, no penalty again
         if flags.contains(.reusedAccrossRedirect) {
             return 0
         }
-
-        if flags.contains(.benignTiny) {
-            if flags.contains(.httpOnlyMissing) || flags.contains(.secureMissing){
-                return -10
+        
+        // cleaning cookie, whatever the size if httponly is set, the cookie is harmless.
+        if flags.contains(.expired) && !flags.contains(.httpOnlyMissing) {
+            return penalty
+        }
+        
+        // Secure session cookie with any size not a fingerprint
+        if flags.contains(.sessionCookie )
+            && !flags.contains(.fingerprintStyle)
+            && !flags.contains(.httpOnlyMissing)
+            && !flags.contains(.secureMissing) {
+            return penalty
+        }
+        
+        if flags.contains([.shortLivedPersistent]) && !flags.contains([.httpOnlyMissing, .secureMissing])  {
+            penalty -= 5
+            return penalty
+        }
+        
+        // Harmless but bad practice
+        if flags.contains(.smallCookie) && (flags.contains(.httpOnlyMissing) || !flags.contains(.secureMissing)) {
+            if flags.contains(.persistent) {
+                penalty -= 5
             }
-            return 0 // early return to skip other penalties for small harmless cookies
+            penalty -= 5
+            return penalty
         }
         
-        // Dangerous handoff-style pattern
-        if flags.contains([.cookieOnRedirect, .fingerprintStyle]) {
-            return -25
-        }
-
-        // Insecure flags — but small
-        if flags.contains([.secureMissing, .httpOnlyMissing]) {
-            return -20
+        //// Possibly CSRF-style token, intentionally readable by JS
+        if flags.contains(.mediumCookie)
+           && flags.contains(.persistent)
+           && !flags.contains(.secureMissing)
+           && flags.contains(.httpOnlyMissing)
+           && !flags.contains(.highEntropyValue) {
+            penalty -= 5
+            return penalty
         }
         
-        // Large + secure + persistent = fingerprint blob
-        if flags.contains([.highEntropyValue, .persistent, .largeValue]) {
-            return -15
+        //        legit secure tracking
+        if flags.contains(.persistent) && flags.contains(.highEntropyValue) && !flags.contains(.httpOnlyMissing) && !flags.contains(.secureMissing){
+            penalty = -5
+            return penalty
         }
-
-        // Short-lived opaque tracking (big but short-lived)
-        if flags.contains(.fingerprintStyle) {
-            return -10
-        }
-
-        // Tracking combo: entropy + persistent
-        if flags.contains([.highEntropyValue, .persistent]) {
-            return -10
-        }
-
-        // 🧱 Individual signals
-        var penalty = 0
         
-        if flags.contains(.samesiteNone)         { penalty += -15 }
+//        leaky persistent trackcing
+        if flags.contains(.persistent) && flags.contains(.highEntropyValue) && flags.contains(.httpOnlyMissing){
+            penalty -= 20
+            return penalty
+        }
+        
+        if flags.contains(.shortLivedPersistent) && flags.contains(.httpOnlyMissing) && flags.contains(.secureMissing){
+            penalty -= 15
+            return penalty
+        }
+    
+        if flags.contains([.largeValue, .persistent]) {
+            if flags.contains([.httpOnlyMissing, . secureMissing]) {
+                penalty -= 10
+            }
+            penalty -= 5
+            return penalty
+        }
+        
+//        Secure Heavy tracking fingerprint
+        if flags.contains(.fingerprintStyle) && !flags.contains(.httpOnlyMissing) && !flags.contains(.secureMissing){
+            penalty -= 15
+            return penalty
+        }
+        
+        if flags.contains(.fingerprintStyle) && !flags.contains(.httpOnlyMissing) && flags.contains(.secureMissing){
+            penalty -= 20
+            return penalty
+        }
+        
+        if flags.contains(.fingerprintStyle) && flags.contains(.httpOnlyMissing) {
+            penalty -= 25
+            return penalty
+        }
+        
         if flags.contains(.secureMissing)        { penalty += -15 }
         if flags.contains(.httpOnlyMissing)      { penalty += -15 }
         if flags.contains(.largeValue)           { penalty += -10 }
         if flags.contains(.highEntropyValue)     { penalty += -5 }
         if flags.contains(.persistent)           { penalty += -5 }
         if flags.contains(.shortLivedPersistent) { penalty += -5 }
-
-        // armless
-        if flags.contains(.expired)              { penalty += 0 }
-
-        // ositive scoring for good practices
-//        if !flags.contains(.secureMissing)       { penalty += 5 }
-//        if !flags.contains(.httpOnlyMissing)     { penalty += 5 }
-//        if !flags.contains(.samesiteNone)        { penalty += 5 }
 
         return max(penalty, -100)
     }

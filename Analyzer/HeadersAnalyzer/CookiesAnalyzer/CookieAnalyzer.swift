@@ -17,8 +17,13 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         bitFlags.insert(.highEntropyValue)
         
     }
+    if valueSize <= 16 {
+        bitFlags.insert(.smallCookie)
+    } else if valueSize <= 31 {
+        bitFlags.insert(.mediumCookie)
+    }
 
-    if valueSize >= 64 {
+    if valueSize >= 32 {
         bitFlags.insert(.largeValue)
     }
 
@@ -26,6 +31,11 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         bitFlags.insert(.fingerprintStyle)
     }
 
+    // TODO (v2.0): Investigate use of expired cookies in redirect chains
+    // - If cookie is expired AND value is long/high-entropy → may be fingerprinting cleanup
+    // - If expired on non-200 response → possibly used in cloaking logic
+    // - For now, expired cookies are flagged as `.info` only
+//    print("🔍 Cookie: \(cookie.name) expires in \(cookie.expire) seconds")
     if let expiry = cookie.expire {
         let duration = expiry.timeIntervalSinceNow
         if duration <= 0 {
@@ -35,10 +45,8 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         } else if !cookie.value.isEmpty {
             bitFlags.insert(.shortLivedPersistent)
         }
-    }
-
-    if valueSize > 64 && cookie.secure == false {
-        bitFlags.insert(.secureMissing)
+    } else {
+        bitFlags.insert(.sessionCookie)
     }
 
     if cookie.sameSite.lowercased() == "none" {
@@ -53,16 +61,14 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         bitFlags.insert(.httpOnlyMissing)
     }
 
-    if valueSize <= 12 {
-        bitFlags.insert(.smallCookie)
-    }
+    
 
     let isCrossSite = cookie.sameSite.lowercased() == "none"
     let isSecure = cookie.secure
 
     if httpResponseCode != 200 {
         bitFlags.insert(.cookieOnRedirect)
-        severity = .dangerous
+        severity = .suspicious
     } else if bitFlags.contains([.highEntropyValue, .persistent, .samesiteNone]) {
         severity = .dangerous
     } else if bitFlags.contains(.benignTiny) {

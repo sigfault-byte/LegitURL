@@ -14,14 +14,16 @@ struct SecurityWarning: Identifiable{
     var penalty: Int
     var url: String
     var source: SourceType
+    var bitFlags: WarningFlags
     
-    init(message: String, severity: SeverityLevel, penalty: Int, url: String, source: SourceType) {
-            self.id = UUID()
-            self.message = message
-            self.severity = severity
-            self.penalty = penalty
-            self.url = url
-            self.source = source
+    init(message: String, severity: SeverityLevel, penalty: Int, url: String, source: SourceType, bitFlags: WarningFlags? = nil) {
+        self.id = UUID()
+        self.message = message
+        self.severity = severity
+        self.penalty = penalty
+        self.url = url
+        self.source = source
+        self.bitFlags = bitFlags ?? []
         }
 
     /// **Represents severity levels for warnings**

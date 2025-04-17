@@ -60,7 +60,7 @@ func parseCookies(from headers: [String], for url: String) -> [CookieMetadata] {
 }
 
 struct CookieFlagBits: OptionSet, Hashable {
-    let rawValue: Int
+    let rawValue: UInt16
 
     static let highEntropyValue = CookieFlagBits(rawValue: 1 << 0)
     static let largeValue = CookieFlagBits(rawValue: 1 << 1)
@@ -75,6 +75,8 @@ struct CookieFlagBits: OptionSet, Hashable {
     static let cookieOnRedirect = CookieFlagBits(rawValue: 1 << 10)
     static let smallCookie = CookieFlagBits(rawValue: 1 << 11)
     static let reusedAccrossRedirect = CookieFlagBits(rawValue: 1 << 12)
+    static let sessionCookie = CookieFlagBits(rawValue: 1 << 13)
+    static let mediumCookie = CookieFlagBits(rawValue: 1 << 14)
 
 }
 
@@ -97,21 +99,25 @@ extension CookieFlagBits {
                 reasons.append("High-entropy value")
             }
         }
-        if contains(.smallCookie) && (contains(.httpOnlyMissing) || contains(.secureMissing)) {
-            reasons.append("Small cookie missing security flags")
+        
+        if contains(.shortLivedPersistent) && contains(.httpOnlyMissing) {
+            reasons.append("Short-lived but large value cookie briefly accessible to JavaScript ")
         }
+        
+        if contains(.mediumCookie)          { reasons.append("Medium value")}
         if contains(.largeValue)            { reasons.append("Large value") }
         if contains(.fingerprintStyle)      { reasons.append("Fingerprint-style pattern") }
         if contains(.expired)               { reasons.append("Expired cookie") }
         if contains(.persistent)            { reasons.append("Persistent cookie") }
-        if contains(.shortLivedPersistent)  { reasons.append("Short-lived persistent cookie") }
+        if contains(.shortLivedPersistent)  { reasons.append("Short-lived cookie") }
         if contains(.samesiteNone)          { reasons.append("SameSite=None") }
-        if contains(.secureMissing)         { reasons.append("Secure flag missing") }
-        if contains(.httpOnlyMissing)       { reasons.append("HttpOnly flag missing") }
+        if contains(.secureMissing)         { reasons.append("Secure flag missing, cookie could be sent unencrypted") }
+        if contains(.httpOnlyMissing)       { reasons.append("HttpOnly flag missing, cookie is accessible by javascript") }
         if contains(.benignTiny)            { reasons.append("Benign tiny cookie") }
         if contains(.cookieOnRedirect)      { reasons.append("Cookie on redirect") }
-        if contains(.smallCookie)           { reasons.append("Small Cookie (less than 10 bytes)")}
-        if contains(.reusedAccrossRedirect) { reasons.append("Cookie was already set previously, and penalyzed")}
+        if contains(.smallCookie)           { reasons.append("Small Cookie (less than 16 bytes)")}
+        if contains(.reusedAccrossRedirect) { reasons.append("Cookie was seen previously, and penalyzed")}
+        if contains(.sessionCookie)         { reasons.append("Session cookie")}
 
         return reasons
     }

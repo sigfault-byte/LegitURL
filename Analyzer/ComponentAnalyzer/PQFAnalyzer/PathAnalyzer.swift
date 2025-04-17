@@ -10,7 +10,6 @@ import Foundation
 struct PathAnalyzer {
     
     static func analyze(urlInfo: inout URLInfo) {
-        var tokenResults: [TokenAnalysis] = []
         
         let urlOrigin = urlInfo.components.host ?? ""
         
@@ -24,7 +23,8 @@ struct PathAnalyzer {
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.pathIsEndpointLike,
                 url: urlOrigin,
-                source: .path
+                source: .path,
+                bitFlags: WarningFlags.PATH_ENDPOINTLIKE
             ))
         }
         
@@ -83,17 +83,20 @@ struct PathAnalyzer {
                     severity: .suspicious,
                     penalty: PenaltySystem.Penalty.suspiciousPathSegment,
                     url: urlOrigin,
-                    source: .path
+                    source: .path,
+                    bitFlags: WarningFlags.PATH_OBFUSCATED_STRUCTURE
                 ))
             }
-            if segment.count <= 64 && segment.contains("-") {
+            let isSuspiciouslyLong = segment.count > 64
+            let hasHyphen = segment.contains("-")
+
+            if !isSuspiciouslyLong && hasHyphen {
                 parts = segment.split(separator: "-").map(String.init)
             } else {
                 parts = [segment]
             }
             
             for part in parts {
-                var analysis = TokenAnalysis(part: part)
                 
                 if SuspiciousKeywords.scamTerms.contains(part.lowercased()) {
                     urlInfo.warnings.append(SecurityWarning(
@@ -101,10 +104,9 @@ struct PathAnalyzer {
                         severity: .scam,
                         penalty: PenaltySystem.Penalty.scamWordsInPath,
                         url: urlOrigin,
-                        source: .path
+                        source: .path,
+                        bitFlags: WarningFlags.PATH_SCAM_OR_PHISHING
                     ))
-                    analysis.isPhishing = true
-                    analysis.phishingTerms.append(part)
                 }
                 
                 if SuspiciousKeywords.phishingWords.contains(part.lowercased()) {
@@ -113,10 +115,9 @@ struct PathAnalyzer {
                         severity: .scam,
                         penalty: PenaltySystem.Penalty.phishingWordsInPath,
                         url: urlOrigin,
-                        source: .path
+                        source: .path,
+                        bitFlags: WarningFlags.PATH_SCAM_OR_PHISHING
                     ))
-                    analysis.isPhishing = true
-                    analysis.phishingTerms.append(part)
                 }
                 // TODO: add levenshtein + n gram check!!
                 for brand in KnownBrands.names {
@@ -124,12 +125,11 @@ struct PathAnalyzer {
                         urlInfo.warnings.append(SecurityWarning(
                             message: "ℹ️ Exact Brand reference found in path segment: '\(part)'",
                             severity: .suspicious,
-                            penalty: PenaltySystem.Penalty.exactBrandInPath,
+                            penalty: PenaltySystem.Penalty.containBrandInPath,
                             url: urlOrigin,
-                            source: .path
+                            source: .path,
+                            bitFlags: WarningFlags.PATH_EXACT_BRAND_MATCH
                         ))
-                        analysis.isBrand = true
-                        analysis.brands.append(brand)
                         
                     } else if KnownBrands.names.contains(part.lowercased()) {
                         urlInfo.warnings.append(SecurityWarning(
@@ -137,37 +137,33 @@ struct PathAnalyzer {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.containBrandInPath,
                             url: urlOrigin,
-                            source: .path
+                            source: .path,
+                            bitFlags: WarningFlags.PATH_CONTAINS_BRAND
                         ))
-                        analysis.isBrand = true
-                        analysis.brands.append(brand)
                     }else if part.count >= 3 {
                         let levenshtein = LegitURLTools.levenshtein(part.lowercased(), brand)
                         if levenshtein == 1 {
                             urlInfo.warnings.append(SecurityWarning(
                                 message: "⚠️ Path segment '\(part)' is a likely typo of brand '\(brand)' (Levenshtein = 1).",
                                 severity: .suspicious,
-                                penalty: PenaltySystem.Penalty.brandLookaLike,
+                                penalty: PenaltySystem.Penalty.brandLookaLikeInPath,
                                 url: urlOrigin,
-                                source: .path
+                                source: .path,
+                                bitFlags: WarningFlags.PATH_LOOKALIKE_BRAND
                             ))
-                            analysis.isBrand = true
-                            analysis.brands.append(brand)
                         }
                         let ngram = LegitURLTools.twoGramSimilarity(part.lowercased(), brand)
                         if ngram > 0.6 {
                             urlInfo.warnings.append(SecurityWarning(
                                 message: "⚠️ Path segment '\(part)' is structurally similar to brand '\(brand)' (2-gram similarity = \(String(format: "%.2f", ngram))).",
                                 severity: .suspicious,
-                                penalty: PenaltySystem.Penalty.brandLookaLike,
+                                penalty: PenaltySystem.Penalty.brandLookaLikeInPath,
                                 url: urlOrigin,
-                                source: .path
+                                source: .path,
+                                bitFlags: WarningFlags.PATH_LOOKALIKE_BRAND
                             ))
-                            analysis.isBrand = true
-                            analysis.brands.append(brand)
                         }
                     }
-                    
                 }
                 
                 if part.contains(".") {
@@ -177,9 +173,10 @@ struct PathAnalyzer {
                         urlInfo.warnings.append(SecurityWarning(
                             message: "🚨 Executable file extension detected: '\(ext)'",
                             severity: .dangerous,
-                            penalty: PenaltySystem.Penalty.critical,
+                            penalty: PenaltySystem.Penalty.pathHasExecutable,
                             url: urlOrigin,
-                            source: .path
+                            source: .path,
+                            bitFlags: WarningFlags.PATH_EXECUTABLE_FILE_TYPE
                         ))
                     }
                 }
@@ -200,25 +197,14 @@ struct PathAnalyzer {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.highEntropyPathComponent,
                             url: urlOrigin,
-                            source: .path
+                            source: .path,
+                            bitFlags: WarningFlags.PATH_HIGH_ENTROPY
                         ))
                         
                     }
                 }
-                tokenResults.append(analysis)
             }
         }
-        
-        if tokenResults.contains(where: { $0.isRelevant }) {
-            urlInfo.components.pathTokenAnalysis = tokenResults
-        }
-        TokenCorrelation.evaluateTokenImpersonation(
-            for: tokenResults,
-            in: &urlInfo,
-            from: .path,
-            url: urlOrigin
-        )
-        
         return
     }
 }

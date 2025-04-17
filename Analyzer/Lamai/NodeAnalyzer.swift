@@ -115,20 +115,23 @@ struct NodeAnalyzer {
             }
         }
 
-        for part in parts {
-            for brand in brands {
-                let levenshtein = LegitURLTools.levenshtein(part, brand)
-                let threshold = min(part.count, brand.count) <= 4 ? 1 : 2
-                if levenshtein <= threshold {
-                    return .similar(brand)
-                }
-
-                let ngramScore = LegitURLTools.twoGramSimilarity(part, brand)
-                if ngramScore > 0.6 {
-                    return .similar(brand)
-                }
-            }
-        }
+//       TODO: This stops the depth of other branch, because it can match on too many false positive. This needs more thinking, about when to trigger it, or, compare nodes to see if this is really relevant
+//        Exemple -> 2 nodes, this and a borther node, borther node finds depth in decoding more, or finds a mail w/e, this then is irrelevant.
+//        Basially if other branch fail, this is relevant, otherwise this is irrelevant
+//        for part in parts {
+//            for brand in brands {
+//                let levenshtein = LegitURLTools.levenshtein(part, brand)
+//                let threshold = min(part.count, brand.count) <= 4 ? 1 : 2
+//                if levenshtein <= threshold {
+//                    return .similar(brand)
+//                }
+//
+//                let ngramScore = LegitURLTools.twoGramSimilarity(part, brand)
+//                if ngramScore > 0.6 {
+//                    return .similar(brand)
+//                }
+//            }
+//        }
 
         return nil
     }
