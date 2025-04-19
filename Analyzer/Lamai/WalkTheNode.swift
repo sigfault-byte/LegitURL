@@ -1,7 +1,4 @@
-//                    // TODO: This should be decode again to see what its carrying
-//                        like so, need to give lamai a better interface, create a new datamodel to store the finding that were also decoded in the findings. findingception. Plus adapt the view!
-//                        let node = LamaiDecoding.decode(value, maxDepth: 3)
-//                                WalkTheNode.analyze(node: node, urlInfo: &urlInfo, comp: comp, label: "JSON[\(key)]")
+
 
 struct WalkTheNode {
     
@@ -11,7 +8,11 @@ struct WalkTheNode {
         var didWarnForDepth = false
         var source = SecurityWarning.SourceType.query
         if comp != "query" {
-            source = SecurityWarning.SourceType.fragment
+            if comp == "fragment" {
+                source = SecurityWarning.SourceType.fragment
+            } else {
+                source = SecurityWarning.SourceType.path
+            }
         }
         
         func walk(_ node: DecodedNode) {
@@ -22,7 +23,7 @@ struct WalkTheNode {
                     severity: .info,
                     penalty: 0,
                     url: urlOrigin,
-                    source: source
+                    source: (comp == "path" ? .pathSub(label: label) : source)
                 ))
                 didWarnForDepth = true
             }
@@ -38,7 +39,7 @@ struct WalkTheNode {
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.hiddenRedirectQuery,
                             url: urlOrigin,
-                            source: source,
+                            source: (comp == "path" ? .pathSub(label: label) : source),
                             bitFlags: WarningFlags.QUERY_URL
                         ))
                         
@@ -49,7 +50,7 @@ struct WalkTheNode {
                             severity: .tracking,
                             penalty: PenaltySystem.Penalty.uuidInQuery,
                             url: urlOrigin,
-                            source: source,
+                            source: (comp == "path" ? .pathSub(label: label) : source),
                             bitFlags: WarningFlags.QUERY_UUID
                         ))
                         
@@ -59,7 +60,7 @@ struct WalkTheNode {
                             severity: .scam,
                             penalty: PenaltySystem.Penalty.scamWordsInQuery,
                             url: urlOrigin,
-                            source: source,
+                            source: (comp == "path" ? .pathSub(label: label) : source),
                             bitFlags: WarningFlags.QUERY_SCAM_PHISHYNG
                         ))
 
@@ -69,7 +70,7 @@ struct WalkTheNode {
                             severity: .scam,
                             penalty: PenaltySystem.Penalty.phishingWordsInQuery,
                             url: urlOrigin,
-                            source: source,
+                            source: (comp == "path" ? .pathSub(label: label) : source),
                             bitFlags: WarningFlags.QUERY_SCAM_PHISHYNG
                         ))
 
@@ -80,7 +81,7 @@ struct WalkTheNode {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.highEntropyQuery,
                             url: urlOrigin,
-                            source: source,
+                            source: (comp == "path" ? .pathSub(label: label) : source),
                             bitFlags: WarningFlags.QUERY_HIGH_ENTROPY
                             
                         ))
@@ -91,7 +92,7 @@ struct WalkTheNode {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.highEntropyQuery,
                             url: urlOrigin,
-                            source: source
+                            source: (comp == "path" ? .pathSub(label: label) : source)
                         ))
                         
                     case .isIPv4(let value):
@@ -100,7 +101,7 @@ struct WalkTheNode {
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.IpAddressInQuery,
                             url: urlOrigin,
-                            source: source
+                            source: (comp == "path" ? .pathSub(label: label) : source)
                         ))
                         
                     case .isIPv6(let value):
@@ -109,7 +110,7 @@ struct WalkTheNode {
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.IpAddressInQuery,
                             url: urlOrigin,
-                            source: source
+                            source: (comp == "path" ? .pathSub(label: label) : source)
                         ))
                         
                     case .email(let value):
@@ -118,7 +119,7 @@ struct WalkTheNode {
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.emailInQuery,
                             url: urlOrigin,
-                            source: source
+                            source: (comp == "path" ? .pathSub(label: label) : source)
                         ))
                         //                    // TODO: This should be decode again to see what its carrying
                         //                        like so, need to give lamai a better interface, create a new datamodel to store the finding that were also decoded in the findings. findingception. Plus adapt the view!
@@ -130,7 +131,7 @@ struct WalkTheNode {
                             severity: .info,
                             penalty: PenaltySystem.Penalty.jsonInQuery,
                             url: urlOrigin,
-                            source: source
+                            source: (comp == "path" ? .pathSub(label: label) : source)
                         ))
                         
                     case .brandExact(let brand):
@@ -139,7 +140,7 @@ struct WalkTheNode {
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.exactBrandInQuery,
                             url: urlOrigin,
-                            source: source,
+                            source: (comp == "path" ? .pathSub(label: label) : source),
                             bitFlags: WarningFlags.QUERY_CONTAINS_BRAND
                         ))
 
@@ -149,7 +150,7 @@ struct WalkTheNode {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.queryContainsBrand,
                             url: urlOrigin,
-                            source: source,
+                            source: (comp == "path" ? .pathSub(label: label) : source),
                             bitFlags: WarningFlags.QUERY_CONTAINS_BRAND
                         ))
 
@@ -159,7 +160,7 @@ struct WalkTheNode {
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.brandLookAlikeInQuery,
                             url: urlOrigin,
-                            source: source,
+                            source: (comp == "path" ? .pathSub(label: label) : source),
                             bitFlags: WarningFlags.QUERY_LOOKALIKE_BRAND
                         ))
                     }

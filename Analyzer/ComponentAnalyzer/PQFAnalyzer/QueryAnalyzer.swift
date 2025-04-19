@@ -104,7 +104,7 @@ struct QueryAnalyzer {
                     bitFlags: WarningFlags.QUERY_OBFUSCATED_STRUCTURE
                 ))
                 
-                //            // TODO: This is useless, we all ready know this failed the key=value contract. See later!
+                //            // TODO: We all ready know this failed the key=value contract. But we should still try to decode
                 //            Send to lamai!
                 
                 return (nil)

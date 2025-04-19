@@ -1,4 +1,3 @@
-//
 //  LamaiDecoding.swift
 //  URLChecker
 //
@@ -16,14 +15,18 @@ struct LamaiDecoding {
     static func decode(input: String, maxDepth: Int = 4) -> DecodedNode {
         let root = DecodedNode(value: input, depth: 0)
         decodeNode(root, maxDepth: maxDepth)
+            
         if !root.wasRelevant, root.children.isEmpty {
             root.runAllAnalyses()
             if !root.wasRelevant {
                 root.checkEntropy()
             }
+
         }
+        root.printTree()
         return root
     }
+    
     
     internal static func decodeNode(_ node: DecodedNode, maxDepth: Int) {
         guard !node.shouldStop, node.depth < maxDepth else { return }
@@ -33,21 +36,33 @@ struct LamaiDecoding {
         // Step 1: Single step percent decoding
         if let decoded = current.removingPercentEncoding,
            decoded != current {
+            print("🔄 [Lamai] Trying percent decoding on: \(current)")
             LamaiAnalyzerHub.handleDecodedChild(value: decoded, method: "percent", under: node, maxDepth: maxDepth)
         }
         
         // Step 2: Try base64
         let currentBase64 = current
-        let padded = normalizeBase64(currentBase64)
-        if let data = Data(base64Encoded: padded),
-           let b64Str = String(data: data, encoding: .utf8) {
-            LamaiAnalyzerHub.handleDecodedChild(value: b64Str, method: "base64", under: node, maxDepth: maxDepth)
+        if let padded = DecodingTools.normalizeBase64(currentBase64) {
+            print("We tried : ", padded)
+            
+            if let data = Data(base64Encoded: padded) {
+                if let b64Str = String(data: data, encoding: .utf8) {
+                    print("🔄 [Lamai] Trying base64 decoding on: \(current)")
+                    LamaiAnalyzerHub.handleDecodedChild(value: b64Str, method: "base64", under: node, maxDepth: maxDepth)
+                } else if let rawData = padded.data(using: .utf8),
+                          let recovered = decodeUntilItStopsMakingSense(encodedBlob: rawData) {
+                    LamaiAnalyzerHub.handleDecodedChild(value: recovered, method: "base64:shrunk", under: node, maxDepth: maxDepth)
+                }
+            } else {
+                print("🧱 [Lamai] Skipping base64 decode — likely garbage.")
+            }
         }
         
         // Step 3: Try hex decoding
         if current.count % 2 == 0,
            let hexData = Data(hexString: current),
            let hexStr = String(data: hexData, encoding: .utf8) {
+            print("🔄 [Lamai] Trying hex decoding on: \(current)")
             LamaiAnalyzerHub.handleDecodedChild(value: hexStr, method: "hex", under: node, maxDepth: maxDepth)
         }
         
@@ -55,6 +70,7 @@ struct LamaiDecoding {
         if looksLikeMime(current),
            let mimeStr = try? current.mimeDecoded(),
            mimeStr != current {
+            print("🔄 [Lamai] Trying MIME decoding on: \(current)")
             LamaiAnalyzerHub.handleDecodedChild(value: mimeStr, method: "mime", under: node, maxDepth: maxDepth)
         }
         
@@ -62,18 +78,34 @@ struct LamaiDecoding {
         if looksLikeUnicode(current),
            let unicodeStr = current.decodedUnicodeEscapes(),
            unicodeStr != current {
+            print("🔄 [Lamai] Trying Unicode decoding on: \(current)")
             LamaiAnalyzerHub.handleDecodedChild(value: unicodeStr, method: "unicode", under: node, maxDepth: maxDepth)
         }
+        
         
         // Step 6: Future steps — Add more decoding strategies as needed
     }
     
-    private static func normalizeBase64(_ str: String) -> String {
-        let clean = str.replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let remainder = clean.count % 4
-        return remainder == 0 ? clean : clean + String(repeating: "=", count: 4 - remainder)
+    private static func decodeUntilItStopsMakingSense(encodedBlob: Data) -> String? {
+        print("ENCODED BLOB: ", encodedBlob)
+        guard let fullString = String(data: encodedBlob, encoding: .utf8) else {
+            print("💥 [Lamai] Could not decode base64 blob to UTF-8 string.")
+            return nil
+        }
+        
+        for i in stride(from: fullString.count, through: 4, by: -1) {
+            let index = fullString.index(fullString.startIndex, offsetBy: i)
+            let slice = String(fullString[..<index])
+            let padded = slice + String(repeating: "=", count: (4 - slice.count % 4) % 4)
+            
+            if let decoded = Data(base64Encoded: padded),
+               let utf8 = String(data: decoded, encoding: .utf8) {
+                print("🧠 [Lamai] Shrink-decoded payload: \(utf8.prefix(80))")
+                return utf8
+            }
+        }
+        
+        return nil
     }
     
     private static func looksLikeMime(_ str: String) -> Bool {
@@ -85,3 +117,27 @@ struct LamaiDecoding {
         return str.contains("\\u003") || str.contains("\\u00") || str.contains("&#x")
     }
 }
+
+
+extension Data {
+    func longestPrintableASCIISequence() -> Data {
+        var longest = Data()
+        var current = Data()
+        
+        for byte in self {
+            if byte >= 32 && byte <= 126 {
+                current.append(byte)
+            } else {
+                if current.count > longest.count {
+                    longest = current
+                }
+                current = Data()
+            }
+        }
+        if current.count > longest.count {
+            longest = current
+        }
+        return longest
+    }
+}
+

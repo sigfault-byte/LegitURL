@@ -16,6 +16,7 @@ struct LamaiAnalyzerHub {
 
         // Run splits first if nothing obvious was found
         if !child.wasRelevant {
+            print("ENDGAME")
             speculativeSplitStrategies(from: value, under: child, maxDepth: maxDepth)
         }
         
@@ -70,6 +71,7 @@ struct LamaiAnalyzerHub {
                 node.method = "kv-pair"
                 node.decoded = value
                 node.runAllAnalyses()
+
                 if !node.shouldStop {
                     LamaiDecoding.decodeNode(node, maxDepth: maxDepth)
                 }
@@ -81,12 +83,18 @@ struct LamaiAnalyzerHub {
         }
 
         // Strategy 3: token delimiters
-        let delimiters = ["|", ".", "_", "~", ":"]
+        let delimiters = ["|",
+                          ".",
+                          ";" ,
+                          "_",
+                          "~",
+                          ":"]
         var bestChildren: [DecodedNode] = []
+        
         for delimiter in delimiters {
             let count = string.filter { $0 == Character(delimiter) }.count
             if count < 2 { continue }
-
+            print("YES YLLAH 2")
             let parts = string.components(separatedBy: String(delimiter)).filter { $0.count >= 4 }
             var children: [DecodedNode] = []
             for part in parts {
@@ -94,6 +102,11 @@ struct LamaiAnalyzerHub {
                 node.method = "split:\(delimiter)"
                 node.decoded = part
                 node.runAllAnalyses()
+                print("YES YLLAH3")
+                if node.wasRelevant {
+                    print("YES")
+                    
+                }
                 if !node.shouldStop {
                     LamaiDecoding.decodeNode(node, maxDepth: maxDepth)
                 }

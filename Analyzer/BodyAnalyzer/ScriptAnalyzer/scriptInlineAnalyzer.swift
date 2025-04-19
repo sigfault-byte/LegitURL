@@ -33,8 +33,8 @@ struct ScriptInlineAnalyzer {
             suspiciousBytes: SuspiciousJSAccessors.accessorsFirstBytes
         )
         // second pass with pos -2 on the second letter of bad js function
-//        print("\(suspiciousCalls.count) Suspicious JS calls found from \(parenPositions.count) ")
-//        print("\(suspiciousAncestors.count) Suspicious JS accessors calls found from \(dotPositions.count) ")
+        //        print("\(suspiciousCalls.count) Suspicious JS calls found from \(parenPositions.count) ")
+        //        print("\(suspiciousAncestors.count) Suspicious JS accessors calls found from \(dotPositions.count) ")
         
         let suspiciousCalls2 = filterSuspiciousJSCalls(
             in: soupData,
@@ -48,7 +48,7 @@ struct ScriptInlineAnalyzer {
             offset: 2,
             suspiciousBytes: SuspiciousJSAccessors.accessorsSecondBytes
         )
-//        third pass because lots of .co .lo .se
+        //        third pass because lots of .co .lo .se
         let suspiciousAncestors3 = filterSuspiciousAncestor(
             in: soupData,
             dotPositions: suspiciousAncestors2,
@@ -154,19 +154,54 @@ struct ScriptInlineAnalyzer {
     
     private static func matchConfirmedJsAccessors(in soupData: Data, position: [Int], origin: String, into warnings: inout [SecurityWarning], setterDetected: Bool) {
         var matchCounts: [String: Int] = [:]
-
+        var setcookie = false
+        var readcookie = false
+        
         for pos in position {
             for (name, bytes) in SuspiciousJSAccessors.all {
                 guard pos + bytes.count <= soupData.count else { continue }
-                //                add 1 for the .
-                let slice = soupData[pos + 1..<pos + 1 + bytes.count]
+                let accessorStart = pos + 1
+                let accessorEnd = accessorStart + bytes.count
+                let slice = soupData[accessorStart..<accessorEnd]
+
                 if slice.elementsEqual(bytes) {
+                    let equalSignPos = accessorEnd - 1
+                    let isAssignment = DataSignatures.fastScriptByteHint(at: equalSignPos, in: soupData, hint: [byteLetters.equalSign])
+//Debug
+//                    if let preview = String(data: soupData[max(0, pos - 40)..<min(soupData.count, pos + 60)], encoding: .utf8) {
+//                        print("🍪 Detected document.cookie context:\n\(preview)\n")
+//                    }
+
+                    if name == "cookie" && isAssignment && !setcookie {
+                        setcookie = true
+                        warnings.append(SecurityWarning(
+                            message: "JavaScript is modifying a cookie using `document.cookie = ...`",
+                            severity: .suspicious,
+                            penalty: PenaltySystem.Penalty.jsSetEditCookie,
+                            url: origin,
+                            source: .body,
+                            bitFlags: WarningFlags.BODY_JS_SET_EDIT_COOKIE
+                        ))
+                        // TODO: Extract full JS block `{}` surrounding this write for context display in body view.
+                        // This could help users understand the surrounding logic — e.g., fingerprinting, reload, cookie clearing.
+                    } else if name == "cookie" && !readcookie {
+                        readcookie = true
+                        warnings.append(SecurityWarning(
+                            message: "JavaScript is reading cookies via `document.cookie`. May be used for user tracking.",
+                            severity: .tracking,
+                            penalty: 0,
+                            url: origin,
+                            source: .body,
+                            bitFlags: WarningFlags.BODY_JS_READ_COOKIE
+                        ))
+                    }
+
                     let displayName = (name == "cookie") ? "document.cookie" : name
                     matchCounts[displayName, default: 0] += 1
                 }
             }
         }
-
+        
         for (displayName, count) in matchCounts {
             let baseName = displayName.replacingOccurrences(of: "document.", with: "")
             let (penalty, severity): (Int, SecurityWarning.SeverityLevel) = {
@@ -184,17 +219,16 @@ struct ScriptInlineAnalyzer {
                 }
             }()
             
-            let adjustedPenalty = setterDetected ? PenaltySystem.Penalty.critical : penalty
-            let adjustedSeverity = setterDetected ? SecurityWarning.SeverityLevel.critical : severity
+            let adjustedSeverity = setterDetected ? SecurityWarning.SeverityLevel.dangerous : severity
             
             var message: String = "Suspicious JS accessor: .\(displayName) detected inline \(count) time(s)."
             if setterDetected {
-                message =  "Suspicious JS setter fuction with \(displayName) detected inline. Strong signal of obfuscation."
+                message =  "Suspicious JS setter function with \(displayName) detected inline. Critical signal of obfuscation."
             }
             warnings.append(SecurityWarning(
                 message: message,
                 severity: adjustedSeverity,
-                penalty: /*count * */adjustedPenalty,
+                penalty: /*count * */penalty, // cant multiply, several signal in the same spot doesnt make a bigger signal!
                 url: origin,
                 source: .body
             ))

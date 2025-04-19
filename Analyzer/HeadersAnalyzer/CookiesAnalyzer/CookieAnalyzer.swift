@@ -3,7 +3,7 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         return CookieAnalysisResult(
             cookie: cookie,
             severity: .info,
-            flags: CookieFlagBits.reusedAccrossRedirect,
+            flags: CookieFlagBits.reusedAcrossRedirect,
             entropy: nil
         )
     }
@@ -18,17 +18,13 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         
     }
     if valueSize <= 16 {
-        bitFlags.insert(.smallCookie)
+        bitFlags.insert(.smallValue)
     } else if valueSize <= 31 {
-        bitFlags.insert(.mediumCookie)
+        bitFlags.insert(.mediumValue)
     }
 
     if valueSize >= 32 {
         bitFlags.insert(.largeValue)
-    }
-
-    if valueSize >= 100 && (cookie.expire?.timeIntervalSinceNow ?? 0) < 3600 {
-        bitFlags.insert(.fingerprintStyle)
     }
 
     // TODO (v2.0): Investigate use of expired cookies in redirect chains
@@ -46,19 +42,19 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
             bitFlags.insert(.shortLivedPersistent)
         }
     } else {
-        bitFlags.insert(.sessionCookie)
+        bitFlags.insert(.session)
     }
 
     if cookie.sameSite.lowercased() == "none" {
-        bitFlags.insert(.samesiteNone)
+        bitFlags.insert(.sameSiteNone)
     }
 
-    if cookie.secure == false {
-        bitFlags.insert(.secureMissing)
+    if cookie.secure == true {
+        bitFlags.insert(.secure)
     }
 
-    if cookie.httpOnly == false {
-        bitFlags.insert(.httpOnlyMissing)
+    if cookie.httpOnly == true {
+        bitFlags.insert(.httpOnly)
     }
 
     
@@ -67,15 +63,15 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     let isSecure = cookie.secure
 
     if httpResponseCode != 200 {
-        bitFlags.insert(.cookieOnRedirect)
+        bitFlags.insert(.setOnRedirect)
         severity = .suspicious
-    } else if bitFlags.contains([.highEntropyValue, .persistent, .samesiteNone]) {
+    } else if bitFlags.contains([.highEntropyValue, .persistent, .sameSiteNone]) {
         severity = .dangerous
-    } else if bitFlags.contains(.benignTiny) {
+    } else if bitFlags.contains(.smallValue) {
         severity = .info
     } else if bitFlags.contains(.expired) {
         severity = .info
-    } else if bitFlags.contains([.highEntropyValue, .persistent]) || bitFlags.contains([.highEntropyValue, .samesiteNone]) || bitFlags.contains([.persistent, .samesiteNone]) {
+    } else if bitFlags.contains([.highEntropyValue, .persistent]) || bitFlags.contains([.highEntropyValue, .sameSiteNone]) || bitFlags.contains([.persistent, .sameSiteNone]) {
         severity = .tracking
     } else if bitFlags.contains(.highEntropyValue) || isCrossSite || (isSecure == false && !isCrossSite) {
         severity = .suspicious

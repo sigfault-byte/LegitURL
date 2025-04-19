@@ -43,7 +43,8 @@ struct URLComponentsInfo {
         case queryValue
         case fragmentKey
         case fragmentValue
-        case malformedQueryw
+        case malformedQuery
         case malformedFragment
+        case path
     }
 }

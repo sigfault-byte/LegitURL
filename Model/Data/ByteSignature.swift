@@ -48,6 +48,7 @@ struct byteLetters {
     static let openTag: UInt8 = 60
     static let t: UInt8 = 116
     static let m: UInt8 = 109
+    static let equalSign: UInt8 = 61
 }
 
 // Helper function to convert a string to Data (bytes)
@@ -66,7 +67,6 @@ func convertToDomainTldBytes(of urlString: String) -> Data? {
     }
     return nil
 }
-
 
 extension Data {
     func containsBytes(of pattern: [UInt8]) -> Bool {

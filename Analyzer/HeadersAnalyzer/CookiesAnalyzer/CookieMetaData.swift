@@ -62,23 +62,34 @@ func parseCookies(from headers: [String], for url: String) -> [CookieMetadata] {
 struct CookieFlagBits: OptionSet, Hashable {
     let rawValue: UInt16
 
-    static let highEntropyValue = CookieFlagBits(rawValue: 1 << 0)
-    static let largeValue = CookieFlagBits(rawValue: 1 << 1)
-    static let fingerprintStyle = CookieFlagBits(rawValue: 1 << 2)
-    static let expired = CookieFlagBits(rawValue: 1 << 3)
-    static let persistent = CookieFlagBits(rawValue: 1 << 4)
-    static let shortLivedPersistent = CookieFlagBits(rawValue: 1 << 5)
-    static let samesiteNone = CookieFlagBits(rawValue: 1 << 6)
-    static let secureMissing = CookieFlagBits(rawValue: 1 << 7)
-    static let httpOnlyMissing = CookieFlagBits(rawValue: 1 << 8)
-    static let benignTiny = CookieFlagBits(rawValue: 1 << 9)
-    static let cookieOnRedirect = CookieFlagBits(rawValue: 1 << 10)
-    static let smallCookie = CookieFlagBits(rawValue: 1 << 11)
-    static let reusedAccrossRedirect = CookieFlagBits(rawValue: 1 << 12)
-    static let sessionCookie = CookieFlagBits(rawValue: 1 << 13)
-    static let mediumCookie = CookieFlagBits(rawValue: 1 << 14)
+    // Size (0–2)
+    static let smallValue           = CookieFlagBits(rawValue: 1 << 0)   // 1
+    static let mediumValue          = CookieFlagBits(rawValue: 1 << 1)   // 2
+    static let largeValue           = CookieFlagBits(rawValue: 1 << 2)   // 4
 
+    // Lifespan (3–6)
+    static let session              = CookieFlagBits(rawValue: 1 << 3)   // 8
+    static let expired              = CookieFlagBits(rawValue: 1 << 4)   // 16
+    static let shortLivedPersistent = CookieFlagBits(rawValue: 1 << 5)   // 32
+    static let persistent           = CookieFlagBits(rawValue: 1 << 6)   // 64
+
+    // Access Control (7–9)
+    static let samesiteLax          = CookieFlagBits(rawValue: 1 << 7)   // 128
+    static let samesiteStrict       = CookieFlagBits(rawValue: 1 << 8)   // 256
+    static let sameSiteNone         = CookieFlagBits(rawValue: 1 << 9)   // 512
+
+    // Security Attributes (10–11)
+    static let secure               = CookieFlagBits(rawValue: 1 << 10)  // 1024
+    static let httpOnly             = CookieFlagBits(rawValue: 1 << 11)  // 2048
+
+    // Context (12–13)
+    static let setOnRedirect        = CookieFlagBits(rawValue: 1 << 12)  // 4096
+    static let reusedAcrossRedirect = CookieFlagBits(rawValue: 1 << 13)  // 8192
+
+    // Content Signature (14)
+    static let highEntropyValue     = CookieFlagBits(rawValue: 1 << 14)  // 16384
 }
+
 
 struct CookieAnalysisResult: Identifiable, Hashable {
     let id = UUID()
@@ -99,25 +110,25 @@ extension CookieFlagBits {
                 reasons.append("High-entropy value")
             }
         }
-        
-        if contains(.shortLivedPersistent) && contains(.httpOnlyMissing) {
-            reasons.append("Short-lived but large value cookie briefly accessible to JavaScript ")
-        }
-        
-        if contains(.mediumCookie)          { reasons.append("Medium value")}
-        if contains(.largeValue)            { reasons.append("Large value") }
-        if contains(.fingerprintStyle)      { reasons.append("Fingerprint-style pattern") }
+
+        if contains(.smallValue)            { reasons.append("Small value (≤16 bytes)") }
+        if contains(.mediumValue)           { reasons.append("Medium value (17–64 bytes)") }
+        if contains(.largeValue)            { reasons.append("Large value (>64 bytes)") }
+
+        if contains(.session)               { reasons.append("Session cookie") }
         if contains(.expired)               { reasons.append("Expired cookie") }
+        if contains(.shortLivedPersistent)  { reasons.append("Short-lived persistent cookie") }
         if contains(.persistent)            { reasons.append("Persistent cookie") }
-        if contains(.shortLivedPersistent)  { reasons.append("Short-lived cookie") }
-        if contains(.samesiteNone)          { reasons.append("SameSite=None") }
-        if contains(.secureMissing)         { reasons.append("Secure flag missing, cookie could be sent unencrypted") }
-        if contains(.httpOnlyMissing)       { reasons.append("HttpOnly flag missing, cookie is accessible by javascript") }
-        if contains(.benignTiny)            { reasons.append("Benign tiny cookie") }
-        if contains(.cookieOnRedirect)      { reasons.append("Cookie on redirect") }
-        if contains(.smallCookie)           { reasons.append("Small Cookie (less than 16 bytes)")}
-        if contains(.reusedAccrossRedirect) { reasons.append("Cookie was seen previously, and penalyzed")}
-        if contains(.sessionCookie)         { reasons.append("Session cookie")}
+
+        if contains(.samesiteLax)           { reasons.append("SameSite=Lax") }
+        if contains(.samesiteStrict)        { reasons.append("SameSite=Strict") }
+        if contains(.sameSiteNone)          { reasons.append("SameSite=None") }
+
+        if contains(.secure) == false       { reasons.append("Secure flag missing (can be sent over HTTP)") }
+        if contains(.httpOnly) == false     { reasons.append("HttpOnly flag missing (accessible by JavaScript)") }
+
+        if contains(.setOnRedirect)         { reasons.append("Cookie was set during redirect") }
+        if contains(.reusedAcrossRedirect)  { reasons.append("Cookie reused across redirect chain") }
 
         return reasons
     }

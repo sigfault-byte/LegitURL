@@ -2,10 +2,10 @@ import Foundation
 
 struct PenaltySystem {
     public enum Penalty {
-       // CRITICAL ISSUES
+        // CRITICAL ISSUES
         static let critical                            = -100
         
-       // HOST-RELATED PENALTIES
+        // HOST-RELATED PENALTIES
         static let highEntropyDomain                   = -30
         static let exactBrandImpersonation             = -25
         static let phishingWordsInHost                 = -20
@@ -18,14 +18,14 @@ struct PenaltySystem {
         static let underScoreInSubdomain               = -10
         static let highEntropySubDomain                = -10
         static let domainNonASCII                      = -10
-
-       // REDIRECTION & OBFUSCATION
-//        static let hiddenRedirectFragment              = -40
+        
+        // REDIRECTION & OBFUSCATION
+        //        static let hiddenRedirectFragment              = -40
         static let hiddenRedirectQuery                 = -30
-//        static let phpRedirect                         = -25
-//        static let suspiciousRedirect                  = -10
-
-       // PATH-RELATED PENALTIES
+        //        static let phpRedirect                         = -25
+        //        static let suspiciousRedirect                  = -10
+        
+        // PATH-RELATED PENALTIES
         static let executableInPath                    = -20
         static let pathHasExecutable                   = -20
         static let pathIsEndpointLike                  = -10
@@ -59,13 +59,15 @@ struct PenaltySystem {
         static let malformedFragment                   = -15
         
         //JAVASCRIPT & SECURITY ISSUES
-         static let javascriptXSS                       = -30
-         static let deepObfuscation                     = -20
-         static let suspiciousPattern                   = -15
-         static let base64Url                           = -10
+        static let javascriptXSS                       = -30
+        
+        static let deepObfuscation                     = -20
+        static let suspiciousPattern                   = -15
+        static let base64Url                           = -10
         
         
-/////////////////////ONLINE ///////////////////////////////////////////
+        
+        /////////////////////ONLINE ///////////////////////////////////////////
         ///Body
         static let scriptIs80Percent                   = -30
         static let extHttpScriptSrc                    = -40
@@ -94,10 +96,12 @@ struct PenaltySystem {
         static let scriptIs5070Percent                 = -5
         static let smallhtmllessthan1408               = -5
         
-        //InlineSpecific JS penalty
-        static let hightPenaltyForInlineJS            = -30
-        static let mediumPenaltyForInlineJS           = -15
-        static let lowPenaltyForInlineJS              = -5
+        //InlineSpecific & JS penalty
+        static let hightPenaltyForInlineJS             = -30
+        static let jsSetEditCookie                     = -20
+        static let mediumPenaltyForInlineJS            = -15
+        static let lowPenaltyForInlineJS               = -5
+        static let jsReadsCookie                       = -5
         
         ///Cookie////
         static let cookiesOnNon200                     = -20
@@ -117,18 +121,18 @@ struct PenaltySystem {
         static let missConfiguredOrScam                = -20
         static let hidden200Redirect                   = -20
         static let suspiciousStatusCode                = -15
-
-       
+        
+        
         
         // Redirect
         static let silentRedirect                     = -20
         static let malformedRedirect                  = -20
         static let redirectToDifferentTLD             = -20
         static let redirectToDifferentDomain          = -10
-
-       // INFORMATIVE (No penalty)
+        
+        // INFORMATIVE (No penalty)
         static let informational                       = 0
-       }
+    }
     
     // ✅ Suspicious TLDs and their penalties
     static let suspiciousTLDs: [String: Int] = [
@@ -174,134 +178,44 @@ struct PenaltySystem {
     ]
     static func penaltyForCookieBitFlags(_ flags: CookieFlagBits) -> Int {
         var penalty = 0
-        if flags.contains(.cookieOnRedirect) {
-            penalty -= 5
-        }
-        if flags.contains(.samesiteNone)         { penalty += -15 }
         
-//         full exposure -> terrible cookie, critical score
-        if flags.contains([.samesiteNone, .secureMissing, .httpOnlyMissing]) {
-            return Penalty.critical
-        }
-//        if already seen, no penalty again
-        if flags.contains(.reusedAccrossRedirect) {
-            return 0
-        }
         
-        // cleaning cookie, whatever the size if httponly is set, the cookie is harmless.
-        if flags.contains(.expired) && !flags.contains(.httpOnlyMissing) {
-            return penalty
-        }
-        
-        // Secure session cookie with any size not a fingerprint
-        if flags.contains(.sessionCookie )
-            && !flags.contains(.fingerprintStyle)
-            && !flags.contains(.httpOnlyMissing)
-            && !flags.contains(.secureMissing) {
-            return penalty
-        }
-        
-        if flags.contains([.shortLivedPersistent]) && !flags.contains([.httpOnlyMissing, .secureMissing])  {
-            penalty -= 5
-            return penalty
-        }
-        
-        // Harmless but bad practice
-        if flags.contains(.smallCookie) && (flags.contains(.httpOnlyMissing) || !flags.contains(.secureMissing)) {
-            if flags.contains(.persistent) {
-                penalty -= 5
-            }
-            penalty -= 5
-            return penalty
-        }
-        
-        //// Possibly CSRF-style token, intentionally readable by JS
-        if flags.contains(.mediumCookie)
-           && flags.contains(.persistent)
-           && !flags.contains(.secureMissing)
-           && flags.contains(.httpOnlyMissing)
-           && !flags.contains(.highEntropyValue) {
-            penalty -= 5
-            return penalty
-        }
-        
-        //        legit secure tracking
-        if flags.contains(.persistent) && flags.contains(.highEntropyValue) && !flags.contains(.httpOnlyMissing) && !flags.contains(.secureMissing){
-            penalty = -5
-            return penalty
-        }
-        
-//        leaky persistent trackcing
-        if flags.contains(.persistent) && flags.contains(.highEntropyValue) && flags.contains(.httpOnlyMissing){
-            penalty -= 20
-            return penalty
-        }
-        
-        if flags.contains(.shortLivedPersistent) && flags.contains(.httpOnlyMissing) && flags.contains(.secureMissing){
-            penalty -= 15
-            return penalty
-        }
-    
-        if flags.contains([.largeValue, .persistent]) {
-            if flags.contains([.httpOnlyMissing, . secureMissing]) {
-                penalty -= 10
-            }
-            penalty -= 5
-            return penalty
-        }
-        
-//        Secure Heavy tracking fingerprint
-        if flags.contains(.fingerprintStyle) && !flags.contains(.httpOnlyMissing) && !flags.contains(.secureMissing){
-            penalty -= 15
-            return penalty
-        }
-        
-        if flags.contains(.fingerprintStyle) && !flags.contains(.httpOnlyMissing) && flags.contains(.secureMissing){
-            penalty -= 20
-            return penalty
-        }
-        
-        if flags.contains(.fingerprintStyle) && flags.contains(.httpOnlyMissing) {
-            penalty -= 25
-            return penalty
-        }
-        
-        if flags.contains(.secureMissing)        { penalty += -15 }
-        if flags.contains(.httpOnlyMissing)      { penalty += -15 }
+        if !flags.contains(.secure)        { penalty += -15 }
+        if !flags.contains(.httpOnly)      { penalty += -15 }
         if flags.contains(.largeValue)           { penalty += -10 }
         if flags.contains(.highEntropyValue)     { penalty += -5 }
         if flags.contains(.persistent)           { penalty += -5 }
         if flags.contains(.shortLivedPersistent) { penalty += -5 }
-
+        
         return max(penalty, -100)
     }
     
     static func getPenaltyAndSeverity(name: String) -> (penalty: Int, severity: SecurityWarning.SeverityLevel) {
         switch name {
-            case "eval", "window[\"eval\"]":
+        case "eval", "window[\"eval\"]":
             return (PenaltySystem.Penalty.critical, .critical)
-            case "atob", "btoa", "fetch", "xmlhttprequest", "window.open", "document.write":
-                return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)
-            case "location.href":
-                return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)
-            case "location.replace", "location.assign", "getElementById":
-                return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
-            case "innerhtml", "outerhtml", "unescape", "escape":
-                return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
-            case "console.log":
-                return (PenaltySystem.Penalty.lowPenaltyForInlineJS, .info)
-            case "cookie":
-                return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
-            case "localStorage":
-                return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)
-            case "setItem":
-                return (PenaltySystem.Penalty.jsSetItemAccess, .suspicious)
-            case "WebAssembly":
-                return (PenaltySystem.Penalty.jsWebAssembly, .dangerous)
-            default:
-                return (-10, .suspicious)
+        case "atob", "btoa", "fetch", "xmlhttprequest", "window.open", "document.write":
+            return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)
+        case "location.href":
+            return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)
+        case "location.replace", "location.assign", "getElementById":
+            return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
+        case "innerhtml", "outerhtml", "unescape", "escape":
+            return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
+        case "console.log":
+            return (PenaltySystem.Penalty.lowPenaltyForInlineJS, .info)
+        case "cookie":
+            return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
+        case "localStorage":
+            return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)
+        case "setItem":
+            return (PenaltySystem.Penalty.jsSetItemAccess, .suspicious)
+        case "WebAssembly":
+            return (PenaltySystem.Penalty.jsWebAssembly, .dangerous)
+        default:
+            return (-10, .suspicious)
         }
     }
-
+    
     
 }

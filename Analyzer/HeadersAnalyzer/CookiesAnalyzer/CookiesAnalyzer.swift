@@ -78,13 +78,13 @@ struct CookiesAnalyzer {
             let result = analyzeCookie(cookie,
                                        httpResponseCode: httpResponseCode,
                                        seenCookie: globalSeenCookies)
-            let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
+//            let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
             let reasons = result.flags.descriptiveReasons().joined(separator: ", ")
             
             urlInfo.warnings.append(SecurityWarning(
                 message: "Cookie `\(cookie.name)` flagged as \(result.severity). Reasons: \(reasons).",
                 severity: result.severity,
-                penalty: penalty,
+                penalty: 0,
                 url: url,
                 source: .cookie
             ))

@@ -188,6 +188,25 @@ extension DecodedNode {
         }
         return path
     }
+    
+    func hasUniqueFinding(against cache: inout Set<String>) -> Bool {
+        for finding in findings {
+            let key = finding.shortLabel + ":" + finding.hashValue.description
+            if cache.contains(key) { return false }
+            cache.insert(key)
+        }
+        return true
+    }
+}
+
+extension Array where Element == DecodedNode.NodeFinding {
+    var onlyContainsEntropy: Bool {
+        return !isEmpty && allSatisfy {
+            if case .entropy = $0 { return true }
+            if case .longEntropyLike = $0 { return true }
+            return false
+        }
+    }
 }
 
 extension DecodedNode {

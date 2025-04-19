@@ -12,8 +12,8 @@ struct HTMLHeadAnalyzer {
                         tagPosToDismiss: [Int],
                         warnings: inout [SecurityWarning], origin: String) -> HeadHTMLFindings {
         
-        var candidate = filterTagsToDismiss(tagPosToDismiss, from: tagPos, endOfEnd: headContent.count)
-        var candidate2 = filterCandidateForTitleAndMeta(candidate, headcontent: headContent)
+        let candidate = filterTagsToDismiss(tagPosToDismiss, from: tagPos, endOfEnd: headContent.count)
+        let candidate2 = filterCandidateForTitleAndMeta(candidate, headcontent: headContent)
         for candidate in candidate2 {
             let localCandidate = candidate - headContent.startIndex
             guard localCandidate + 20 <= headContent.count else { continue }

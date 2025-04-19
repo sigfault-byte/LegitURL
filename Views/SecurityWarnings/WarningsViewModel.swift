@@ -24,6 +24,7 @@ class WarningsViewModel: ObservableObject {
         switch source {
         case .host: return "Host"
         case .path: return "Path"
+        case .pathSub(let label): return "Path (\(label))"
         case .query: return "Query"
         case .fragment: return "Fragment"
         case .cookie: return "Cookie"

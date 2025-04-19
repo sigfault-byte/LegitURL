@@ -1,22 +1,14 @@
-//
-//  PathAnalyzer.swift
-//  LegitURL
-//
-//  Created by Chief Hakka on 11/03/2025.
-//
-
 import Foundation
-
 struct PathAnalyzer {
     
     static func analyze(urlInfo: inout URLInfo) {
         
         let urlOrigin = urlInfo.components.host ?? ""
-        
+        var foundURL: [String] = []
         guard let rawPath = urlInfo.components.pathEncoded else {
             return
         }
-        
+
         if !rawPath.hasSuffix("/"), urlInfo.components.query != nil {
             urlInfo.warnings.append(SecurityWarning(
                 message: "🧠 Suspicious endpoint-like path followed by query.",
@@ -70,11 +62,40 @@ struct PathAnalyzer {
         
         for segment in pathSegments {
             guard !segment.isEmpty else { continue }
+//            This should be a var, but is a let while the combo is not working properly
+            let comboWasRelevant = false
             
             // This needs more thinking
             if WhiteList.safePaths.contains(segment.lowercased()) {
                 continue
             }
+            
+//            // Try all contiguous path combinations from this segment onward
+//            TODO: This needs more thinking the logic fails because multiple warning are given for the same warning.
+//            Maybe: Traverse the node tree just like WalkTheNode
+//            Collect all findings with their associated source labels, values, scores, etc.
+//            Store them in a temporary buffer
+//            Apply deduplication / suppression / scoring consolidation
+//            THEN emit a final filtered list of warnings but this will be for a later update 1.0 will not do it
+            
+//            let index = pathSegments.firstIndex(of: segment) ?? 0
+//            for endIndex in index..<pathSegments.count {
+//                let combo = pathSegments[index...endIndex].joined(separator: "/")
+//                guard combo.count > 4 else { continue }
+//                let valueNode = LamaiDecoding.decode(input: combo, maxDepth: 6)
+//                if valueNode.findings.onlyContainsEntropy {
+//                    continue // Skip saving pure entropy-only combos
+//                }
+//                if valueNode.hasDeepDescendant() {
+//                    comboWasRelevant = true
+//                }
+//                let label = "combo\(index)-\(endIndex)"
+//                let url = WalkTheNode.analyze(node: valueNode, urlInfo: &urlInfo, comp: "path", label: label)
+//                if let url = url, !url.isEmpty {
+//                    foundURL.append(url)
+//                }
+//            }
+            
             
             var parts: [String]
             if segment.count > 64 {
@@ -89,118 +110,39 @@ struct PathAnalyzer {
             }
             let isSuspiciouslyLong = segment.count > 64
             let hasHyphen = segment.contains("-")
-
-            if !isSuspiciouslyLong && hasHyphen {
-                parts = segment.split(separator: "-").map(String.init)
-            } else {
-                parts = [segment]
-            }
+//            Irrelevant without the pathcombo logic
+//            if comboWasRelevant { return }
             
-            for part in parts {
-                
-                if SuspiciousKeywords.scamTerms.contains(part.lowercased()) {
-                    urlInfo.warnings.append(SecurityWarning(
-                        message: "🚩 Scam-related word detected in path segment: '\(part)'",
-                        severity: .scam,
-                        penalty: PenaltySystem.Penalty.scamWordsInPath,
-                        url: urlOrigin,
-                        source: .path,
-                        bitFlags: WarningFlags.PATH_SCAM_OR_PHISHING
-                    ))
+            if !comboWasRelevant {
+                if !isSuspiciouslyLong && hasHyphen {
+                    parts = segment.split(separator: "-").map(String.init)
+                } else {
+                    parts = [segment]
                 }
-                
-                if SuspiciousKeywords.phishingWords.contains(part.lowercased()) {
-                    urlInfo.warnings.append(SecurityWarning(
-                        message: "🚩 Phishing-related word detected in path segment: '\(part)'",
-                        severity: .scam,
-                        penalty: PenaltySystem.Penalty.phishingWordsInPath,
-                        url: urlOrigin,
-                        source: .path,
-                        bitFlags: WarningFlags.PATH_SCAM_OR_PHISHING
-                    ))
-                }
-                // TODO: add levenshtein + n gram check!!
-                for brand in KnownBrands.names {
-                    if brand == part.lowercased() {
-                        urlInfo.warnings.append(SecurityWarning(
-                            message: "ℹ️ Exact Brand reference found in path segment: '\(part)'",
-                            severity: .suspicious,
-                            penalty: PenaltySystem.Penalty.containBrandInPath,
-                            url: urlOrigin,
-                            source: .path,
-                            bitFlags: WarningFlags.PATH_EXACT_BRAND_MATCH
-                        ))
-                        
-                    } else if KnownBrands.names.contains(part.lowercased()) {
-                        urlInfo.warnings.append(SecurityWarning(
-                            message: "ℹ️ Brand reference found in path segment: '\(part)'",
-                            severity: .suspicious,
-                            penalty: PenaltySystem.Penalty.containBrandInPath,
-                            url: urlOrigin,
-                            source: .path,
-                            bitFlags: WarningFlags.PATH_CONTAINS_BRAND
-                        ))
-                    }else if part.count >= 3 {
-                        let levenshtein = LegitURLTools.levenshtein(part.lowercased(), brand)
-                        if levenshtein == 1 {
-                            urlInfo.warnings.append(SecurityWarning(
-                                message: "⚠️ Path segment '\(part)' is a likely typo of brand '\(brand)' (Levenshtein = 1).",
-                                severity: .suspicious,
-                                penalty: PenaltySystem.Penalty.brandLookaLikeInPath,
-                                url: urlOrigin,
-                                source: .path,
-                                bitFlags: WarningFlags.PATH_LOOKALIKE_BRAND
-                            ))
-                        }
-                        let ngram = LegitURLTools.twoGramSimilarity(part.lowercased(), brand)
-                        if ngram > 0.6 {
-                            urlInfo.warnings.append(SecurityWarning(
-                                message: "⚠️ Path segment '\(part)' is structurally similar to brand '\(brand)' (2-gram similarity = \(String(format: "%.2f", ngram))).",
-                                severity: .suspicious,
-                                penalty: PenaltySystem.Penalty.brandLookaLikeInPath,
-                                url: urlOrigin,
-                                source: .path,
-                                bitFlags: WarningFlags.PATH_LOOKALIKE_BRAND
-                            ))
-                        }
-                    }
-                }
-                
-                if part.contains(".") {
-                    let pieces = part.split(separator: ".")
-                    if let ext = pieces.last?.lowercased(),
-                       SuspiciousKeywords.dangerousExtensions.contains(ext) {
-                        urlInfo.warnings.append(SecurityWarning(
-                            message: "🚨 Executable file extension detected: '\(ext)'",
-                            severity: .dangerous,
-                            penalty: PenaltySystem.Penalty.pathHasExecutable,
-                            url: urlOrigin,
-                            source: .path,
-                            bitFlags: WarningFlags.PATH_EXECUTABLE_FILE_TYPE
-                        ))
-                    }
-                }
-                
-                if !LegitURLTools.isRealWord(part) {
-                    urlInfo.warnings.append(SecurityWarning(
-                        message: "ℹ️ Path segment '\(part)' is not recognized by the dictionary.",
-                        severity: .info,
-                        penalty: PenaltySystem.Penalty.informational,
-                        url: urlOrigin,
-                        source: .path
-                    ))
+                var partNumber: Int = 0
+                for part in parts {
+                    let delimiters: [Character] = ["+", "|", ":", ";", "~"]
+                    var subParts: [String] = [part]
                     
-                    let (isHighEntropy, score) = LegitURLTools.isHighEntropy(part)
-                    if isHighEntropy, let entropy = score {
-                        urlInfo.warnings.append(SecurityWarning(
-                            message: "⚠️ Path segment '\(part)' has high entropy (≈ \(String(format: "%.2f", entropy))).",
-                            severity: .suspicious,
-                            penalty: PenaltySystem.Penalty.highEntropyPathComponent,
-                            url: urlOrigin,
-                            source: .path,
-                            bitFlags: WarningFlags.PATH_HIGH_ENTROPY
-                        ))
-                        
+                    for delimiter in delimiters {
+                        if part.contains(delimiter) {
+                            subParts = part.split(separator: delimiter).map(String.init)
+                            break
+                        }
+                    }
+                    
+                    //Real words are not flagged correctly
+                    for (subIndex, subPart) in subParts.enumerated() {
+                        guard subPart.count > 4 else { continue }
+                        let valueNode = LamaiDecoding.decode(input: subPart, maxDepth: 6)
+                        if valueNode.hasDeepDescendant() {
+                            urlInfo.components.lamaiTrees[.path, default: []].append(valueNode)
+                        }
+                        partNumber += 1
+                        let label = "part\(partNumber).sub\(subIndex)"
+                        if let url = WalkTheNode.analyze(node: valueNode, urlInfo: &urlInfo, comp: "path", label: label), !url.isEmpty {
+                            foundURL.append(url)
+                        }
                     }
                 }
             }

@@ -82,4 +82,41 @@ struct DecodingTools {
         
         return UUIDAnalysisResult(original: input, formatted: formatted, version: version, variant: variant, classification: classification)
     }
+    
+    public static func normalizeBase64(_ str: String) -> String? {
+        var clean = str
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Strip leading "+" characters because this would means the ascii > 250, so its a separator or non-printable
+        while let first = clean.first, first == "+" {
+            print("🍰 [Lamai] Stripping misleading leading + character")
+            clean.removeFirst()
+        }
+        
+        // Step 1: Reject if it doesn't look like base64
+        let pattern = #"^[A-Za-z0-9+/=_-]{16,}$"#
+        guard clean.range(of: pattern, options: .regularExpression) != nil else {
+            print("🧱 [Lamai] Failed base64 structure check")
+            return nil
+        }
+        
+        // Step 2: Reject if first character strongly implies non-printable result
+        let suspiciousStarters: Set<Character> = ["/", "9", "8", "7", "6", "5"]
+        if let firstChar = clean.first, suspiciousStarters.contains(firstChar) {
+            print("🧱 [Lamai] First base64 character is suspicious: \(firstChar)")
+            return nil
+        }
+        
+        // Acceptable printable characters include:
+        // " = Ig == I, g
+        // ' = Jw == J, w
+        
+        // Step 3: Apply padding to make the length a multiple of 4
+        let remainder = clean.count % 4
+        let padded = remainder == 0 ? clean : clean + String(repeating: "=", count: 4 - remainder)
+        print("✅ [Lamai] Normalized base64 candidate: \(padded)")
+        return padded
+    }
 }

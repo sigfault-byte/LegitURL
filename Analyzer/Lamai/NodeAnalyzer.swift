@@ -168,9 +168,9 @@ struct NodeAnalyzer {
                 return .entropy(score: Double(entropy), value: value)
             }
 //             If long and low entropy, still suspicious
-            if value.count >= 50 {
-                return .longEntropyLike(value: value)
-            }
+//            if value.count >= 50 {
+//                return .longEntropyLike(value: value)
+//            }
         }
         return nil
     }

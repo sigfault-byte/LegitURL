@@ -53,6 +53,7 @@ struct SecurityWarning: Identifiable{
     enum SourceType: Hashable {
         case host
         case path
+        case pathSub(label: String)
         case query
         case fragment
         case cookie

@@ -41,6 +41,10 @@ struct WarningFlags: OptionSet {
     static let BODY_HIGH_JS_RATIO = WarningFlags(rawValue: 1 << 33)
     static let BODY_HIGH_JS_RATIO_SMALL_HTML = WarningFlags(rawValue: 1 << 34)
     static let BODY_HIGH_SCRIPT_DENSITY = WarningFlags(rawValue: 1 << 35)
+    static let BODY_JS_SET_EDIT_COOKIE = WarningFlags(rawValue: 1 << 36)
+    static let BODY_JS_READ_COOKIE = WarningFlags(rawValue: 1 << 37)
+    
+    
     //TLS FLAGS
     static let TLS_IS_FRESH = WarningFlags(rawValue: 1 << 40)
     //COOKIE FLAGS
