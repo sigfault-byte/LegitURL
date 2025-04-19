@@ -18,6 +18,8 @@ struct CookieViewModel: Identifiable {
     let secure: Bool
     let httpOnly: Bool
     let entropy: Float?
+    let path: String
+    let domain: String?
 
     init(from result: CookieAnalysisResult) {
         self.id = result.id
@@ -31,12 +33,18 @@ struct CookieViewModel: Identifiable {
         self.secure = result.cookie.secure
         self.httpOnly = result.cookie.httpOnly
         self.entropy = result.entropy
+        self.path = result.cookie.path
+        self.domain = result.cookie.domain
     }
 
     var displayedSameSitePolicy: String {
         sameSite ?? "Missing, default to Lax"
     }
 
+    var displayedDomain: String {
+        domain?.isEmpty == false ? domain! : "Host"
+    }
+    
     var displayedSecureStatus: String {
         if secure {
             return "Yes"

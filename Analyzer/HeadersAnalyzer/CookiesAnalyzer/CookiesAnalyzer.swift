@@ -15,16 +15,7 @@
 //  Long expiry dates (Expires or Max-Age) -> persistent tracking / finger printing
 //  How to differentiate scam tactics from "legitimate" tracking for ads and marketting? Looks like they have the same markers...
 //  -> maybe: track entropy, cookie naming, volume, and possibly domain age + cert info later for tie-breakers.
-//  Might need a set for know cookis, session is ok, but fuck java session cookis, java is a small tell the server is from a script scam kit...
-//
-//•    sessionid, sid, sess, JSESSIONID, PHPSESSID, etc.
-//•    Marketing/Tracking:
-//•    utm_, fbp, _ga, _gid, _gcl_au, _gat, ajs_user_id
-//•    cluid, visitor_id, trackid, tracker, campaign, click_id
-//•    Analytics:
-//•    _ga, _gid, __utm, __hssc, __hstc, __cf_bm
-//•    Adtech:
-//•    ads/, ad_id, affiliate_id, pixel_id
+
 import Foundation
 
 struct CookiesAnalyzer {
@@ -35,6 +26,8 @@ struct CookiesAnalyzer {
         guard let headersCookies = headersCookies, !headersCookies.isEmpty else {
             return
         }
+        
+        let hostRef =  urlInfo.components.host ?? ""
         
         // Parse each Set-Cookie header into CookieMetadata
         let parsedCookies: [CookieMetadata] = parseCookies(from: headersCookies, for: url)
@@ -77,14 +70,15 @@ struct CookiesAnalyzer {
             let globalSeenCookies = URLQueue.shared.cookiesSeenByRedirectChain.values.reduce(into: Set<String>()) { $0.formUnion($1) }
             let result = analyzeCookie(cookie,
                                        httpResponseCode: httpResponseCode,
-                                       seenCookie: globalSeenCookies)
+                                       seenCookie: globalSeenCookies,
+                                       host: hostRef)
 //            let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
             let reasons = result.flags.descriptiveReasons().joined(separator: ", ")
-            
+            let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
             urlInfo.warnings.append(SecurityWarning(
                 message: "Cookie `\(cookie.name)` flagged as \(result.severity). Reasons: \(reasons).",
                 severity: result.severity,
-                penalty: 0,
+                penalty: penalty,
                 url: url,
                 source: .cookie
             ))

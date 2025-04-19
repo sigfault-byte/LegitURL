@@ -1,4 +1,55 @@
-func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: Set<String>) -> CookieAnalysisResult {
+// DOMAIN STRUCTURE
+//┌─────────────────────────────┐
+//│         example.com         │
+//└────────────┬────────────────┘
+//             │
+//   ┌─────────┴────────────┐
+//   │                      │
+//www.example.com     api.example.com
+//   │                      │
+//login.example.com   shop.example.com
+//
+//
+// COOKIE DOMAIN SCOPE
+//Set-Cookie: Domain=example.com
+//→ Sent only to: example.com
+//
+//Set-Cookie: Domain=.example.com
+//→ Sent to: example.com, www.example.com, api.example.com, etc.
+//
+//Set-Cookie: Domain=sub.example.com
+//→ Sent only to: sub.example.com
+//
+// Wildcards like *.example.com are NOT allowed
+// But Set-Cookie: Path=/ → cookie is sent to all paths on the same domain (site-wide scope)
+// Not shared across domains or subdomains unless Domain=.example.com is explicitly set
+//📁 PATH STRUCTURE UNDER example.com
+///
+//├── index.html
+//├── account/
+//│   ├── login/
+//│   └── settings/
+//└── shop/
+//    ├── cart/
+//    └── checkout/
+//
+//COOKIE PATH SCOPE
+//Request URL: https[:]//example.com/account/login
+//
+//1. No Path attribute →
+//   → Cookie Path = /account/
+//   → Sent to: /account/, /account/login/, /account/settings/
+//   → Not sent to /shop/ or /
+//
+//2. Path=/
+//   → Sent to ALL paths under domain (site-wide)
+//
+//3. Path=/account/
+//   → Sent only to: /account/, /account/login/, etc.
+//
+//Cookie Path = Directory of the request URI if unspecified
+
+func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: Set<String>, host: String) -> CookieAnalysisResult {
     if seenCookie.contains(cookie.name) {
         return CookieAnalysisResult(
             cookie: cookie,
@@ -19,19 +70,16 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     }
     if valueSize <= 16 {
         bitFlags.insert(.smallValue)
-    } else if valueSize <= 31 {
+    } else if valueSize < 64 {
         bitFlags.insert(.mediumValue)
-    }
-
-    if valueSize >= 32 {
+    } else {
         bitFlags.insert(.largeValue)
     }
-
     // TODO (v2.0): Investigate use of expired cookies in redirect chains
     // - If cookie is expired AND value is long/high-entropy → may be fingerprinting cleanup
     // - If expired on non-200 response → possibly used in cloaking logic
     // - For now, expired cookies are flagged as `.info` only
-//    print("🔍 Cookie: \(cookie.name) expires in \(cookie.expire) seconds")
+//    print("Cookie: \(cookie.name) expires in \(cookie.expire) seconds")
     if let expiry = cookie.expire {
         let duration = expiry.timeIntervalSinceNow
         if duration <= 0 {
@@ -47,6 +95,10 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
 
     if cookie.sameSite.lowercased() == "none" {
         bitFlags.insert(.sameSiteNone)
+    } else if cookie.sameSite.lowercased() == "lax" {
+        bitFlags.insert(.samesiteLax)
+    } else if cookie.sameSite.lowercased() == "strict" {
+        bitFlags.insert(.samesiteStrict)
     }
 
     if cookie.secure == true {
@@ -57,7 +109,17 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         bitFlags.insert(.httpOnly)
     }
 
+    let isDomainBroad = cookie.domain.hasPrefix(".")
+    let isPathBroad = cookie.path == "/"
+    if isPathBroad {
+        bitFlags.insert(.pathOverlyBroad)
+    }
     
+
+    if isDomainBroad && isPathBroad {
+        bitFlags.insert(.domainOverlyBroad)
+    }
+
 
     let isCrossSite = cookie.sameSite.lowercased() == "none"
     let isSecure = cookie.secure

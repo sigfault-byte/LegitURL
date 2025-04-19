@@ -177,15 +177,111 @@ struct PenaltySystem {
         ".live":        -20
     ]
     static func penaltyForCookieBitFlags(_ flags: CookieFlagBits) -> Int {
+        // MARK: - Cookie Scoring Pyramid Initial logic
+        //
+        // Group 1 — BENIGN (Score: 0)
+        // - Expired token:
+        //     .expired + .httpOnly, without .highEntropyValue → harmless cleanup
+        // - Secure session ID:
+        //     .session + .smallValue + .secure + .httpOnly
+        // - Short-lived token:
+        //     .shortLivedPersistent + .smallValue + .secure + .httpOnly
+        // - SameSite strict/lax with low entropy → conservative setup
+        //
+        // Group 2 — TRACKING (Score: -5 to -10)
+        // - Secure persistent tracking:
+        //     .persistent + .highEntropyValue + .secure + .httpOnly
+        // - Clean medium cookie:
+        //     .mediumValue + .secure + .httpOnly
+        // - Redirect reuse:
+        //     .reusedAcrossRedirect + .smallValue
+        // - 3rd party tracking with protection:
+        //     .sameSiteNone + .secure + .httpOnly
+        //
+        // Group 3 — SUSPICIOUS (Score: -10 to -15)
+        // - Leaky persistent tracking:
+        //     .persistent + .highEntropyValue + (missing .httpOnly || missing .secure)
+        // - Fingerprint-style token:
+        //     .shortLivedPersistent + .largeValue + .highEntropyValue + missing .httpOnly
+        // - Redirect behavior:
+        //     .setOnRedirect + .reusedAcrossRedirect
+        // - Inconsistent session:
+        //     .session + .largeValue
+        // - SameSite=None + missing Secure flag
+        //
+        // Group 4 — DANGEROUS (Score: -15 to -20)
+        // - Full fingerprint blob:
+        //     .largeValue + .shortLivedPersistent + .highEntropyValue + missing .httpOnly
+        // - Cross-redirect ID recycling:
+        //     .persistent + .reusedAcrossRedirect + .highEntropyValue
+        // - Cloaked redirect injection:
+        //     .setOnRedirect + .highEntropyValue
+        // - Conflicting lifespan indicators:
+        //     .persistent + .shortLivedPersistent → malformed config, possibly intentional abuse
         var penalty = 0
+        let fullSecured = flags.contains([.httpOnly, .secure])
+        let fingerPrintStyle = flags.contains([. largeValue, .persistent])
         
+        // Group 1: Harmless, bad practice not dangerous,  reused on redirect
+        if (flags.contains([.expired, .httpOnly]) || flags.contains(.reusedAcrossRedirect)) {
+            return 0
+        }
+        // Group 1: Benign cookie combinations
+        if flags.contains(.smallValue) && fullSecured {
+            return 0
+        }
+        if flags.contains(.smallValue) && !fullSecured {
+            return -1
+        }
         
-        if !flags.contains(.secure)        { penalty += -15 }
-        if !flags.contains(.httpOnly)      { penalty += -15 }
-        if flags.contains(.largeValue)           { penalty += -10 }
-        if flags.contains(.highEntropyValue)     { penalty += -5 }
-        if flags.contains(.persistent)           { penalty += -5 }
-        if flags.contains(.shortLivedPersistent) { penalty += -5 }
+        // Group 2: Suspicious secure tracker potential
+        if flags.contains(.mediumValue) && flags.contains(.session) {
+            if fullSecured {
+                return -2
+            } else if !flags.contains(.secure) && flags.contains(.httpOnly) {
+                return -3
+            } else if flags.contains(.secure) && !flags.contains(.httpOnly) {
+                return -6
+            } else {
+                return -7
+            }
+        }
+        
+        // Group 3: Dangerous tracking blob
+        if flags.contains(.highEntropyValue) &&
+            flags.contains(.domainOverlyBroad) &&
+            flags.contains(.pathOverlyBroad) &&
+            !flags.contains(.httpOnly) {
+            penalty += -30
+        }
+
+        // Group 4: Critical tracker abuse
+        if flags.contains(.highEntropyValue) &&
+            flags.contains(.setOnRedirect) &&
+            flags.contains(.domainOverlyBroad) &&
+            !flags.contains(.httpOnly) {
+            penalty += -50
+        }
+
+        
+        // MARK: - Atomic signal-based accumulation
+        
+        // Exposure
+        if !flags.contains(.httpOnly)            { penalty += -5 } // More dangerous: JS can access
+        if !flags.contains(.secure)              { penalty += -2 } // Less dangerous: sent over HTTP
+        if flags.contains(.domainOverlyBroad)    { penalty += -2 }
+        if flags.contains(.pathOverlyBroad)      { penalty += -2 }
+        
+        // Payload intent
+        if flags.contains(.persistent)           { penalty += -2 }
+        if flags.contains(.shortLivedPersistent) { penalty += -1 }
+        if flags.contains(.highEntropyValue)     { penalty += -3 }
+        if flags.contains(.largeValue)           { penalty += -5 }
+        
+        // Configuration quirks
+        if flags.contains(.sameSiteNone)         { penalty += -5 }
+//        if flags.contains(.expired)              { penalty += -1 }
+        if flags.contains(.setOnRedirect)        { penalty += -2}
         
         return max(penalty, -100)
     }

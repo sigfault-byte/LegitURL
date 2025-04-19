@@ -26,10 +26,12 @@ struct CookieMetadata: Hashable{
 }
 
 func populateCookieMetadata(_ cookie: HTTPCookie) -> CookieMetadata {
+    let rawDomain = cookie.domain
+    let normalizedDomain = (rawDomain == ".^filecookies^" || rawDomain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) ? nil : rawDomain
     return CookieMetadata(
         name: cookie.name,
         value: cookie.value,
-        domain: cookie.domain,
+        domain: normalizedDomain ?? "",
         path: cookie.path,
         expire: cookie.expiresDate,
         sameSite: cookie.sameSitePolicy?.rawValue ?? "Lax",
@@ -63,31 +65,33 @@ struct CookieFlagBits: OptionSet, Hashable {
     let rawValue: UInt16
 
     // Size (0–2)
-    static let smallValue           = CookieFlagBits(rawValue: 1 << 0)   // 1
-    static let mediumValue          = CookieFlagBits(rawValue: 1 << 1)   // 2
-    static let largeValue           = CookieFlagBits(rawValue: 1 << 2)   // 4
+    static let smallValue            = CookieFlagBits(rawValue: 1 << 0)   // 1
+    static let mediumValue           = CookieFlagBits(rawValue: 1 << 1)   // 2
+    static let largeValue            = CookieFlagBits(rawValue: 1 << 2)   // 4
 
     // Lifespan (3–6)
-    static let session              = CookieFlagBits(rawValue: 1 << 3)   // 8
-    static let expired              = CookieFlagBits(rawValue: 1 << 4)   // 16
-    static let shortLivedPersistent = CookieFlagBits(rawValue: 1 << 5)   // 32
-    static let persistent           = CookieFlagBits(rawValue: 1 << 6)   // 64
+    static let session               = CookieFlagBits(rawValue: 1 << 3)   // 8
+    static let expired               = CookieFlagBits(rawValue: 1 << 4)   // 16
+    static let shortLivedPersistent  = CookieFlagBits(rawValue: 1 << 5)   // 32
+    static let persistent            = CookieFlagBits(rawValue: 1 << 6)   // 64
 
     // Access Control (7–9)
-    static let samesiteLax          = CookieFlagBits(rawValue: 1 << 7)   // 128
-    static let samesiteStrict       = CookieFlagBits(rawValue: 1 << 8)   // 256
-    static let sameSiteNone         = CookieFlagBits(rawValue: 1 << 9)   // 512
+    static let samesiteLax           = CookieFlagBits(rawValue: 1 << 7)   // 128
+    static let samesiteStrict        = CookieFlagBits(rawValue: 1 << 8)   // 256
+    static let sameSiteNone          = CookieFlagBits(rawValue: 1 << 9)   // 512
 
     // Security Attributes (10–11)
-    static let secure               = CookieFlagBits(rawValue: 1 << 10)  // 1024
-    static let httpOnly             = CookieFlagBits(rawValue: 1 << 11)  // 2048
+    static let secure                = CookieFlagBits(rawValue: 1 << 10)  // 1024
+    static let httpOnly              = CookieFlagBits(rawValue: 1 << 11)  // 2048
 
     // Context (12–13)
-    static let setOnRedirect        = CookieFlagBits(rawValue: 1 << 12)  // 4096
-    static let reusedAcrossRedirect = CookieFlagBits(rawValue: 1 << 13)  // 8192
+    static let setOnRedirect         = CookieFlagBits(rawValue: 1 << 12)  // 4096
+    static let reusedAcrossRedirect  = CookieFlagBits(rawValue: 1 << 13)  // 8192
 
     // Content Signature (14)
-    static let highEntropyValue     = CookieFlagBits(rawValue: 1 << 14)  // 16384
+    static let highEntropyValue      = CookieFlagBits(rawValue: 1 << 14)  // 16384
+    static let pathOverlyBroad       = CookieFlagBits(rawValue: 1 << 15)  // 32768
+    static let domainOverlyBroad     = CookieFlagBits(rawValue: 1 << 16)  // 65536
 }
 
 
@@ -103,17 +107,15 @@ extension CookieFlagBits {
     func descriptiveReasons(entropyScore: Float? = nil) -> [String] {
         var reasons: [String] = []
 
-        if contains(.highEntropyValue) {
-            if let score = entropyScore {
-                reasons.append("High-entropy value (H ≈ \(String(format: "%.2f", score)))")
-            } else {
-                reasons.append("High-entropy value")
-            }
-        }
+        
 
         if contains(.smallValue)            { reasons.append("Small value (≤16 bytes)") }
-        if contains(.mediumValue)           { reasons.append("Medium value (17–64 bytes)") }
-        if contains(.largeValue)            { reasons.append("Large value (>64 bytes)") }
+        if contains(.mediumValue)           { reasons.append("Medium value (16–64 bytes)") }
+        if contains(.largeValue) && contains(.persistent) {
+            reasons.append("Fingerprint-style tracking (large persistent value too big to be random)")
+        } else if contains(.largeValue) {
+            reasons.append("Large value (>64 bytes) — too big to be random")
+        }
 
         if contains(.session)               { reasons.append("Session cookie") }
         if contains(.expired)               { reasons.append("Expired cookie") }
@@ -129,6 +131,16 @@ extension CookieFlagBits {
 
         if contains(.setOnRedirect)         { reasons.append("Cookie was set during redirect") }
         if contains(.reusedAcrossRedirect)  { reasons.append("Cookie reused across redirect chain") }
+        
+        if contains(.highEntropyValue) {
+            if let score = entropyScore {
+                reasons.append("High-entropy value (H ≈ \(String(format: "%.2f", score)))")
+            } else {
+                reasons.append("High-entropy value")
+            }
+        }
+        if contains(.pathOverlyBroad)        { reasons.append("Path is overly broad (applies site-wide)") }
+        if contains(.domainOverlyBroad)      { reasons.append("Domain is overly broad (shared with subdomains)") }
 
         return reasons
     }

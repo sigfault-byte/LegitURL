@@ -26,6 +26,8 @@ struct CookieListView: View {
                     LabeledContent("SameSite Policy", value: cookie.displayedSameSitePolicy)
                     LabeledContent("Secure", value: cookie.displayedSecureStatus)
                     LabeledContent("HttpOnly", value: cookie.displayHttpOnly)
+                    LabeledContent("Path", value: cookie.path)
+                    LabeledContent("Domain", value: cookie.displayedDomain)
 
                     LabeledContent("Value", value: expandedCookieIDs.contains(cookie.id) ? cookie.value : String(cookie.value.prefix(40)) + "…")
                         .onTapGesture {
