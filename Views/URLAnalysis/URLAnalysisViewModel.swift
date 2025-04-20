@@ -8,6 +8,8 @@ import SwiftUI
 
 @MainActor
 class URLAnalysisViewModel: ObservableObject {
+    // core singleton
+    var urlQueue = URLQueue.shared
     
     // Core Inputs:
     var urlInput: String
@@ -21,13 +23,10 @@ class URLAnalysisViewModel: ObservableObject {
     @Published var infoOpacity: Double = 1.0
     @Published var showingWarningsSheet : Bool = false
     
-    // Data Models:
-    @Published var warningsGroupedByURL: [URLWarningGroup] = []
-    
-    // Child ViewModels:
+    // Child Comp:
     @Published var scoreSummaryVM = ScoreSummaryViewModel(
         legitScore: URLQueue.shared.legitScore,
-        errorMessage: nil
+        isAnalysisComplete: false
     )
     @Published var urlComponentsVM = URLComponentsViewModel(
         urlInfo: [URLInfo.placeholder],
@@ -38,75 +37,64 @@ class URLAnalysisViewModel: ObservableObject {
     @Published var destinationInfoVM = DestinationInfoViewModel(
         inputDomain: "",
         finalHost: "",
-        finalHostPunycode: "",
+        summaryMessage: "",
         hopCount: 0,
         domainLabel: "",
-        tldLabel: ""
+        tldLabel: "",
+        isAnalysisComplete: false
     )
     
-    var urlQueue = URLQueue.shared
+    @Published var warningsVM = WarningsViewModel(
+        preGrouped: []
+    )
     
-    var allSecurityWarningsCount: Int {
-        warningsGroupedByURL.reduce(0) { $0 + $1.warnings.count }
-    }
-
-    // Timer for pooling
-    private var timer: Timer?
     
     init(urlInput: String, infoMessage: String) {
         self.urlInput = urlInput
         self.infoMessage = infoMessage
+        
+        let scoreVM = ScoreSummaryViewModel(
+            legitScore: URLQueue.shared.legitScore,
+            isAnalysisComplete: false
+        )
+        scoreVM.startFlicker()
+        self.scoreSummaryVM = scoreVM
+        
         Task {
             await self.startAnalysis()
         }
     }
     
-    func filterErrorMessageAndPopulateScoreSummaryVM() -> Void {
-        let filteredWarnings = urlQueue.criticalAndFetchErrorWarnings
-        self.scoreSummaryVM.errorMessage = filteredWarnings.map { $0.message }
-    }
     
     func startAnalysis() async {
         if !analysisStarted {
             analysisStarted = true
             await URLAnalyzer.analyze(urlString: urlInput)
         }
-        self.scoreSummaryVM.startFlicker()
-        
-        // Info banner delay animation
-        try? await Task.sleep(nanoseconds: 3 * 1_000_000_000)
-        withAnimation(.easeInOut(duration: 1)) {
-            self.infoOpacity = 0.3
-        }
-        try? await Task.sleep(nanoseconds: 1 * 1_000_000_000)
-        withAnimation(.easeInOut(duration: 1)) {
-            self.showInfoMessage = false
-        }
-
-        // Final analysis update
-        while !self.urlQueue.legitScore.analysisCompleted {
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
-            self.updateAnalysisState()
-        }
-
-        try? await Task.sleep(nanoseconds: 500_000_000) // final defer
-
         self.updateAnalysisState()
-        self.populateDestinationVM()
-         // Call startFlicker after initialization
+        
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2 * 1_000_000_000)
+            withAnimation(.easeInOut(duration: 1)) {
+                self.infoOpacity = 0.3
+            }
+            try? await Task.sleep(nanoseconds: 1 * 500_000_000)
+            withAnimation(.easeInOut(duration: 1)) {
+                self.showInfoMessage = false
+            }
+        }
+        
     }
     
     //Assigning pooled data
     private func updateAnalysisState() {
-        let structuredGroups = self.urlQueue.offlineQueue.map {
-            URLWarningGroup(urlInfo: $0, warnings: $0.warnings)
-        }
-        self.warningsGroupedByURL = structuredGroups
-        
-        self.urlComponentsVM.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
+        self.warningsVM = WarningsViewModel(preGrouped: self.urlQueue.groupedWarnings)
+        populateDestinationVM()
         self.urlComponentsVM.urlInfo = self.urlQueue.offlineQueue
         self.urlComponentsVM.onlineInfo = self.urlQueue.onlineQueue
-        
+        self.urlComponentsVM.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
+        self.scoreSummaryVM.legitScore = self.urlQueue.legitScore
+        self.scoreSummaryVM.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
     }
     
     func showWarningsSheet() -> Void {
@@ -115,10 +103,11 @@ class URLAnalysisViewModel: ObservableObject {
     
     func populateDestinationVM() -> Void {
         self.destinationInfoVM.inputDomain = self.urlQueue.offlineQueue.first?.components.fullURL ?? ""
-        self.destinationInfoVM.finalHost = self.urlQueue.offlineQueue.last?.components.host ?? ""
-        self.destinationInfoVM.finalHostPunycode = self.urlQueue.offlineQueue.last?.components.host?.idnaEncoded ?? ""
-        self.destinationInfoVM.hopCount = self.urlQueue.offlineQueue.count
+        self.destinationInfoVM.finalHost = self.urlQueue.offlineQueue.last?.components.fullURL ?? ""
+        self.destinationInfoVM.summaryMessage =  ""
+        self.destinationInfoVM.hopCount = self.urlQueue.offlineQueue.count - 1
         self.destinationInfoVM.domainLabel = self.urlQueue.offlineQueue.last?.components.extractedDomain ?? ""
         self.destinationInfoVM.tldLabel = self.urlQueue.offlineQueue.last?.components.extractedTLD ?? ""
+        self.destinationInfoVM.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
     }
 }

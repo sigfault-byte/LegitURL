@@ -19,34 +19,24 @@ struct ScoreSummaryView: View {
                             .font(.title)
                             .multilineTextAlignment(.trailing)
                     }
-                    .frame(maxWidth: viewModel.shouldShowDivider ? .infinity : nil)
-                    .animation(.easeOut(duration: 0.25), value: viewModel.shouldShowDivider)
                     
                     dividerView
                     
-                    Text(viewModel.displayScore)
-                        .frame(maxWidth: viewModel.shouldShowDivider ? .infinity : nil)
-                        .animation(.easeOut(duration: 0.25), value: viewModel.shouldShowDivider)
+                    Text(viewModel.isAnalysisComplete ? "\(viewModel.legitScore.score)" : viewModel.flickerScore)
+                        .frame(maxWidth: .infinity)
                         .font(.system(size: 70, weight: .black, design: .monospaced))
-                        .foregroundColor(viewModel.legitScore.analysisCompleted ? viewModel.scoreColor : viewModel.flickerColor)
-                Spacer()
+                        .foregroundColor(viewModel.isAnalysisComplete ? viewModel.scoreColor : viewModel.flickerColor)
+                    Spacer()
                 }
-                
-                Text(viewModel.displayScoreText)
-                    .font(.subheadline)
-                    .multilineTextAlignment(.center)
-                
             }
         }
     }
     
     @ViewBuilder
     private var dividerView: some View {
-        if viewModel.shouldShowDivider {
             Rectangle()
                 .frame(width: 1, height: 70)
                 .foregroundColor(.gray)
                 .transition(.opacity)
-        }
     }
 }

@@ -8,12 +8,16 @@
 import Foundation
 
 struct URLAnalyzer {
-    private static var hasManuallyStopped = false
-    private static var hasFinalized = false
+    private static var analysisStartTime: Date?
+   
+    public static var hasManuallyStopped = false
+    public static var hasFinalized = false
     
     // MARK: - Public Entry Point
     public static func analyze(urlString: String) async {
-        resetQueue()
+        self.analysisStartTime = Date()
+        AnalysisContextManager.reset()
+        print("🧼 SAN memory after reset:", TLSCertificateAnalyzer.tlsSANReusedMemory)
         
         let extractedInfo = extractComponents(from: urlString)
         
@@ -100,6 +104,10 @@ struct URLAnalyzer {
             if !hasFinalized {
                 hasFinalized = true
                 URLAnalyzerUtils.finalizeAnalysis()
+                if let start = analysisStartTime {
+                    let duration = Date().timeIntervalSince(start)
+                    print("🌐 Full analyze() duration: \(String(format: "%.3f", duration)) seconds")
+                }
             }
             return
         }
@@ -179,15 +187,6 @@ struct URLAnalyzer {
     
     // MARK: - Utility Functions --
     
-    public static func resetQueue() {
-        URLQueue.shared.cookiesSeenByRedirectChain.removeAll()
-        URLQueue.shared.offlineQueue.removeAll()
-        URLQueue.shared.onlineQueue.removeAll()
-        URLQueue.shared.legitScore.score = 100
-        hasManuallyStopped = false
-        hasFinalized = false
-    }
-    
     private static func sanitizeAndValidate(_ urlString: String, _ infoMessage: inout String?) -> (String?, String?) {
         return LegitURLTools.sanitizeInputURL(urlString)
     }
@@ -202,19 +201,13 @@ struct URLAnalyzer {
         if urlInfo.warnings.contains(where: { $0.severity == .critical }) {
             URLQueue.shared.offlineQueue[index].processed = true
             URLAnalyzerUtils.finalizeAnalysis()
-//            URLQueue.shared.legitScore.score -= 100
-//            URLQueue.shared.legitScore.analysisCompleted = true
             hasManuallyStopped = true
-            
-//            print("Critical warning found. Stopping analysis.")
             return true
+            
         } else if urlInfo.warnings.contains(where: { $0.severity == .fetchError }) {
             URLQueue.shared.offlineQueue[index].processed = true
             URLAnalyzerUtils.finalizeAnalysis()
-//            URLQueue.shared.legitScore.analysisCompleted = true
-//            URLQueue.shared.legitScore.score -= 100
             hasManuallyStopped = true
-//            print(" URL GET request failed. Stopping analysis.")
             return true
         }
         return false

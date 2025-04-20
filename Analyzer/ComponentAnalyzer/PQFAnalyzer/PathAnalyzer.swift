@@ -121,7 +121,7 @@ struct PathAnalyzer {
                 }
                 var partNumber: Int = 0
                 for part in parts {
-                    let delimiters: [Character] = ["+", "|", ":", ";", "~"]
+                    let delimiters: [Character] = ["+", "|", ":", ";", "~", "_"]
                     var subParts: [String] = [part]
                     
                     for delimiter in delimiters {

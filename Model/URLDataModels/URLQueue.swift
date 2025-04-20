@@ -11,6 +11,7 @@ class URLQueue: ObservableObject {
     @Published var offlineQueue: [URLInfo] = []
     @Published var onlineQueue: [OnlineURLInfo] = []
     @Published var legitScore = ScoreUpdateModel()
+    @Published var groupedWarnings: [WarningDomainGroup] = []
     
     //    seen cookies set to not double penalyze same cookie keys because we have a fresh get each time
     var cookiesSeenByRedirectChain: [UUID: Set<String>] = [:]
@@ -19,22 +20,22 @@ class URLQueue: ObservableObject {
 //    @Published var activeAsyncCount: Int = 0
     
     
-    /// Dynamically updates with all warnings from `offlineQueue`
-    var allWarnings: [SecurityWarning] {
-        offlineQueue.flatMap { $0.warnings }
-    }
-//
-    var allWarningsDebug: String {
-        offlineQueue
-            .flatMap { $0.warnings }
-            .map { "• [\($0.severity.rawValue.uppercased())] \($0.message)" }
-            .joined(separator: "\n")
-    }
-  
+    // Legacy flattening for previous view (no longer used)
     
-    var criticalAndFetchErrorWarnings: [SecurityWarning] {
-        allWarnings.filter { $0.severity == .critical || $0.severity == .fetchError }
-    }
+    // var allWarnings: [SecurityWarning] {
+    //     offlineQueue.flatMap { $0.warnings }
+    // }
+    //
+    // var allWarningsDebug: String {
+    //     offlineQueue
+    //         .flatMap { $0.warnings }
+    //         .map { "• [\($0.severity.rawValue.uppercased())] \($0.message)" }
+    //         .joined(separator: "\n")
+    // }
+  
+//    var criticalAndFetchErrorWarnings: [SecurityWarning] {
+//        allWarnings.filter { $0.severity == .critical || $0.severity == .fetchError }
+//    }
     
     static let shared = URLQueue() // ✅ Singleton to use it globally
 }

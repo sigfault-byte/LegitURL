@@ -23,6 +23,7 @@ struct ParsedCertificate {
     var publicKeyAlgorithm: String?
     var keyUsage: String?
     var publicKeyBits: Int?
+    var fingerprintSHA256: String?
     var extendedKeyUsageOID: String?
     var extendedKeyUsageString: [ParsedEKU]?
     var certificatePolicyOIDs: String?

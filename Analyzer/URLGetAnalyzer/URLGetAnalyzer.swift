@@ -7,8 +7,8 @@ struct URLGetAnalyzer {
         
         let originalURL = urlInfo.components.fullURL ?? ""
         let urlOrigin = urlInfo.components.coreURL ?? ""
-        let domain = urlInfo.domain
-        let tld = urlInfo.tld
+//        let domain = urlInfo.domain
+//        let tld = urlInfo.tld
         
         // Retrieve OnlineURLInfo using the ID and guard for sanity check and sync mystery
         guard let onlineInfo = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id }) else {
@@ -64,34 +64,21 @@ struct URLGetAnalyzer {
             }
         }
         
-        // skip domain and tld analysis if it was already encoutered
-        let shouldSkipDomainAnalysis: Bool = {
-            guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == urlInfo.id }),
-                  currentIndex > 0 else { return false }
-            
-            let previous = URLQueue.shared.offlineQueue[currentIndex - 1]
-            return previous.domain == domain && previous.tld == tld
-        }()
+        
+        //Then TLS
         
         
-        //        Then TLS Only if not already encountered
-        if shouldSkipDomainAnalysis {
-            urlInfo.warnings.append(SecurityWarning(
-                message: "Same domain and TLD as previous request, skipping tls analysis",
-                severity: .info,
-                penalty: PenaltySystem.Penalty.informational,
-                url: urlOrigin,
-                source: .tls
-            ))
-        } else {
-            if let tlsCertificate = onlineInfo.parsedCertificate {
-                let domainAndTLD = [urlInfo.domain, urlInfo.tld].compactMap { $0 }.joined(separator: ".")
-                let host = urlInfo.host ?? ""
-                TLSCertificateAnalyzer.analyze(certificate: tlsCertificate,
-                                               host: host,
-                                               domain: domainAndTLD,
-                                               warnings: &urlInfo.warnings, responseCode: responseCode )
-            }
+        if let tlsCertificate = onlineInfo.parsedCertificate {
+            let domainAndTLD = [urlInfo.domain, urlInfo.tld].compactMap { $0 }.joined(separator: ".")
+            let host = urlInfo.host ?? ""
+            TLSCertificateAnalyzer.analyze(
+                certificate: tlsCertificate,
+                host: host,
+                domain: domainAndTLD,
+                warnings: &urlInfo.warnings,
+                responseCode: responseCode,
+                origin: urlOrigin
+            )
         }
         
         //        Headers

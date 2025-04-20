@@ -7,18 +7,32 @@
 import SwiftUI
 
 struct WarningBannerComponent: View {
-    @ObservedObject var viewModel: URLAnalysisViewModel
+    @ObservedObject var viewModel: WarningsViewModel
 
     var body: some View {
-        if viewModel.allSecurityWarningsCount > 0 {
+        let severityCounts = viewModel.severityCounts
+
+        if !severityCounts.isEmpty {
             HStack {
-                Text("⚠️ Warnings (\(viewModel.allSecurityWarningsCount))")
-                    .font(.headline)
-                    .foregroundColor(.red)
-                    .padding(.vertical, 12)
-                    .onTapGesture {
-                        viewModel.showWarningsSheet()
+                HStack(spacing: 8) {
+                    Text("Findings:")
+                        .fontWeight(.medium)
+
+                    ForEach(SecurityWarning.SeverityLevel.allWarnings, id: \.self) { severity in
+                        if let count = severityCounts[severity], count > 0 {
+                            HStack(spacing: 4) {
+                                Image(systemName: severity.iconName)
+                                    .foregroundColor(severity.iconColor)
+                                Text("\(count)")
+                                    .foregroundColor(.primary)
+                            }
+                        }
                     }
+                }
+                .padding(.vertical, 12)
+                .onTapGesture {
+                    viewModel.showingWarningsSheet = true
+                }
             }
             .frame(maxWidth: .infinity)
             .background(
@@ -28,10 +42,9 @@ struct WarningBannerComponent: View {
             )
             .sheet(isPresented: $viewModel.showingWarningsSheet) {
                 WarningsDetailView(
-                    viewModel: WarningsViewModel(groupedByURL: viewModel.warningsGroupedByURL)
+                    viewModel: WarningsViewModel(preGrouped: viewModel.grouped)
                 )
             }
         }
     }
 }
-//List insetGroup??

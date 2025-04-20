@@ -62,7 +62,7 @@ func parseCookies(from headers: [String], for url: String) -> [CookieMetadata] {
 }
 
 struct CookieFlagBits: OptionSet, Hashable {
-    let rawValue: UInt16
+    let rawValue: UInt32
 
     // Size (0–2)
     static let smallValue            = CookieFlagBits(rawValue: 1 << 0)   // 1
@@ -108,7 +108,7 @@ extension CookieFlagBits {
         var reasons: [String] = []
 
         
-
+        // Size (0–2)
         if contains(.smallValue)            { reasons.append("Small value (≤16 bytes)") }
         if contains(.mediumValue)           { reasons.append("Medium value (16–64 bytes)") }
         if contains(.largeValue) && contains(.persistent) {
@@ -117,21 +117,34 @@ extension CookieFlagBits {
             reasons.append("Large value (>64 bytes) — too big to be random")
         }
 
-        if contains(.session)               { reasons.append("Session cookie") }
+        // Lifespan (3–6)
         if contains(.expired)               { reasons.append("Expired cookie") }
-        if contains(.shortLivedPersistent)  { reasons.append("Short-lived persistent cookie") }
-        if contains(.persistent)            { reasons.append("Persistent cookie") }
-
-        if contains(.samesiteLax)           { reasons.append("SameSite=Lax") }
-        if contains(.samesiteStrict)        { reasons.append("SameSite=Strict") }
+        if contains(.shortLivedPersistent) && contains(.persistent) {
+            reasons.append("Conflicting lifespan — both short-lived and persistent set (likely misconfiguration or cloaking)")
+        } else if contains(.shortLivedPersistent) {
+            reasons.append("Short-lived persistent cookie — mimics session but persists (likely tracking)")
+        } else if contains(.persistent) {
+            reasons.append("Persistent cookie")
+        }
+        
+        // Access Control (7–9)
         if contains(.sameSiteNone)          { reasons.append("SameSite=None") }
+        if contains(.sameSiteNone) && contains(.session) {
+            reasons.append("Suspicious: Session cookie with SameSite=None (likely tracking intent)")
+        }
+        if contains(.sameSiteNone) && !contains(.secure) {
+            reasons.append("Invalid: SameSite=None used without Secure (modern browsers reject this)")
+        }
 
+        // Security Attributes (10–11)
         if contains(.secure) == false       { reasons.append("Secure flag missing (can be sent over HTTP)") }
         if contains(.httpOnly) == false     { reasons.append("HttpOnly flag missing (accessible by JavaScript)") }
 
+        // Context (12–13)
         if contains(.setOnRedirect)         { reasons.append("Cookie was set during redirect") }
         if contains(.reusedAcrossRedirect)  { reasons.append("Cookie reused across redirect chain") }
         
+        // Content Signature (14)
         if contains(.highEntropyValue) {
             if let score = entropyScore {
                 reasons.append("High-entropy value (H ≈ \(String(format: "%.2f", score)))")
@@ -140,7 +153,7 @@ extension CookieFlagBits {
             }
         }
         if contains(.pathOverlyBroad)        { reasons.append("Path is overly broad (applies site-wide)") }
-        if contains(.domainOverlyBroad)      { reasons.append("Domain is overly broad (shared with subdomains)") }
+        if contains(.domainOverlyBroad)      { reasons.append("Domain is overly broad (shared with subdomains and site-wide)") }
 
         return reasons
     }

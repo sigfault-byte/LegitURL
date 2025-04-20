@@ -6,6 +6,7 @@
 import Foundation
 import ASN1Decoder
 import ObjectiveC
+import CryptoKit
 
 struct TLSExtract {
     
@@ -56,6 +57,9 @@ struct TLSExtract {
                         isSet ? ["Digital Signature", "Non-Repudiation", "Key Encipherment", "Data Encipherment", "Key Agreement", "Cert Sign", "CRL Sign", "Encipher Only", "Decipher Only"][index] : nil
                     }.joined(separator: ", "),  // Convert Key Usage Bits
                     publicKeyBits: inferredPublicKeyBits(from: decodedCertificate),
+                    fingerprintSHA256: SHA256.hash(data: certificateData)
+                        .map { String(format: "%02x", $0) }
+                        .joined(),
                     extendedKeyUsageOID: decodedCertificate.extendedKeyUsage.joined(separator: ", "),
                     extendedKeyUsageString: parseEKUs(from: decodedCertificate.extendedKeyUsage.joined(separator: ", ")),
                     certificatePolicyOIDs: extractCertificatePolicyOIDs(from: decodedCertificate),

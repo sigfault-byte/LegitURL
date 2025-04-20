@@ -96,3 +96,36 @@ extension SecurityWarning.SeverityLevel {
         return self.color
     }
 }
+
+/// Struct for the view
+struct WarningDomainGroup: Identifiable {
+    let id = UUID()
+    let domain: String
+    let sources: [WarningSourceGroup]
+}
+
+struct WarningSourceGroup: Identifiable {
+    let id = UUID()
+    let source: SecurityWarning.SourceType
+    let severityMap: [SecurityWarning.SeverityLevel: [SecurityWarning]]
+}
+
+extension SecurityWarning.SourceType {
+    var displayLabel: String {
+        switch self {
+        case .host: return "Host"
+        case .path: return "Path"
+        case .pathSub(let label): return "Path (\(label))"
+        case .query: return "Query"
+        case .fragment: return "Fragment"
+        case .cookie: return "Cookie"
+        case .header: return "Header"
+        case .body: return "Body"
+        case .tls: return "TLS"
+        case .getError: return "Fetch Error"
+        case .redirect: return "Redirect"
+        case .responseCode: return "Response Code"
+        }
+    }
+}
+

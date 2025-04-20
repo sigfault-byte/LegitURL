@@ -68,13 +68,16 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         bitFlags.insert(.highEntropyValue)
         
     }
-    if valueSize <= 16 {
+    
+    switch valueSize {
+    case 0...16:
         bitFlags.insert(.smallValue)
-    } else if valueSize < 64 {
+    case 17...64:
         bitFlags.insert(.mediumValue)
-    } else {
+    default:
         bitFlags.insert(.largeValue)
     }
+    
     // TODO (v2.0): Investigate use of expired cookies in redirect chains
     // - If cookie is expired AND value is long/high-entropy → may be fingerprinting cleanup
     // - If expired on non-200 response → possibly used in cloaking logic
@@ -109,7 +112,9 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         bitFlags.insert(.httpOnly)
     }
 
-    let isDomainBroad = cookie.domain.hasPrefix(".")
+    let domainParts = cookie.domain.components(separatedBy: ".").filter { !$0.isEmpty }
+    let isDomainBroad = cookie.domain.hasPrefix(".") && domainParts.count >= 2
+    print("HERE: ", cookie.domain)
     let isPathBroad = cookie.path == "/"
     if isPathBroad {
         bitFlags.insert(.pathOverlyBroad)
@@ -117,9 +122,13 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     
 
     if isDomainBroad && isPathBroad {
+        print("Entered")
         bitFlags.insert(.domainOverlyBroad)
     }
 
+    if bitFlags.contains(.domainOverlyBroad) {
+        print("👀 Flag was set: .domainOverlyBroad")
+    }
 
     let isCrossSite = cookie.sameSite.lowercased() == "none"
     let isSecure = cookie.secure

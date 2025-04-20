@@ -5,47 +5,52 @@ struct DestinationInfoView: View {
 
     var body: some View {
         VStack(alignment: .center, spacing: 16) {
-            HStack {
-                Label("Final destination", systemImage: "location.fill")
-                Spacer()
-                Text(viewModel.finalHost)
-                    .monospaced()
-                    .foregroundStyle(.primary)
-            }
-
-            HStack {
-                Label("Redirect hops", systemImage: "arrow.triangle.branch")
-                Spacer()
-                Text("\(viewModel.hopCount)")
-            }
-
-            if viewModel.punycodeWarning {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("⚠️ Domain uses encoded characters")
+            if viewModel.displayMessage {
+                VStack(alignment: .center, spacing: 6) {
+                    Text("⚠️ Potential issue ⚠️\nwith the destination domain ")
                         .font(.callout)
                         .fontWeight(.semibold)
                         .foregroundColor(.orange)
+                        .multilineTextAlignment(.center)
 
-                    Text("You entered '\(viewModel.inputDomain)', but the actual destination is '\(viewModel.finalHostPunycode)'. This may be a lookalike domain.")
+                    Text("We'll generate a personalized message that summarize the score. For now, this is a placeholder. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. ")
                         .font(.footnote)
                         .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    
                 }
                 .padding()
                 .background(.ultraThinMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
+            
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Entered URL")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text(viewModel.inputDomain)
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                        .foregroundColor(.primary)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(viewModel.hopCount > 0 ? "Redirected in \(viewModel.hopCount) steps to" : "Final destination")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("\(viewModel.finalHost)")
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                        .foregroundColor(.primary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Divider()
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("You are being redirected to:")
-                    .font(.footnote)
-                Text("→ \(viewModel.domainLabel).\(viewModel.tldLabel)")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
 
             Text("Stay alert if the destination doesn't match your expectations.")
                 .font(.footnote)
@@ -54,6 +59,6 @@ struct DestinationInfoView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(.vertical, 6)
-        .animation(.easeOut(duration: 0.3), value: viewModel.punycodeWarning)
+        .animation(.easeOut(duration: 0.3), value: viewModel.displayMessage)
     }
 }

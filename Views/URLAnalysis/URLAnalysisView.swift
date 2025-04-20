@@ -37,7 +37,7 @@ struct URLAnalysisView: View {
             }
             .listStyle(.insetGrouped)
             .safeAreaInset(edge: .bottom) {
-                WarningBannerComponent(viewModel: viewModel)
+                WarningBannerComponent(viewModel: viewModel.warningsVM)
             }
             .toolbar {
                 // Bottom bar for Home & Help

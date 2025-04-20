@@ -38,7 +38,7 @@ struct PenaltySystem {
         
         // QUERIES & fragment ... Need granularity see lamai todo
         static let malformedQueryPair                  = -40
-        static let highEntropyQuery                    = -15
+        static let highEntropyQuery                    = -10
         static let queryKeyForbiddenCharacters         = -20
         static let valueForbiddenCharacters            = -20
         static let scamWordsInQuery                    = -20
@@ -109,11 +109,13 @@ struct PenaltySystem {
         static let moreThan16BofCookie                 = -5
         ///TLS///
         static let tksWeakKey                          = -20
+        static let reusedTLS1FDQN                      = -20
         static let unknownVL                           = -10
         static let hotDogwaterCN                       = -10
         static let tlsWillExpireSoon                   = -10
-        static let tlsIsNew                            = -10
+        static let tlsIsNew7days                       = -10
         static let tlsShortLifespan                    = -10
+        static let tlsIsNew30days                      = -5
         
         //RESPONSE HEADER ISSUE
         static let blockedByFirewall                   = -100
@@ -221,17 +223,42 @@ struct PenaltySystem {
         var penalty = 0
         let fullSecured = flags.contains([.httpOnly, .secure])
         let fingerPrintStyle = flags.contains([. largeValue, .persistent])
+        let isSameSiteNone = flags.contains(.sameSiteNone)
         
         // Group 1: Harmless, bad practice not dangerous,  reused on redirect
-        if (flags.contains([.expired, .httpOnly]) || flags.contains(.reusedAcrossRedirect)) {
+        if flags.contains([.expired, .httpOnly]) {
             return 0
         }
+        if flags.contains(.reusedAcrossRedirect) && !flags.contains(.setOnRedirect) {
+            return 0
+        }
+        
+        // Suspicious misuse: session + SameSite=None
+        if flags.contains(.session) && flags.contains(.sameSiteNone) {
+            return -10  // Indicates tracking intent with fake session scope
+        }
+
+        // Invalid combo: SameSite=None without Secure
+        if flags.contains(.sameSiteNone) && !flags.contains(.secure) {
+            return -15  // Rejected by modern browsers but still a strong red flag
+        }
+        
+        // Conflicting lifespan — possibly intentional cloaking
+        if flags.contains([.persistent, .shortLivedPersistent]) {
+            return -15
+        }
+        
+        if flags.contains(.setOnRedirect) && flags.contains(.reusedAcrossRedirect) {
+            if flags.contains(.highEntropyValue) {
+                return -15  // Likely fingerprint injected mid-redirect
+            } else {
+                return -10  // Behavioral tracking across hops
+            }
+        }
+        
         // Group 1: Benign cookie combinations
         if flags.contains(.smallValue) && fullSecured {
             return 0
-        }
-        if flags.contains(.smallValue) && !fullSecured {
-            return -1
         }
         
         // Group 2: Suspicious secure tracker potential
@@ -239,7 +266,7 @@ struct PenaltySystem {
             if fullSecured {
                 return -2
             } else if !flags.contains(.secure) && flags.contains(.httpOnly) {
-                return -3
+                return -4
             } else if flags.contains(.secure) && !flags.contains(.httpOnly) {
                 return -6
             } else {
@@ -247,20 +274,38 @@ struct PenaltySystem {
             }
         }
         
-        // Group 3: Dangerous tracking blob
-        if flags.contains(.highEntropyValue) &&
-            flags.contains(.domainOverlyBroad) &&
-            flags.contains(.pathOverlyBroad) &&
-            !flags.contains(.httpOnly) {
-            penalty += -30
+        if flags.contains(.largeValue) && flags.contains(.session) {
+            if fullSecured {
+                return -3
+            } else if flags.contains(.httpOnly) && !flags.contains(.secure) {
+                return -5
+            } else if flags.contains(.secure) && !flags.contains(.httpOnly) {
+                return -6
+            } else {
+                return -8
+            }
         }
-
-        // Group 4: Critical tracker abuse
-        if flags.contains(.highEntropyValue) &&
-            flags.contains(.setOnRedirect) &&
-            flags.contains(.domainOverlyBroad) &&
-            !flags.contains(.httpOnly) {
-            penalty += -50
+        
+        if fingerPrintStyle {
+            if fullSecured && !isSameSiteNone {
+                return -5
+            } else if fullSecured && isSameSiteNone {
+                return -7
+            } else if flags.contains(.httpOnly) && !flags.contains(.secure) {
+                return -8
+            } else if flags.contains(.secure) && !flags.contains(.httpOnly) {
+                return isSameSiteNone ? -10 : -8
+            } else {
+                return -15
+            }
+        }
+        
+        if flags.contains(.setOnRedirect) && flags.contains(.reusedAcrossRedirect) {
+            if flags.contains(.highEntropyValue) {
+                return -15  // Likely fingerprint injected mid-redirect
+            } else {
+                return -10  // Behavioral tracking across hops
+            }
         }
 
         
@@ -268,7 +313,7 @@ struct PenaltySystem {
         
         // Exposure
         if !flags.contains(.httpOnly)            { penalty += -5 } // More dangerous: JS can access
-        if !flags.contains(.secure)              { penalty += -2 } // Less dangerous: sent over HTTP
+        if !flags.contains(.secure)              { penalty += -2 } // Less dangerous, more like different kind of dangerous : sent over HTTP
         if flags.contains(.domainOverlyBroad)    { penalty += -2 }
         if flags.contains(.pathOverlyBroad)      { penalty += -2 }
         

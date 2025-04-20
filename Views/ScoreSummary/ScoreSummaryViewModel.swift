@@ -6,30 +6,17 @@
 //
 import SwiftUI
 
-@MainActor
 class ScoreSummaryViewModel: ObservableObject{
     
-    @ObservedObject var legitScore: ScoreUpdateModel
+    @Published var legitScore: ScoreUpdateModel
     
-    @Published var errorMessage: [String]? = nil {
-        didSet {
-            if self.legitScore.analysisCompleted && errorMessage != nil {
-                displayFlickerOrScore()
-            }
-        }
-    }
-    
-    @Published var shouldShowDivider: Bool = true
-    
-    var displayError: Bool = false
+    @Published var isAnalysisComplete: Bool = false
     
     @Published var labelText: String = "Legit Score"
     
-    var flickerText: String = "00"
-    var flickerColor: Color = .gray
-    
-    @Published var displayScore: String = ""
-    @Published var displayScoreText: String = ""
+    @Published var flickerScore: String = "00"
+    @Published var flickerColor: Color = .gray
+    private var flickerTimer: Timer?
 
     var scoreColor: Color {
         if legitScore.score >= 80 {
@@ -41,65 +28,25 @@ class ScoreSummaryViewModel: ObservableObject{
         }
     }
     
-    var scoreText: String {
-        if self.errorMessage != [] {
-            if let messages = self.errorMessage {
-                self.shouldShowDivider = false
-                return messages.joined(separator: "\n\n")
-            }
-        }
-        
-        switch legitScore.score {
-        case ..<50:
-            return "The URL might try to trick you."
-        case 50..<60:
-            return "The URL is suspicious."
-        case 60..<80:
-            return "The URL might be suspicious."
-        case 80...:
-            return "The URL looks safe."
-        default:
-            return "Analysis incomplete."
-        }
-    }
-    
-    init(legitScore: ScoreUpdateModel, errorMessage: [String]?) {
+    init(legitScore: ScoreUpdateModel, isAnalysisComplete: Bool = false) {
         self.legitScore = legitScore
-        self.errorMessage = errorMessage
-        
+        self.isAnalysisComplete = isAnalysisComplete
     }
     
+    
+
     func startFlicker() {
-        self.flickerTextLoop()
-        Task {
-            try await Task.sleep(nanoseconds: 800_000_000)
-            self.displayFlickerOrScore()
+        flickerTimer?.invalidate()
+        flickerTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if self.isAnalysisComplete {
+                self.flickerTimer?.invalidate()
+                return
+            }
+            let byte = Int.random(in: 0...255)
+            self.flickerScore = String(format: "%02X", byte)
+            self.flickerColor = Color(hue: Double.random(in: 0...1), saturation: 0.8, brightness: 0.9)
         }
     }
     
-    private func flickerTextLoop() {
-        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
-            Task { @MainActor in
-                if !self.legitScore.analysisCompleted {
-                    let hex = String(format: "%02X", Int.random(in: 0...255))
-                    self.flickerText = hex
-                    let colors: [Color] = [.gray, .cyan, .orange, .purple, .yellow, .blue]
-                    self.flickerColor = colors.randomElement() ?? .gray
-                } else {
-                    timer.invalidate()
-                }
-            }
-        }
-    }
-    
-    private func displayFlickerOrScore() -> Void {
-        if !self.legitScore.analysisCompleted {
-            self.displayScore = self.flickerText
-        } else {
-            withAnimation {
-                self.labelText = "Legit Score"
-                self.displayScore = String(self.legitScore.score)
-            }
-        }
-    }
 }
