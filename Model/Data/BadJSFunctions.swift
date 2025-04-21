@@ -141,4 +141,29 @@ struct SuspiciousJSAccessors {
         UInt8(ascii: "t"), // se
         UInt8(ascii: "b"), // We
     ]
+    
+//    TODO: add all these too, but need more tinkering for the byte parser
+//    // Obfuscation & Encoding Tricks
+//    static let obfuscationAndEncodingTricks: Set<String> = [
+//        "encodeURIComponent(", "decodeURIComponent(",
+//        "fromCharCode(", "String.fromCharCode",
+//        "charCodeAt(", "replace(/", "match(/", "split(", "join(",
+//        "rot13", "hex_encode", "base64_encode", "base64_decode",
+//        "urlencode", "urldecode", "xor", "aes_encrypt", "des_encrypt",
+//        "md5", "sha1", "sha256", "crc32", "hmac", "ciphertext",
+//        "pkcs7", "pbkdf2", "bcrypt", "scrypt", "jwt="
+//    ]
+//    
+//    static let trackingAndMonitoring: Set<String> = [
+//        "ga(", "fbq(", "ym(", "insightly(", "mixpanel(", "amplitude(",
+//        "keen(", "matomo(", "clickid", "hotjar(", "clarity(", "snowplow(",
+//        "segment(", "fullstory(", "luckyorange(", "heap(", "adroll(",
+//        "pixel.fire", "doubleclick.net", "googletagmanager(", "gtm(",
+//        "google-analytics.com", "facebook.com/tr", "fbclid", "utm_",
+//        "trk", "trkId", "trkRef", "trackEvent", "trackPageview",
+//        "trackConversion", "visitorId", "sessionId", "userId",
+//        "datadome", "akamai-mpulse", "cloudflare_insights", "newrelic(",
+//        "optimizely(", "braze(", "webtrends(", "quantcast(", "pardot("
+//    ]
 }
+

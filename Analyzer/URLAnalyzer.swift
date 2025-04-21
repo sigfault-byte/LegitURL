@@ -16,6 +16,8 @@ struct URLAnalyzer {
     public static func analyze(urlString: String) async {
         self.analysisStartTime = Date()
         AnalysisContextManager.reset()
+//        load user singletn + statics
+        UserHeuristicsCache.load()
         
         let extractedInfo = extractComponents(from: urlString)
         
@@ -101,6 +103,8 @@ struct URLAnalyzer {
 //            print("✅ All online checks complete.")
             if !hasFinalized {
                 hasFinalized = true
+                //flush singleton
+                UserHeuristicsCache.flush()
                 URLAnalyzerUtils.finalizeAnalysis()
                 if let start = analysisStartTime {
                     let duration = Date().timeIntervalSince(start)

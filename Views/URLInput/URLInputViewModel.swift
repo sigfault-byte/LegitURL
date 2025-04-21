@@ -38,4 +38,10 @@ class URLInputViewModel: ObservableObject{
             return false
         }
     }
+    
+    func pasteURLFromClipboard() {
+        DispatchQueue.main.async {
+            self.urlInput = UIPasteboard.general.string ?? ""
+        }
+    }
 }

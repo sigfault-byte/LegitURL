@@ -65,10 +65,10 @@ struct PathAnalyzer {
 //            This should be a var, but is a let while the combo is not working properly
             let comboWasRelevant = false
             
-            // This needs more thinking
-            if WhiteList.safePaths.contains(segment.lowercased()) {
-                continue
-            }
+//            // This needs more thinking
+//            if WhiteList.safePaths.contains(segment.lowercased()) {
+//                continue
+//            }
             
 //            // Try all contiguous path combinations from this segment onward
 //            TODO: This needs more thinking the logic fails because multiple warning are given for the same warning.

@@ -97,7 +97,11 @@ struct NodeAnalyzer {
     static func detectBrandMatch(_ input: String) -> BrandMatch? {
         let lowercasedInput = input.lowercased()
         let parts = lowercasedInput.split(whereSeparator: { !$0.isLetter }).map(String.init)
-        let brands = KnownBrands.names // assumes brandList is [String] of lowercase known brands
+        let brands = UserHeuristicsCache.brands // assumes brandList is [String] of lowercase known brands
+        // Skip brand detection if a trusted domain self-references its own brand
+        if UserHeuristicsCache.trustedDomains.contains(where: lowercasedInput.contains) {
+            return nil
+        }
 
         for part in parts {
             for brand in brands {
