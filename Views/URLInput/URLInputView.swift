@@ -60,26 +60,60 @@ struct URLInputForm: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            TextField("Enter URL", text: $viewModel.urlInput)
-                .keyboardType(.URL)
-                .submitLabel(.go)
-                .onSubmit {
-                    if viewModel.analyzeURL() {
-                        onAnalyze()
+            HStack(spacing: 0) {
+                if UIPasteboard.general.hasStrings {
+                    Button(action: {
+                        DispatchQueue.main.async {
+                            viewModel.urlInput = UIPasteboard.general.string ?? ""
+                        }
+                    }) {
+                        Image(systemName: "doc.on.clipboard")
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                            .background(
+                                Color.blue
+                                    .clipShape(CustomCorner(radius: 8, corners: [.topLeft, .bottomLeft]))
+                            )
                     }
                 }
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(uiColor: .systemGray6))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(uiColor: .separator), lineWidth: 1)
-                )
-                .padding(.horizontal)
+
+                TextField("Enter URL", text: $viewModel.urlInput)
+                    .padding(.leading, 5)
+                    .keyboardType(.URL)
+                    .submitLabel(.go)
+                    .onSubmit {
+                        if viewModel.analyzeURL() {
+                            onAnalyze()
+                        }
+                    }
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .padding(.vertical, 10)
+                    .frame(height: 44)
+                    .background(
+                        Color(uiColor: .systemGray6)
+                            .clipShape(CustomCorner(radius: 8, corners: [.topRight, .bottomRight]))
+                    )
+                    .overlay(
+                        CustomCorner(radius: 8, corners: [.topRight, .bottomRight])
+                            .stroke(Color(uiColor: .separator), lineWidth: 1)
+                    )
+                    .overlay(
+                        HStack {
+                            Spacer()
+                            if !viewModel.urlInput.isEmpty {
+                                Button(action: {
+                                    viewModel.urlInput = ""
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.gray)
+                                        .padding(.trailing, 8)
+                                }
+                            }
+                        }
+                    )
+            }
+            .padding(.horizontal)
             
             Button(action: {
                 if viewModel.analyzeURL() {
@@ -99,5 +133,15 @@ struct URLInputForm: View {
                     .padding(.horizontal)
             }
         }
+    }
+}
+
+struct CustomCorner: Shape {
+    var radius: CGFloat = 8
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
     }
 }

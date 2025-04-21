@@ -235,8 +235,7 @@ struct URLAnalyzer {
         let (cleanedRedirectURL, _) = sanitizeAndValidate(finalRedirect, &dummy)
         guard let cleanedRedirectURL = cleanedRedirectURL else { return }
         
-        var newURLInfo = extractComponents(from: cleanedRedirectURL)
-//        RedirectAnalyzer.analyzeRedirect(fromInfo: currentURLInfo, toInfo: &newURLInfo, responseCode: responseCode)
+        let newURLInfo = extractComponents(from: cleanedRedirectURL)
         
 //        print("🔁 Adding redirect URL to offline queue:", cleanedRedirectURL)
         URLQueue.shared.offlineQueue.append(newURLInfo)
