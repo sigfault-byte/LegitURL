@@ -10,9 +10,13 @@ import SwiftUI
 class URLInputViewModel: ObservableObject{
     @Published var errorMessage: String = ""
     @Published var showQRScanner: Bool = false
-    var infoMessage: String = ""
-
     @Published var isInputValid: Bool = false
+    @Published var pasteAvailable = false
+
+    var infoMessage: String = ""
+    init() {
+        pasteAvailable = UIPasteboard.general.hasStrings
+    }
 
     var urlInput: String = "" {
         didSet {

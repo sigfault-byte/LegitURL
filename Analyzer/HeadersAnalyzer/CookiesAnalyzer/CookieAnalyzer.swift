@@ -114,7 +114,6 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
 
     let domainParts = cookie.domain.components(separatedBy: ".").filter { !$0.isEmpty }
     let isDomainBroad = cookie.domain.hasPrefix(".") && domainParts.count >= 2
-    print("HERE: ", cookie.domain)
     let isPathBroad = cookie.path == "/"
     if isPathBroad {
         bitFlags.insert(.pathOverlyBroad)
@@ -122,12 +121,7 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     
 
     if isDomainBroad && isPathBroad {
-        print("Entered")
         bitFlags.insert(.domainOverlyBroad)
-    }
-
-    if bitFlags.contains(.domainOverlyBroad) {
-        print("👀 Flag was set: .domainOverlyBroad")
     }
 
     let isCrossSite = cookie.sameSite.lowercased() == "none"

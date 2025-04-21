@@ -143,7 +143,7 @@ struct ScriptExtractor {
         
         let duration = Date().timeIntervalSince(startTime)
         print("✅ Total scan completed in \(Int(duration * 1000))ms")
-//        print("📦 Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
+        print("📦 Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
 //        for script in confirmedScripts {
 //            guard let endTag = script.endTagPos else { continue }
 //

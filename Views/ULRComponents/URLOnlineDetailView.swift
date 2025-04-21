@@ -106,14 +106,13 @@ private struct RawToFormatedForHeavyBody: View {
     var content: String
     
     var body: some View {
-        ScrollView {
             TextEditor(text: .constant(content))
                 .font(.system(size: 10, weight: .regular, design: .monospaced))
                 .foregroundColor(.primary)
                 .padding()
-                .disabled(true)
-        }
-        .navigationTitle(title)
+                .frame(minHeight: 400)
+                .background(Color(.systemBackground))
+                .navigationTitle(title)
     }
 }
 

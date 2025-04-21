@@ -26,6 +26,11 @@ struct URLInputView: View {
                 QRScannerView { scannedURL in
                     viewModel.urlInput = scannedURL
                     viewModel.showQRScanner = false
+
+                    // Trigger layout refresh
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        viewModel.objectWillChange.send()
+                    }
                 }
             }
             .buttonStyle(.bordered)
@@ -69,7 +74,7 @@ struct URLInputForm: View {
     var body: some View {
         VStack(spacing: 16) {
             HStack(spacing: 0) {
-                if UIPasteboard.general.hasStrings {
+                if viewModel.pasteAvailable {
                     Button(action: {
                         DispatchQueue.main.async {
                             viewModel.urlInput = UIPasteboard.general.string ?? ""
@@ -145,6 +150,7 @@ struct URLInputForm: View {
                         }
                     )
             }
+            .frame(height: 44)
             .padding(.horizontal)
             
             Button(action: {

@@ -10,12 +10,12 @@ struct TLSHeuristics {
     static func domainIsCoveredBySANs(domain: String, host: String, sans: [String]) -> Bool {
 
 //         First try wildcard matches against the domain
-        print("NUMBER OF SANs: ", sans.count)
-        var i = 1
-        for san in sans {
-            print(i, "SAN: ", san)
-            i+=1
-        }
+//        print("NUMBER OF SANs: ", sans.count)
+//        var i = 1
+//        for san in sans {
+//            print(i, "SAN: ", san)
+//            i+=1
+//        }
         
         for san in sans {
             if san.hasPrefix("*.") {

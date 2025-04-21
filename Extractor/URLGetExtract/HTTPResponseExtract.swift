@@ -155,7 +155,9 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
                 String(data: processedBody, encoding: .utf8) ??
                 String(data: processedBody, encoding: .isoLatin1) ??
                 String(data: processedBody, encoding: .utf16)
-
+            
+            if let bodyText { print ("📝 Body text: \(bodyText.count)")}
+            
             if let bodyText = bodyText {
                 onlineInfo.humanReadableBody = bodyText
                 onlineInfo.humanBodySize = processedBody.count

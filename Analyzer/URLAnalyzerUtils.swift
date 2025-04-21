@@ -4,8 +4,8 @@ struct URLAnalyzerUtils {
         // let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
 
         let totalPenalty = warnings.map { $0.penalty }.reduce(0, +)
-        let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
-        penaltyDetails.forEach { print($0) }
+//        let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
+//        penaltyDetails.forEach { print($0) }
         var newScore = 100 + totalPenalty
         if newScore < 0 {
             newScore = 0
@@ -13,7 +13,6 @@ struct URLAnalyzerUtils {
             newScore = 100
         }
         let score = newScore
-        print("SCORE: ", score)
         return score
     }
 
