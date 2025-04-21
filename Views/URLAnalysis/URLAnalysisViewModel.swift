@@ -41,7 +41,8 @@ class URLAnalysisViewModel: ObservableObject {
         hopCount: 0,
         domainLabel: "",
         tldLabel: "",
-        isAnalysisComplete: false
+        isAnalysisComplete: false,
+        score: 0
     )
     
     @Published var warningsVM = WarningsViewModel(
@@ -109,5 +110,6 @@ class URLAnalysisViewModel: ObservableObject {
         self.destinationInfoVM.domainLabel = self.urlQueue.offlineQueue.last?.components.extractedDomain ?? ""
         self.destinationInfoVM.tldLabel = self.urlQueue.offlineQueue.last?.components.extractedTLD ?? ""
         self.destinationInfoVM.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
+        self.destinationInfoVM.score = self.urlQueue.legitScore.score
     }
 }

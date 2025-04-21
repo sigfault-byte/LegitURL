@@ -13,6 +13,8 @@ class DestinationInfoViewModel: ObservableObject {
     @Published var hopCount: Int = 0
     @Published var domainLabel: String
     @Published var tldLabel: String
+    @Published var score: Int
+    
     @Published var isAnalysisComplete: Bool = false
     
     var displayMessage: Bool {
@@ -25,7 +27,8 @@ class DestinationInfoViewModel: ObservableObject {
          hopCount: Int,
          domainLabel: String,
          tldLabel: String,
-         isAnalysisComplete: Bool = false)
+         isAnalysisComplete: Bool = false,
+         score: Int)
     {
         self.inputDomain = inputDomain
         self.finalHost = finalHost
@@ -34,5 +37,18 @@ class DestinationInfoViewModel: ObservableObject {
         self.domainLabel = domainLabel
         self.tldLabel = tldLabel
         self.isAnalysisComplete = isAnalysisComplete
+        self.score = score
+    }
+    
+        
+    var scoreColor: Color {
+        switch self.score {
+        case 80...100:
+            return .green
+        case 50..<80:
+            return .yellow
+        default:
+            return .red
+        }
     }
 }

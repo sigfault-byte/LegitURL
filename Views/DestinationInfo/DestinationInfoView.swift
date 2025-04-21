@@ -2,9 +2,11 @@ import SwiftUI
 
 struct DestinationInfoView: View {
     @ObservedObject var viewModel: DestinationInfoViewModel
+    
+    
 
     var body: some View {
-        VStack(alignment: .center, spacing: 16) {
+        VStack(alignment: .center, spacing: 12) {
             if viewModel.displayMessage {
                 VStack(alignment: .center, spacing: 6) {
                     Text("⚠️ Potential issue ⚠️\nwith the destination domain ")
@@ -34,19 +36,40 @@ struct DestinationInfoView: View {
                         .font(.body)
                         .fontWeight(.semibold)
                         .monospacedDigit()
-                        .foregroundColor(.primary)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding()
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(viewModel.hopCount > 0 ? "Redirected in \(viewModel.hopCount) steps to" : "Final destination")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Text("\(viewModel.finalHost)")
-                        .font(.body)
-                        .fontWeight(.semibold)
-                        .monospacedDigit()
-                        .foregroundColor(.primary)
+                    let prefix = viewModel.finalHost.components(separatedBy: "\(viewModel.domainLabel).\(viewModel.tldLabel)").first ?? ""
+                    let suffix = viewModel.finalHost.components(separatedBy: "\(viewModel.domainLabel).\(viewModel.tldLabel)").dropFirst().joined()
+
+                    (
+                        Text(prefix)
+                            .foregroundColor(.secondary)
+                        + Text(viewModel.domainLabel)
+                            .foregroundColor(viewModel.scoreColor)
+                        + Text(".")
+                            .foregroundColor(viewModel.scoreColor)
+                        + Text(viewModel.tldLabel)
+                            .foregroundColor(viewModel.scoreColor)
+                        + Text(suffix)
+                            .foregroundColor(.secondary)
+                    )
+                    .font(.body)
+                    .fontWeight(.semibold)
+                    .monospacedDigit()
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding()
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 

@@ -19,9 +19,9 @@ struct ScriptSecurityAnalyzer {
 //                if script.endTagPos == nil {
 //                    print("NO END")
 //                }
-//                print("⚠️Preview for \(script.origin?.rawValue): \(previewStart). First 1024 bytes:\n\(previewString)")
+//                print("Preview for \(script.origin?.rawValue): \(previewStart). First 1024 bytes:\n\(previewString)")
 //            } else {
-//                print("⚠️ Unclosed script tag at \(previewStart). Unable to decode preview.")
+//                print(" Unclosed script tag at \(previewStart). Unable to decode preview.")
 //            }
 //        }
         
@@ -30,7 +30,7 @@ struct ScriptSecurityAnalyzer {
         //TODO Double check the script possibilities
         if dataURICount > 0 {
             warnings.append(SecurityWarning(
-                message: "⚠️ This page includes \(dataURICount) script(s) using data: URIs. These are often used for obfuscation or tracking.",
+                message: "This page includes \(dataURICount) script(s) using data: URIs. These are often used for obfuscation or tracking.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.scriptDataURI,
                 url: origin,
@@ -59,7 +59,7 @@ struct ScriptSecurityAnalyzer {
             switch origin {
             case .httpExternal:
                 warnings.append(SecurityWarning(
-                    message: "❌ External script loaded over HTTP. This is insecure and exposes users to injection risks.",
+                    message: "External script loaded over HTTP. This is insecure and exposes users to injection risks.",
                     severity: .critical,
                     penalty: PenaltySystem.Penalty.critical,
                     url: originURL,
@@ -71,7 +71,7 @@ struct ScriptSecurityAnalyzer {
 
             case .unknown:
                 warnings.append(SecurityWarning(
-                    message: "⚠️ Script origin could not be determined. This may indicate cloaking or malformed attributes.",
+                    message: "Script origin could not be determined. This may indicate cloaking or malformed attributes.",
                     severity: .dangerous,
                     penalty: PenaltySystem.Penalty.scriptUnknownOrigin,
                     url: originURL,
@@ -81,7 +81,7 @@ struct ScriptSecurityAnalyzer {
 
             case .malformed:
                 warnings.append(SecurityWarning(
-                    message: "🛑 Malformed script tag or broken src attribute detected.",
+                    message: "Malformed script tag or broken src attribute detected.",
                     severity: .dangerous,
                     penalty: PenaltySystem.Penalty.scriptMalformed,
                     url: originURL,
@@ -131,7 +131,7 @@ struct ScriptSecurityAnalyzer {
             break
         case 40..<50:
             warnings.append(SecurityWarning(
-                message: "⚠️ Inline JS makes up \(percent)% of the HTML content. This may indicate excessive inline scripting.",
+                message: "Inline JS makes up \(percent)% of the HTML content. This may indicate excessive inline scripting.",
                 severity: .info,
                 penalty: PenaltySystem.Penalty.informational + smallHTMLBonus,
                 url: originURL,
@@ -140,7 +140,7 @@ struct ScriptSecurityAnalyzer {
             ))
         case 50..<70:
             warnings.append(SecurityWarning(
-                message: "🚨 Inline JS dominates \(percent)% of the HTML content. This suggests heavy client-side scripting.",
+                message: "Inline JS dominates \(percent)% of the HTML content. This suggests heavy client-side scripting.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.scriptIs5070Percent + smallHTMLBonus,
                 url: originURL,
@@ -149,7 +149,7 @@ struct ScriptSecurityAnalyzer {
             ))
         case 70...:
             warnings.append(SecurityWarning(
-                message: "🛑 Inline JS makes up \(percent)% of the HTML. This is highly suspicious and may indicate obfuscation or cloaking.",
+                message: "Inline JS makes up \(percent)% of the HTML. This is highly suspicious and may indicate obfuscation or cloaking.",
                 severity: .dangerous,
                 penalty: PenaltySystem.Penalty.scriptIs70Percent + smallHTMLBonus,
                 url: originURL,
@@ -175,7 +175,7 @@ struct ScriptSecurityAnalyzer {
             break
         case 0.05..<0.1:
             warnings.append(SecurityWarning(
-                message: "ℹ️ Script density is \(rounded) script per 1000 bytes. This may be typical of apps using moderate scripting.",
+                message: "Script density is \(rounded) script per 1000 bytes. This may be typical of apps using moderate scripting.",
                 severity: .info,
                 penalty: 0,
                 url: originURL,
@@ -183,7 +183,7 @@ struct ScriptSecurityAnalyzer {
             ))
         case 0.1..<0.2:
             warnings.append(SecurityWarning(
-                message: "⚠️ Script density is \(rounded) script per 1000 bytes. This could indicate heavy client-side logic or potential cloaking.",
+                message: "Script density is \(rounded) script per 1000 bytes. This could indicate heavy client-side logic or potential cloaking.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.mediumScritpDensity,
                 url: originURL,
@@ -192,7 +192,7 @@ struct ScriptSecurityAnalyzer {
             ))
         case 0.2...:
             warnings.append(SecurityWarning(
-                message: "🚨 High script density detected (\(rounded)) script per 1000 bytes. This is abnormal and may signal obfuscation or cloaked logic.",
+                message: "High script density detected (\(rounded)) script per 1000 bytes. This is abnormal and may signal obfuscation or cloaked logic.",
                 severity: .dangerous,
                 penalty: PenaltySystem.Penalty.highScriptDensity,
                 url: originURL,

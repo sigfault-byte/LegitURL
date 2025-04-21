@@ -59,7 +59,10 @@ struct URLOfflineDetailView: View {
     }
     
     private var punycodeHostRow: AnyView? {
-        urlInfo.components.punycodeHostEncoded.map { AnyView(URLDetailRow(label: "Punycode Host", value: $0)) }
+        if urlInfo.components.host != urlInfo.components.punycodeHostEncoded {
+            return urlInfo.components.punycodeHostEncoded.map { AnyView(URLDetailRow(label: "Punycode Host", value: $0)) }
+        }
+        return nil
     }
     
     private var tldRow: AnyView? {
