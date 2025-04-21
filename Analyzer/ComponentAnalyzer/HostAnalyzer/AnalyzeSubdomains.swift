@@ -36,6 +36,19 @@ struct AnalyzeSubdomains {
             }
         }
         
+        for scamword in allScamwords where scamword.contains("-") {
+            if subdomainLowercased.contains(scamword) {
+                urlInfo.warnings.append(SecurityWarning(
+                    message: "Subdomain contains the Scam Keyword '\(scamword)'.",
+                    severity: SecurityWarning.SeverityLevel.suspicious,
+                    penalty: PenaltySystem.Penalty.scamWordsInHost,
+                    url: urlOrigin,
+                    source: .host,
+                    bitFlags: WarningFlags.SUBDOMAIN_CONTAINS_SCAMWORDS
+                ))
+            }
+        }
+        
         for subdomain in subdomains {
             let raw = subdomain.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
             
@@ -119,7 +132,7 @@ struct AnalyzeSubdomains {
                     penalty: PenaltySystem.Penalty.exactBrandImpersonation,
                     url: urlOrigin,
                     source: .host,
-                    bitFlags: WarningFlags.DOMAIN_EXACT_BRAND_MATCH
+                    bitFlags: WarningFlags.SUBDOMAIN_CONTAINS_BRAND
                 ))
             } else if lowered.contains(brandLower) {
                 urlInfo.warnings.append(SecurityWarning(
@@ -128,7 +141,7 @@ struct AnalyzeSubdomains {
                     penalty: PenaltySystem.Penalty.brandImpersonation,
                     url: urlOrigin,
                     source: .host,
-                    bitFlags: WarningFlags.DOMAIN_CONTAINS_BANRD
+                    bitFlags: WarningFlags.SUBDOMAIN_CONTAINS_BRAND
                 ))
                 
             } else {
@@ -140,7 +153,7 @@ struct AnalyzeSubdomains {
                         penalty: PenaltySystem.Penalty.brandLookaLike,
                         url: urlOrigin,
                         source: .host,
-                        bitFlags: WarningFlags.DOMAIN_LOOKALIKE_BRAND_MATCH
+                        bitFlags: WarningFlags.SUBDOMAIN_CONTAINS_LOOKALIKE_BRANDS
                     ))
                 }
                 
@@ -152,7 +165,7 @@ struct AnalyzeSubdomains {
                         penalty: PenaltySystem.Penalty.brandLookaLike,
                         url: urlOrigin,
                         source: .host,
-                        bitFlags: WarningFlags.DOMAIN_LOOKALIKE_BRAND_MATCH
+                        bitFlags: WarningFlags.SUBDOMAIN_CONTAINS_LOOKALIKE_BRANDS
                     ))
                 }
             }

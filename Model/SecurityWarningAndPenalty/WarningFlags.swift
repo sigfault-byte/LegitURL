@@ -14,6 +14,8 @@ struct WarningFlags: OptionSet {
     static let DOMAIN_SCAM_OR_PHISHING = WarningFlags(rawValue: 1 << 3)
     static let DOMAIN_LOOKALIKE_BRAND_MATCH = WarningFlags(rawValue: 1 << 4)
     static let SUBDOMAIN_CONTAINS_BRAND = WarningFlags(rawValue: 1 << 5)
+    static let SUBDOMAIN_CONTAINS_SCAMWORDS = WarningFlags(rawValue: 1 << 6)
+    static let SUBDOMAIN_CONTAINS_LOOKALIKE_BRANDS = WarningFlags(rawValue: 1 << 7)
     
     //PATH FLAGS
     static let PATH_EXACT_BRAND_MATCH = WarningFlags(rawValue: 1 << 10)

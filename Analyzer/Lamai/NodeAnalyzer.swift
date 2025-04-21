@@ -72,7 +72,8 @@ struct NodeAnalyzer {
     
     // Look for scamWords
     static func detectScanWords(_ value: String) -> String?{
-        if SuspiciousKeywords.scamTerms.contains(value) {
+        let userScams = UserHeuristicsCache.scamwords
+        if userScams.contains(value) {
             return value
         }
         return nil
