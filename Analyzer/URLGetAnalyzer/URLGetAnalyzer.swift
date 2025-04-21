@@ -25,7 +25,8 @@ struct URLGetAnalyzer {
         
         //Should be Done in urlgGetExtract, in the meantime ill rawdog it here
         let finalURL = onlineInfo.finalRedirectURL ?? originalURL
-        //TODO: Change this normalized header to a more friendly logic so its acutally readable!
+        
+        //TODO: Change normalized header to a more friendly logic so its acutally readable!
         
         let headers = onlineInfo.normalizedHeaders ?? [:]
         
@@ -33,8 +34,23 @@ struct URLGetAnalyzer {
         
         let responseCode = onlineInfo.serverResponseCode ?? 0
         
+        // Precheck for scammy relative redirect
+        if let locationHeader = headers["location"], !locationHeader.contains("://") {
+            urlInfo.warnings.append(SecurityWarning(
+            message: "🚨 The server redirected to a relative path starting with '\(locationHeader.prefix(16))...'. This is commonly used in scam kits or misconfigured servers. Analysis halted.",
+                severity: .critical,
+                penalty: -100,
+                url: urlOrigin,
+                source: .redirect
+            ))
+            return urlInfo
+        }
+        
         //Http response handler
+        let redirectURL = URLExtractComponents.extract(url: finalURL)
         HandleHTTPResponse.cases(responseCode: responseCode, urlInfo: &urlInfo)
+        RedirectAnalyzer.analyzeRedirect(fromInfo: redirectURL, toInfo: &urlInfo, responseCode: responseCode)
+        
         
         
         // Analyze body response Body first, returns "script" found in the html, if it's perfect

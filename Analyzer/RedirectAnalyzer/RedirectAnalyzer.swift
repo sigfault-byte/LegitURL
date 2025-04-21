@@ -17,7 +17,12 @@ struct RedirectAnalyzer {
               let targetTLD = toInfo.tld?.lowercased(),
               let originalHost = fromInfo.host?.lowercased(),
               let targetHost = toInfo.host?.lowercased(),
-              let source: SecurityWarning.SourceType = responseCode != nil ? .redirect : .query
+              let source: SecurityWarning.SourceType = {
+                  if let responseCode = responseCode, (300...399).contains(responseCode) {
+                      return .redirect
+                  }
+                  return .query
+              }()
         else {
             toInfo.warnings.append(SecurityWarning(
                 message: "❌ Missing domain, TLD, or host information for redirect analysis.",

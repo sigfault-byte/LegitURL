@@ -1,4 +1,3 @@
-//
 //  URLAnalyzer.swift
 //  LegitURL
 //
@@ -17,7 +16,6 @@ struct URLAnalyzer {
     public static func analyze(urlString: String) async {
         self.analysisStartTime = Date()
         AnalysisContextManager.reset()
-        print("🧼 SAN memory after reset:", TLSCertificateAnalyzer.tlsSANReusedMemory)
         
         let extractedInfo = extractComponents(from: urlString)
         
@@ -63,6 +61,7 @@ struct URLAnalyzer {
     private static func processOfflineURL(at index: Int) -> Bool {
         
         var urlInfo = URLQueue.shared.offlineQueue[index]
+        guard hasManuallyStopped == false else { return false}
         
         // Check for early exit conditions before processing
         //        if shouldStopAnalysis(atIndex: index) { return false }
@@ -99,7 +98,6 @@ struct URLAnalyzer {
 //        print("Remaining URLs: \(remaining.map { $0.components.fullURL ?? "unknown" })")
         
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline && !$0.processingNow }) else {
-//            print("✅ No more unprocessed URLs. Finalizing...")
 //            print("✅ All online checks complete.")
             if !hasFinalized {
                 hasFinalized = true
@@ -125,7 +123,8 @@ struct URLAnalyzer {
         do {
             let onlineInfo = try await URLGetExtract.extractAsync(urlInfo: currentURLInfo)
 //            print("✅ Finished GET extract for:", currentURLInfo.components.fullURL ?? "unknown")
-
+            
+            
             guard let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) else {
 //                print("ould not find URLInfo to attach onlineInfo")
                 return
@@ -148,13 +147,20 @@ struct URLAnalyzer {
             
             URLQueue.shared.offlineQueue[index] = updatedURLInfo
 
+            
+            
             let OnlineAnalysisURLInfo = await URLGetAnalyzer.analyze(urlInfo: updatedURLInfo)
             URLQueue.shared.offlineQueue[index] = OnlineAnalysisURLInfo
 //            print("✅ Online analysis complete for:", OnlineAnalysisURLInfo.components.fullURL ?? "unknown")
             URLQueue.shared.offlineQueue[index].processedOnline = true
+            
+            // Check if any critical finding where found
+            if shouldStopAnalysis(atIndex: index) {
+                return
+            }
 
             if let finalRedirect = OnlineAnalysisURLInfo.onlineInfo?.finalRedirectURL {
-                await handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect)
+                await handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect, responseCode: currentURLInfo.onlineInfo?.serverResponseCode ?? 0)
             }
 
         } catch {
@@ -176,6 +182,11 @@ struct URLAnalyzer {
         }
     }
     
+    
+    
+    
+    // MARK: - Utility Functions --
+    
     private static func markURLInfoOnlineProcessed(for urlInfo: URLInfo) {
         if let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == urlInfo.id }) {
             var updated = URLQueue.shared.offlineQueue[index]
@@ -184,8 +195,6 @@ struct URLAnalyzer {
             URLQueue.shared.offlineQueue[index] = updated
         }
     }
-    
-    // MARK: - Utility Functions --
     
     private static func sanitizeAndValidate(_ urlString: String, _ infoMessage: inout String?) -> (String?, String?) {
         return LegitURLTools.sanitizeInputURL(urlString)
@@ -213,7 +222,7 @@ struct URLAnalyzer {
         return false
     }
     
-    private static func handleFinalRedirect(from currentURLInfo: URLInfo, finalRedirect: String) async {
+    private static func handleFinalRedirect(from currentURLInfo: URLInfo, finalRedirect: String, responseCode: Int) async {
         guard let originalURL = currentURLInfo.components.fullURL else { return }
         if finalRedirect.lowercased() == originalURL.lowercased() { return }
         
@@ -227,7 +236,7 @@ struct URLAnalyzer {
         guard let cleanedRedirectURL = cleanedRedirectURL else { return }
         
         var newURLInfo = extractComponents(from: cleanedRedirectURL)
-        RedirectAnalyzer.analyzeRedirect(fromInfo: currentURLInfo, toInfo: &newURLInfo)
+//        RedirectAnalyzer.analyzeRedirect(fromInfo: currentURLInfo, toInfo: &newURLInfo, responseCode: responseCode)
         
 //        print("🔁 Adding redirect URL to offline queue:", cleanedRedirectURL)
         URLQueue.shared.offlineQueue.append(newURLInfo)

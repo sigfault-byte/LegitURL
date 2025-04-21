@@ -40,11 +40,11 @@ struct SecurityWarning: Identifiable{
         var color: Color {
             switch self {
             case .info: return Color.blue
-            case .tracking: return Color.gray
+            case .tracking: return Color.purple
             case .suspicious: return Color.orange
-            case .scam: return Color.purple
+            case .scam: return Color(red: 0.6, green: 0, blue: 0.2)
             case .dangerous: return Color.red
-            case .critical: return Color.red.opacity(0.8)
+            case .critical: return Color(red: 0.4, green: 0, blue: 0)
             case .fetchError: return Color.black
             }
         }
@@ -97,6 +97,15 @@ extension SecurityWarning.SeverityLevel {
     }
 }
 
+extension SecurityWarning.SourceType {
+    var normalizedType: SecurityWarning.SourceType {
+        switch self {
+        case .pathSub: return .path
+        default: return self
+        }
+    }
+}
+
 /// Struct for the view
 struct WarningDomainGroup: Identifiable {
     let id = UUID()
@@ -127,5 +136,20 @@ extension SecurityWarning.SourceType {
         case .responseCode: return "Response Code"
         }
     }
+    
+    var glossaryID: String {
+            switch self {
+            case .host: return "host"
+            case .path, .pathSub: return "path"
+            case .query: return "query"
+            case .fragment: return "fragment"
+            case .cookie: return "cookie"
+            case .header: return "header"
+            case .body: return "body"
+            case .tls: return "tls"
+            case .getError: return "getError"
+            case .redirect: return "redirect"
+            case .responseCode: return "responseCode"
+            }
+        }
 }
-

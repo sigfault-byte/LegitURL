@@ -3,7 +3,7 @@ struct PathAnalyzer {
     
     static func analyze(urlInfo: inout URLInfo) {
         
-        let urlOrigin = urlInfo.components.host ?? ""
+        let urlOrigin = urlInfo.components.coreURL ?? ""
         var foundURL: [String] = []
         guard let rawPath = urlInfo.components.pathEncoded else {
             return
@@ -72,7 +72,7 @@ struct PathAnalyzer {
             
 //            // Try all contiguous path combinations from this segment onward
 //            TODO: This needs more thinking the logic fails because multiple warning are given for the same warning.
-//            Maybe: Traverse the node tree just like WalkTheNode
+//            MAYBE: Traverse the node tree just like WalkTheNode
 //            Collect all findings with their associated source labels, values, scores, etc.
 //            Store them in a temporary buffer
 //            Apply deduplication / suppression / scoring consolidation
@@ -110,9 +110,9 @@ struct PathAnalyzer {
             }
             let isSuspiciouslyLong = segment.count > 64
             let hasHyphen = segment.contains("-")
+            
 //            Irrelevant without the pathcombo logic
 //            if comboWasRelevant { return }
-            
             if !comboWasRelevant {
                 if !isSuspiciouslyLong && hasHyphen {
                     parts = segment.split(separator: "-").map(String.init)

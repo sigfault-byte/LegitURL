@@ -8,6 +8,8 @@ import SwiftUI
 
 struct URLAnalysisView: View {
     @StateObject private var viewModel: URLAnalysisViewModel
+    @State private var showHelpPage = false
+    
     let onExit: () -> Void
     
     init(urlInput: String, infoMessage: String, onExit: @escaping () -> Void) {
@@ -43,8 +45,11 @@ struct URLAnalysisView: View {
                 // Bottom bar for Home & Help
                 ToolbarItemGroup(placement: .bottomBar) {
                     BottomToolbar(lButtonIcon: "🏠", lButtonText: "Home", lButtonAction: {onExit()},
-                                  rButtonIcon: "❓", rButtonText: "Help", rButtonAction: {})
+                                  rButtonIcon: "❓", rButtonText: "Help", rButtonAction: {showHelpPage = true})
                 }
+            }
+            .navigationDestination(isPresented: $showHelpPage) {
+                HelpPageView(scrollTarget: nil)
             }
             
         }

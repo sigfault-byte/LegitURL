@@ -43,9 +43,18 @@ struct URLAnalyzerUtils {
 
             let groupedBySource = Dictionary(grouping: warnings, by: { $0.source })
 
-            let sourceGroups: [WarningSourceGroup] = groupedBySource.map { (source, sourceWarnings) in
-                let groupedBySeverity = Dictionary(grouping: sourceWarnings, by: { $0.severity })
-                return WarningSourceGroup(source: source, severityMap: groupedBySeverity)
+            let preferredSourceOrder: [SecurityWarning.SourceType] = [
+                .host, .path, .query, .fragment, .responseCode, .redirect, .cookie, .body, .tls, .header, .getError
+            ]
+            
+            let sourceGroups: [WarningSourceGroup] = preferredSourceOrder.compactMap { preferred in
+                let matchingSources = groupedBySource.keys.filter { $0.normalizedType == preferred }
+
+                let warningsForThisGroup = matchingSources.flatMap { groupedBySource[$0] ?? [] }
+                guard !warningsForThisGroup.isEmpty else { return nil }
+
+                let groupedBySeverity = Dictionary(grouping: warningsForThisGroup, by: { $0.severity })
+                return WarningSourceGroup(source: preferred, severityMap: groupedBySeverity)
             }
 
             return WarningDomainGroup(domain: domain, sources: sourceGroups)
