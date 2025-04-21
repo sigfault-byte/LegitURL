@@ -9,6 +9,7 @@ import SwiftUI
 
 class URLInputViewModel: ObservableObject{
     @Published var errorMessage: String = ""
+    @Published var showQRScanner: Bool = false
     var infoMessage: String = ""
 
     @Published var isInputValid: Bool = false

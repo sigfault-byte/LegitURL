@@ -22,6 +22,14 @@ struct URLInputView: View {
                     onAnalyze(viewModel.urlInput, viewModel.infoMessage)
                 }
             .padding(.vertical)
+            .sheet(isPresented: $viewModel.showQRScanner) {
+                QRScannerView { scannedURL in
+                    viewModel.urlInput = scannedURL
+                    viewModel.showQRScanner = false
+                }
+            }
+            .buttonStyle(.bordered)
+            .padding(.bottom)
             
             Spacer()
         }
@@ -68,14 +76,36 @@ struct URLInputForm: View {
                         }
                     }) {
                         Image(systemName: "doc.on.clipboard")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)
+                            .padding(12)
                             .foregroundColor(.white)
-                            .frame(width: 44, height: 44)
-                            .background(
-                                Color.blue
-                                    .clipShape(CustomCorner(radius: 8, corners: [.topLeft, .bottomLeft]))
-                            )
+                            .background(Color.blue)
                     }
+                    .frame(width: 44, height: 44)
+                    .clipShape(CustomCorner(radius: 8, corners: [.topLeft, .bottomLeft]))
                 }
+
+                Button(action: {
+                    viewModel.showQRScanner = true
+                }) {
+                    Image(systemName: "qrcode.viewfinder")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                        .padding(12)
+                        .foregroundColor(.white)
+                        .background(Color.blue)
+                }
+                .frame(width: 44, height: 44)
+                .clipShape(CustomCorner(radius: 0, corners: []))
+                .overlay(
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(width: 1),
+                    alignment: .leading
+                )
 
                 TextField("Enter URL", text: $viewModel.urlInput)
                     .padding(.leading, 5)
@@ -109,6 +139,8 @@ struct URLInputForm: View {
                                         .foregroundColor(.gray)
                                         .padding(.trailing, 8)
                                 }
+                                .buttonStyle(.plain)
+                                .background(Color.clear)
                             }
                         }
                     )
