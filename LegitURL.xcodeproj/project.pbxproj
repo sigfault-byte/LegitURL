@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		2440A9542DB7556D000A621A /* public_suffix_list.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = 2440A9012DB7556D000A621A /* public_suffix_list.sqlite */; };
 		2440A9552DB7556D000A621A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2440A94E2DB7556D000A621A /* Assets.xcassets */; };
-		2440A9562DB7556D000A621A /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 2440A94D2DB7556D000A621A /* .gitignore */; };
 		2440A9572DB7556D000A621A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2440A9132DB7556D000A621A /* Preview Assets.xcassets */; };
 		2440A9582DB7556D000A621A /* URLInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9442DB7556D000A621A /* URLInputView.swift */; };
 		2440A9592DB7556D000A621A /* DataSignatures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8FE2DB7556D000A621A /* DataSignatures.swift */; };
@@ -223,7 +222,6 @@
 		2440A9482DB7556D000A621A /* UserScamwordViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserScamwordViewModel.swift; sourceTree = "<group>"; };
 		2440A9492DB7556D000A621A /* UserWatchListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserWatchListView.swift; sourceTree = "<group>"; };
 		2440A94A2DB7556D000A621A /* UserWatchListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserWatchListViewModel.swift; sourceTree = "<group>"; };
-		2440A94D2DB7556D000A621A /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		2440A94E2DB7556D000A621A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2440A94F2DB7556D000A621A /* LegitURL-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "LegitURL-Info.plist"; sourceTree = "<group>"; };
 		2440A9502DB7556D000A621A /* URLChecker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = URLChecker.entitlements; sourceTree = "<group>"; };
@@ -679,7 +677,6 @@
 				2440A9142DB7556D000A621A /* Preview Content */,
 				2440A91B2DB7556D000A621A /* Utilities */,
 				2440A94C2DB7556D000A621A /* Views */,
-				2440A94D2DB7556D000A621A /* .gitignore */,
 				2440A94E2DB7556D000A621A /* Assets.xcassets */,
 				2440A94F2DB7556D000A621A /* LegitURL-Info.plist */,
 				2440A9502DB7556D000A621A /* URLChecker.entitlements */,
@@ -773,7 +770,6 @@
 			files = (
 				2440A9542DB7556D000A621A /* public_suffix_list.sqlite in Resources */,
 				2440A9552DB7556D000A621A /* Assets.xcassets in Resources */,
-				2440A9562DB7556D000A621A /* .gitignore in Resources */,
 				2440A9572DB7556D000A621A /* Preview Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
