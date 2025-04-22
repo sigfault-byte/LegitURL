@@ -1,0 +1,89 @@
+//  DataSignatures.swift
+//  URLChecker
+//
+//  Created by Chief Hakka on 11/04/2025.
+//
+import Foundation
+struct DataSignatures {
+
+    public static func extractAllTagMarkers(in body: Data, within range: Range<Int>, tag: UInt8 = 60) -> [Int] {
+        var tagPositions: [Int] = []
+        var currentIndex = range.lowerBound
+
+        while currentIndex < range.upperBound {
+            if body[currentIndex] == tag {
+                tagPositions.append(currentIndex)
+            }
+            currentIndex += 1
+        }
+
+        return tagPositions
+    }
+//    Need to "fallBack" to end of document is </html> is not found! Ma
+    public static func extractHtmlTagRange(in body: Data) -> (Range<Int>, htmlClosed: Bool)? {
+        let prefixRange = body.startIndex..<min(500, body.count)
+        let suffixRange = max(body.count - 500, 0)..<body.count
+
+        let htmlOpenTag = Data("<html".utf8)
+        let htmlCloseTag = Data("</html>".utf8)
+
+        guard let openRange = body.range(of: htmlOpenTag, options: [], in: prefixRange) else {
+            return nil
+        }
+
+        let closeRange = body.range(of: htmlCloseTag, options: [], in: suffixRange)
+        let end = closeRange?.upperBound ?? body.endIndex
+        return (openRange.lowerBound..<end, closeRange != nil)
+    }
+
+    
+    public static func matchesAsciiTag(at position: Int, in body: Data, asciiToCompare: [UInt8], lookAheadWindow: Int = 24) -> Bool {
+        let maxLookahead = min(position + lookAheadWindow, body.count)
+        let slice = body[position..<maxLookahead]
+
+        var index = slice.startIndex + 1
+        while index < slice.endIndex && (slice[index] == 0x20 || slice[index] == 0x09 || slice[index] == 0x0A || slice[index] == 0x0D) {
+            index += 1
+        }
+
+        let remaining = slice[index..<slice.endIndex]
+        guard remaining.count >= asciiToCompare.count else { return false }
+
+        for i in 0..<asciiToCompare.count {
+            let char = remaining[remaining.startIndex + i]
+            if char | 0x20 != asciiToCompare[i] { // <- smooth operator
+                return false
+            }
+        }
+
+        return true
+    }
+    
+    public static func fastScriptByteHint(at position: Int, in body: Data, hint: [UInt8], range: Int = 4) -> Bool {
+        let end = min(position + range + 1, body.count)
+        var index = position + 1
+        while index < end {
+            let byte = body[index]
+            
+            if hint.count == 1 {
+                if byte == hint[0] {
+                    return true
+                }
+            } else if hint.count >= 2 {
+                if byte == hint[0] || byte == hint[1] {
+                    return true
+                }
+            }
+            // Ski garbage empty space
+            if byte == 0x20 || byte == 0x09 || byte == 0x0A || byte == 0x0D {
+                index += 1
+                continue
+            }
+
+            // Non-matching, non-whitespace byte ends the search
+            return false
+        }
+
+        return false
+    }
+}

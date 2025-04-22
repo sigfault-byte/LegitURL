@@ -7,227 +7,46 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2440A9542DB7556D000A621A /* public_suffix_list.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = 2440A9012DB7556D000A621A /* public_suffix_list.sqlite */; };
-		2440A9552DB7556D000A621A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2440A94E2DB7556D000A621A /* Assets.xcassets */; };
-		2440A9572DB7556D000A621A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2440A9132DB7556D000A621A /* Preview Assets.xcassets */; };
-		2440A9582DB7556D000A621A /* URLInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9442DB7556D000A621A /* URLInputView.swift */; };
-		2440A9592DB7556D000A621A /* DataSignatures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8FE2DB7556D000A621A /* DataSignatures.swift */; };
-		2440A95A2DB7556D000A621A /* LegitURLTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9182DB7556D000A621A /* LegitURLTools.swift */; };
-		2440A95B2DB7556D000A621A /* URLGetAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8E52DB7556D000A621A /* URLGetAnalyzer.swift */; };
-		2440A95C2DB7556D000A621A /* BodyAnalyzerFast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8BF2DB7556D000A621A /* BodyAnalyzerFast.swift */; };
-		2440A95D2DB7556D000A621A /* UserScamwordViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9482DB7556D000A621A /* UserScamwordViewModel.swift */; };
-		2440A95E2DB7556D000A621A /* HeadersTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8D42DB7556D000A621A /* HeadersTools.swift */; };
-		2440A95F2DB7556D000A621A /* WhiteList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9032DB7556D000A621A /* WhiteList.swift */; };
-		2440A9602DB7556D000A621A /* WarningFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9072DB7556D000A621A /* WarningFlags.swift */; };
-		2440A9612DB7556D000A621A /* UserScamwordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9472DB7556D000A621A /* UserScamwordView.swift */; };
-		2440A9622DB7556D000A621A /* SettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9312DB7556D000A621A /* SettingView.swift */; };
-		2440A9632DB7556D000A621A /* ByteSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8FD2DB7556D000A621A /* ByteSignature.swift */; };
-		2440A9642DB7556D000A621A /* RedirectAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8DE2DB7556D000A621A /* RedirectAnalyzer.swift */; };
-		2440A9652DB7556D000A621A /* BadJSFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8FC2DB7556D000A621A /* BadJSFunctions.swift */; };
-		2440A9662DB7556D000A621A /* URLQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A90D2DB7556D000A621A /* URLQueue.swift */; };
-		2440A9672DB7556D000A621A /* HostAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8C42DB7556D000A621A /* HostAnalysis.swift */; };
-		2440A9682DB7556D000A621A /* scriptInlineAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8BC2DB7556D000A621A /* scriptInlineAnalyzer.swift */; };
-		2440A9692DB7556D000A621A /* CSPKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8D22DB7556D000A621A /* CSPKeys.swift */; };
-		2440A96A2DB7556D000A621A /* UnicodeScriptClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A91A2DB7556D000A621A /* UnicodeScriptClassifier.swift */; };
-		2440A96B2DB7556D000A621A /* CookieAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8CE2DB7556D000A621A /* CookieAnalyzer.swift */; };
-		2440A96C2DB7556D000A621A /* SuspiciousKeyWords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9022DB7556D000A621A /* SuspiciousKeyWords.swift */; };
-		2440A96D2DB7556D000A621A /* DecodingNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8D82DB7556D000A621A /* DecodingNode.swift */; };
-		2440A96E2DB7556D000A621A /* WalkTheNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8DC2DB7556D000A621A /* WalkTheNode.swift */; };
-		2440A96F2DB7556D000A621A /* HeadersAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8D32DB7556D000A621A /* HeadersAnalyzer.swift */; };
-		2440A9702DB7556D000A621A /* Regex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9192DB7556D000A621A /* Regex.swift */; };
-		2440A9712DB7556D000A621A /* HtmlHeadAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8D62DB7556D000A621A /* HtmlHeadAnalyzer.swift */; };
-		2440A9722DB7556D000A621A /* LamaiAnalyzerHub.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8D92DB7556D000A621A /* LamaiAnalyzerHub.swift */; };
-		2440A9732DB7556D000A621A /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9272DB7556D000A621A /* QRScannerView.swift */; };
-		2440A9742DB7556D000A621A /* CookieListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9362DB7556D000A621A /* CookieListView.swift */; };
-		2440A9752DB7556D000A621A /* PQFAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8CA2DB7556D000A621A /* PQFAnalyzer.swift */; };
-		2440A9762DB7556D000A621A /* URLScripts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A90E2DB7556D000A621A /* URLScripts.swift */; };
-		2440A9772DB7556D000A621A /* DomainAndTLDExtract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8F12DB7556D000A621A /* DomainAndTLDExtract.swift */; };
-		2440A9782DB7556D000A621A /* FragmentAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8C82DB7556D000A621A /* FragmentAnalyzer.swift */; };
-		2440A9792DB7556D000A621A /* HTTPResponseExtract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8F52DB7556D000A621A /* HTTPResponseExtract.swift */; };
-		2440A97A2DB7556D000A621A /* KeyValuePairAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8C62DB7556D000A621A /* KeyValuePairAnalyzer.swift */; };
-		2440A97B2DB7556D000A621A /* TLSCertificateAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8E12DB7556D000A621A /* TLSCertificateAnalyzer.swift */; };
-		2440A97C2DB7556D000A621A /* URLCheckerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9512DB7556D000A621A /* URLCheckerApp.swift */; };
-		2440A97D2DB7556D000A621A /* URLExtractComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8F22DB7556D000A621A /* URLExtractComponents.swift */; };
-		2440A97E2DB7556D000A621A /* HelpGlossaryBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9212DB7556D000A621A /* HelpGlossaryBubbleView.swift */; };
-		2440A97F2DB7556D000A621A /* UserWatchList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8FA2DB7556D000A621A /* UserWatchList.swift */; };
-		2440A9802DB7556D000A621A /* KeyValuePairExtract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8EC2DB7556D000A621A /* KeyValuePairExtract.swift */; };
-		2440A9812DB7556D000A621A /* HelpGlossaryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9232DB7556D000A621A /* HelpGlossaryViewModel.swift */; };
-		2440A9822DB7556D000A621A /* URLInputViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9452DB7556D000A621A /* URLInputViewModel.swift */; };
-		2440A9832DB7556D000A621A /* ScoreSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A92A2DB7556D000A621A /* ScoreSummaryView.swift */; };
-		2440A9842DB7556D000A621A /* QRScannerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9282DB7556D000A621A /* QRScannerViewModel.swift */; };
-		2440A9852DB7556D000A621A /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9172DB7556D000A621A /* Extensions.swift */; };
-		2440A9862DB7556D000A621A /* URLAnalysisViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9422DB7556D000A621A /* URLAnalysisViewModel.swift */; };
-		2440A9872DB7556D000A621A /* HelpGlossaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9222DB7556D000A621A /* HelpGlossaryView.swift */; };
-		2440A9882DB7556D000A621A /* HandleHTTPResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9102DB7556D000A621A /* HandleHTTPResponse.swift */; };
-		2440A9892DB7556D000A621A /* NodeAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8DB2DB7556D000A621A /* NodeAnalyzer.swift */; };
-		2440A98A2DB7556D000A621A /* scriptSecurityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8BD2DB7556D000A621A /* scriptSecurityAnalyzer.swift */; };
-		2440A98B2DB7556D000A621A /* HeadersKeyWords.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8FF2DB7556D000A621A /* HeadersKeyWords.swift */; };
-		2440A98C2DB7556D000A621A /* WarningsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A92E2DB7556D000A621A /* WarningsDetailView.swift */; };
-		2440A98D2DB7556D000A621A /* KnowBrands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9002DB7556D000A621A /* KnowBrands.swift */; };
-		2440A98E2DB7556D000A621A /* ScoreSummaryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A92B2DB7556D000A621A /* ScoreSummaryViewModel.swift */; };
-		2440A98F2DB7556D000A621A /* ScriptExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8EF2DB7556D000A621A /* ScriptExtractor.swift */; };
-		2440A9902DB7556D000A621A /* GetAnalyzerUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8E42DB7556D000A621A /* GetAnalyzerUtils.swift */; };
-		2440A9912DB7556D000A621A /* WarningBannerComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A92D2DB7556D000A621A /* WarningBannerComponent.swift */; };
-		2440A9922DB7556D000A621A /* URLComponentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A93A2DB7556D000A621A /* URLComponentsViewModel.swift */; };
-		2440A9932DB7556D000A621A /* URLInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A90B2DB7556D000A621A /* URLInfo.swift */; };
-		2440A9942DB7556D000A621A /* PSLDataBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9112DB7556D000A621A /* PSLDataBase.swift */; };
-		2440A9952DB7556D000A621A /* UserWatchListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A94A2DB7556D000A621A /* UserWatchListViewModel.swift */; };
-		2440A9962DB7556D000A621A /* DestinatuionInfoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A91F2DB7556D000A621A /* DestinatuionInfoViewModel.swift */; };
-		2440A9972DB7556D000A621A /* URLAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9412DB7556D000A621A /* URLAnalysisView.swift */; };
-		2440A9982DB7556D000A621A /* LamaiTreeViewComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9252DB7556D000A621A /* LamaiTreeViewComponent.swift */; };
-		2440A9992DB7556D000A621A /* CookieViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9372DB7556D000A621A /* CookieViewModel.swift */; };
-		2440A99A2DB7556D000A621A /* PathAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8C92DB7556D000A621A /* PathAnalyzer.swift */; };
-		2440A99B2DB7556D000A621A /* UserWatchListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9492DB7556D000A621A /* UserWatchListView.swift */; };
-		2440A99C2DB7556D000A621A /* DecodingTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9152DB7556D000A621A /* DecodingTools.swift */; };
-		2440A99D2DB7556D000A621A /* DestinationInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A91E2DB7556D000A621A /* DestinationInfoView.swift */; };
-		2440A99E2DB7556D000A621A /* AnalyzeSubdomains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8C22DB7556D000A621A /* AnalyzeSubdomains.swift */; };
-		2440A99F2DB7556D000A621A /* HelperFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8EE2DB7556D000A621A /* HelperFunctions.swift */; };
-		2440A9A02DB7556D000A621A /* DeepScamHellCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9162DB7556D000A621A /* DeepScamHellCheck.swift */; };
-		2440A9A12DB7556D000A621A /* URlDetailRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A93B2DB7556D000A621A /* URlDetailRow.swift */; };
-		2440A9A22DB7556D000A621A /* CookiesAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8D02DB7556D000A621A /* CookiesAnalyzer.swift */; };
-		2440A9A32DB7556D000A621A /* URLAnalyzerUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8E82DB7556D000A621A /* URLAnalyzerUtils.swift */; };
-		2440A9A42DB7556D000A621A /* TLSHeuristics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8E22DB7556D000A621A /* TLSHeuristics.swift */; };
-		2440A9A52DB7556D000A621A /* URLCertificateDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9392DB7556D000A621A /* URLCertificateDetailView.swift */; };
-		2440A9A62DB7556D000A621A /* TLSExtract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8F62DB7556D000A621A /* TLSExtract.swift */; };
-		2440A9A72DB7556D000A621A /* WarningsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A92F2DB7556D000A621A /* WarningsViewModel.swift */; };
-		2440A9A82DB7556D000A621A /* URLComponentsInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A90A2DB7556D000A621A /* URLComponentsInfo.swift */; };
-		2440A9A92DB7556D000A621A /* AnalysisContextManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8EA2DB7556D000A621A /* AnalysisContextManager.swift */; };
-		2440A9AA2DB7556D000A621A /* RedirectChainSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9382DB7556D000A621A /* RedirectChainSection.swift */; };
-		2440A9AB2DB7556D000A621A /* PenaltySystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9052DB7556D000A621A /* PenaltySystem.swift */; };
-		2440A9AC2DB7556D000A621A /* URLCertificate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9092DB7556D000A621A /* URLCertificate.swift */; };
-		2440A9AD2DB7556D000A621A /* URLOnlineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A93F2DB7556D000A621A /* URLOnlineDetailView.swift */; };
-		2440A9AE2DB7556D000A621A /* AppCoordinatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A91C2DB7556D000A621A /* AppCoordinatorView.swift */; };
-		2440A9AF2DB7556D000A621A /* UserHeuristicCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8F92DB7556D000A621A /* UserHeuristicCache.swift */; };
-		2440A9B02DB7556D000A621A /* URLInfoDetailHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A93C2DB7556D000A621A /* URLInfoDetailHeaderView.swift */; };
-		2440A9B12DB7556D000A621A /* URLAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8E72DB7556D000A621A /* URLAnalyzer.swift */; };
-		2440A9B22DB7556D000A621A /* URLOnlineInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A90C2DB7556D000A621A /* URLOnlineInfo.swift */; };
-		2440A9B32DB7556D000A621A /* SettingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9322DB7556D000A621A /* SettingViewModel.swift */; };
-		2440A9B42DB7556D000A621A /* AnalyzeTLD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8C32DB7556D000A621A /* AnalyzeTLD.swift */; };
-		2440A9B52DB7556D000A621A /* AnalyzeDomain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8C12DB7556D000A621A /* AnalyzeDomain.swift */; };
-		2440A9B62DB7556D000A621A /* URLOfflineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A93E2DB7556D000A621A /* URLOfflineDetailView.swift */; };
-		2440A9B72DB7556D000A621A /* SecurityWarnings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9062DB7556D000A621A /* SecurityWarnings.swift */; };
-		2440A9B82DB7556D000A621A /* ToolBarComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A9342DB7556D000A621A /* ToolBarComponent.swift */; };
-		2440A9B92DB7556D000A621A /* ParsedEKU.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8E02DB7556D000A621A /* ParsedEKU.swift */; };
-		2440A9BA2DB7556D000A621A /* LamaiDecoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8DA2DB7556D000A621A /* LamaiDecoding.swift */; };
-		2440A9BB2DB7556D000A621A /* ExtractAsync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8F42DB7556D000A621A /* ExtractAsync.swift */; };
-		2440A9BC2DB7556D000A621A /* URLInfoDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A93D2DB7556D000A621A /* URLInfoDetailView.swift */; };
-		2440A9BD2DB7556D000A621A /* CookieMetaData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8CF2DB7556D000A621A /* CookieMetaData.swift */; };
-		2440A9BE2DB7556D000A621A /* QueryAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2440A8CB2DB7556D000A621A /* QueryAnalyzer.swift */; };
 		244BFDFF2D8830D20060DA50 /* ASN1Decoder in Frameworks */ = {isa = PBXBuildFile; productRef = 244BFDFE2D8830D20060DA50 /* ASN1Decoder */; };
 		244BFE022D8830DB0060DA50 /* Punycode in Frameworks */ = {isa = PBXBuildFile; productRef = 244BFE012D8830DB0060DA50 /* Punycode */; };
+		24E29A032DB7A8B30036E457 /* README.txt in Resources */ = {isa = PBXBuildFile; fileRef = 24E299012DB7A8B30036E457 /* README.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		2440A8BC2DB7556D000A621A /* scriptInlineAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = scriptInlineAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8BD2DB7556D000A621A /* scriptSecurityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = scriptSecurityAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8BF2DB7556D000A621A /* BodyAnalyzerFast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAnalyzerFast.swift; sourceTree = "<group>"; };
-		2440A8C12DB7556D000A621A /* AnalyzeDomain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeDomain.swift; sourceTree = "<group>"; };
-		2440A8C22DB7556D000A621A /* AnalyzeSubdomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeSubdomains.swift; sourceTree = "<group>"; };
-		2440A8C32DB7556D000A621A /* AnalyzeTLD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeTLD.swift; sourceTree = "<group>"; };
-		2440A8C42DB7556D000A621A /* HostAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostAnalysis.swift; sourceTree = "<group>"; };
-		2440A8C62DB7556D000A621A /* KeyValuePairAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyValuePairAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8C82DB7556D000A621A /* FragmentAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FragmentAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8C92DB7556D000A621A /* PathAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8CA2DB7556D000A621A /* PQFAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PQFAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8CB2DB7556D000A621A /* QueryAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueryAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8CE2DB7556D000A621A /* CookieAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8CF2DB7556D000A621A /* CookieMetaData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieMetaData.swift; sourceTree = "<group>"; };
-		2440A8D02DB7556D000A621A /* CookiesAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookiesAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8D22DB7556D000A621A /* CSPKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSPKeys.swift; sourceTree = "<group>"; };
-		2440A8D32DB7556D000A621A /* HeadersAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadersAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8D42DB7556D000A621A /* HeadersTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadersTools.swift; sourceTree = "<group>"; };
-		2440A8D62DB7556D000A621A /* HtmlHeadAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlHeadAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8D82DB7556D000A621A /* DecodingNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodingNode.swift; sourceTree = "<group>"; };
-		2440A8D92DB7556D000A621A /* LamaiAnalyzerHub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LamaiAnalyzerHub.swift; sourceTree = "<group>"; };
-		2440A8DA2DB7556D000A621A /* LamaiDecoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LamaiDecoding.swift; sourceTree = "<group>"; };
-		2440A8DB2DB7556D000A621A /* NodeAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8DC2DB7556D000A621A /* WalkTheNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkTheNode.swift; sourceTree = "<group>"; };
-		2440A8DE2DB7556D000A621A /* RedirectAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedirectAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8E02DB7556D000A621A /* ParsedEKU.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedEKU.swift; sourceTree = "<group>"; };
-		2440A8E12DB7556D000A621A /* TLSCertificateAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TLSCertificateAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8E22DB7556D000A621A /* TLSHeuristics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TLSHeuristics.swift; sourceTree = "<group>"; };
-		2440A8E42DB7556D000A621A /* GetAnalyzerUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetAnalyzerUtils.swift; sourceTree = "<group>"; };
-		2440A8E52DB7556D000A621A /* URLGetAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLGetAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8E72DB7556D000A621A /* URLAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLAnalyzer.swift; sourceTree = "<group>"; };
-		2440A8E82DB7556D000A621A /* URLAnalyzerUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLAnalyzerUtils.swift; sourceTree = "<group>"; };
-		2440A8EA2DB7556D000A621A /* AnalysisContextManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisContextManager.swift; sourceTree = "<group>"; };
-		2440A8EC2DB7556D000A621A /* KeyValuePairExtract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyValuePairExtract.swift; sourceTree = "<group>"; };
-		2440A8EE2DB7556D000A621A /* HelperFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperFunctions.swift; sourceTree = "<group>"; };
-		2440A8EF2DB7556D000A621A /* ScriptExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptExtractor.swift; sourceTree = "<group>"; };
-		2440A8F12DB7556D000A621A /* DomainAndTLDExtract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainAndTLDExtract.swift; sourceTree = "<group>"; };
-		2440A8F22DB7556D000A621A /* URLExtractComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLExtractComponents.swift; sourceTree = "<group>"; };
-		2440A8F42DB7556D000A621A /* ExtractAsync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtractAsync.swift; sourceTree = "<group>"; };
-		2440A8F52DB7556D000A621A /* HTTPResponseExtract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPResponseExtract.swift; sourceTree = "<group>"; };
-		2440A8F62DB7556D000A621A /* TLSExtract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TLSExtract.swift; sourceTree = "<group>"; };
-		2440A8F92DB7556D000A621A /* UserHeuristicCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserHeuristicCache.swift; sourceTree = "<group>"; };
-		2440A8FA2DB7556D000A621A /* UserWatchList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserWatchList.swift; sourceTree = "<group>"; };
-		2440A8FC2DB7556D000A621A /* BadJSFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadJSFunctions.swift; sourceTree = "<group>"; };
-		2440A8FD2DB7556D000A621A /* ByteSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ByteSignature.swift; sourceTree = "<group>"; };
-		2440A8FE2DB7556D000A621A /* DataSignatures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSignatures.swift; sourceTree = "<group>"; };
-		2440A8FF2DB7556D000A621A /* HeadersKeyWords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadersKeyWords.swift; sourceTree = "<group>"; };
-		2440A9002DB7556D000A621A /* KnowBrands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowBrands.swift; sourceTree = "<group>"; };
-		2440A9012DB7556D000A621A /* public_suffix_list.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = public_suffix_list.sqlite; sourceTree = "<group>"; };
-		2440A9022DB7556D000A621A /* SuspiciousKeyWords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuspiciousKeyWords.swift; sourceTree = "<group>"; };
-		2440A9032DB7556D000A621A /* WhiteList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhiteList.swift; sourceTree = "<group>"; };
-		2440A9052DB7556D000A621A /* PenaltySystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PenaltySystem.swift; sourceTree = "<group>"; };
-		2440A9062DB7556D000A621A /* SecurityWarnings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityWarnings.swift; sourceTree = "<group>"; };
-		2440A9072DB7556D000A621A /* WarningFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarningFlags.swift; sourceTree = "<group>"; };
-		2440A9092DB7556D000A621A /* URLCertificate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCertificate.swift; sourceTree = "<group>"; };
-		2440A90A2DB7556D000A621A /* URLComponentsInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLComponentsInfo.swift; sourceTree = "<group>"; };
-		2440A90B2DB7556D000A621A /* URLInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLInfo.swift; sourceTree = "<group>"; };
-		2440A90C2DB7556D000A621A /* URLOnlineInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLOnlineInfo.swift; sourceTree = "<group>"; };
-		2440A90D2DB7556D000A621A /* URLQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLQueue.swift; sourceTree = "<group>"; };
-		2440A90E2DB7556D000A621A /* URLScripts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLScripts.swift; sourceTree = "<group>"; };
-		2440A9102DB7556D000A621A /* HandleHTTPResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandleHTTPResponse.swift; sourceTree = "<group>"; };
-		2440A9112DB7556D000A621A /* PSLDataBase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PSLDataBase.swift; sourceTree = "<group>"; };
-		2440A9132DB7556D000A621A /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		2440A9152DB7556D000A621A /* DecodingTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodingTools.swift; sourceTree = "<group>"; };
-		2440A9162DB7556D000A621A /* DeepScamHellCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepScamHellCheck.swift; sourceTree = "<group>"; };
-		2440A9172DB7556D000A621A /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
-		2440A9182DB7556D000A621A /* LegitURLTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegitURLTools.swift; sourceTree = "<group>"; };
-		2440A9192DB7556D000A621A /* Regex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Regex.swift; sourceTree = "<group>"; };
-		2440A91A2DB7556D000A621A /* UnicodeScriptClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnicodeScriptClassifier.swift; sourceTree = "<group>"; };
-		2440A91C2DB7556D000A621A /* AppCoordinatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinatorView.swift; sourceTree = "<group>"; };
-		2440A91E2DB7556D000A621A /* DestinationInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationInfoView.swift; sourceTree = "<group>"; };
-		2440A91F2DB7556D000A621A /* DestinatuionInfoViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinatuionInfoViewModel.swift; sourceTree = "<group>"; };
-		2440A9212DB7556D000A621A /* HelpGlossaryBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpGlossaryBubbleView.swift; sourceTree = "<group>"; };
-		2440A9222DB7556D000A621A /* HelpGlossaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpGlossaryView.swift; sourceTree = "<group>"; };
-		2440A9232DB7556D000A621A /* HelpGlossaryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpGlossaryViewModel.swift; sourceTree = "<group>"; };
-		2440A9252DB7556D000A621A /* LamaiTreeViewComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LamaiTreeViewComponent.swift; sourceTree = "<group>"; };
-		2440A9272DB7556D000A621A /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
-		2440A9282DB7556D000A621A /* QRScannerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerViewModel.swift; sourceTree = "<group>"; };
-		2440A92A2DB7556D000A621A /* ScoreSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreSummaryView.swift; sourceTree = "<group>"; };
-		2440A92B2DB7556D000A621A /* ScoreSummaryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreSummaryViewModel.swift; sourceTree = "<group>"; };
-		2440A92D2DB7556D000A621A /* WarningBannerComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarningBannerComponent.swift; sourceTree = "<group>"; };
-		2440A92E2DB7556D000A621A /* WarningsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarningsDetailView.swift; sourceTree = "<group>"; };
-		2440A92F2DB7556D000A621A /* WarningsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarningsViewModel.swift; sourceTree = "<group>"; };
-		2440A9312DB7556D000A621A /* SettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingView.swift; sourceTree = "<group>"; };
-		2440A9322DB7556D000A621A /* SettingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingViewModel.swift; sourceTree = "<group>"; };
-		2440A9342DB7556D000A621A /* ToolBarComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolBarComponent.swift; sourceTree = "<group>"; };
-		2440A9362DB7556D000A621A /* CookieListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieListView.swift; sourceTree = "<group>"; };
-		2440A9372DB7556D000A621A /* CookieViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieViewModel.swift; sourceTree = "<group>"; };
-		2440A9382DB7556D000A621A /* RedirectChainSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedirectChainSection.swift; sourceTree = "<group>"; };
-		2440A9392DB7556D000A621A /* URLCertificateDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCertificateDetailView.swift; sourceTree = "<group>"; };
-		2440A93A2DB7556D000A621A /* URLComponentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLComponentsViewModel.swift; sourceTree = "<group>"; };
-		2440A93B2DB7556D000A621A /* URlDetailRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URlDetailRow.swift; sourceTree = "<group>"; };
-		2440A93C2DB7556D000A621A /* URLInfoDetailHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLInfoDetailHeaderView.swift; sourceTree = "<group>"; };
-		2440A93D2DB7556D000A621A /* URLInfoDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLInfoDetailView.swift; sourceTree = "<group>"; };
-		2440A93E2DB7556D000A621A /* URLOfflineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLOfflineDetailView.swift; sourceTree = "<group>"; };
-		2440A93F2DB7556D000A621A /* URLOnlineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLOnlineDetailView.swift; sourceTree = "<group>"; };
-		2440A9412DB7556D000A621A /* URLAnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLAnalysisView.swift; sourceTree = "<group>"; };
-		2440A9422DB7556D000A621A /* URLAnalysisViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLAnalysisViewModel.swift; sourceTree = "<group>"; };
-		2440A9442DB7556D000A621A /* URLInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLInputView.swift; sourceTree = "<group>"; };
-		2440A9452DB7556D000A621A /* URLInputViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLInputViewModel.swift; sourceTree = "<group>"; };
-		2440A9472DB7556D000A621A /* UserScamwordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserScamwordView.swift; sourceTree = "<group>"; };
-		2440A9482DB7556D000A621A /* UserScamwordViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserScamwordViewModel.swift; sourceTree = "<group>"; };
-		2440A9492DB7556D000A621A /* UserWatchListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserWatchListView.swift; sourceTree = "<group>"; };
-		2440A94A2DB7556D000A621A /* UserWatchListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserWatchListViewModel.swift; sourceTree = "<group>"; };
-		2440A94E2DB7556D000A621A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		2440A94F2DB7556D000A621A /* LegitURL-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "LegitURL-Info.plist"; sourceTree = "<group>"; };
-		2440A9502DB7556D000A621A /* URLChecker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = URLChecker.entitlements; sourceTree = "<group>"; };
-		2440A9512DB7556D000A621A /* URLCheckerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCheckerApp.swift; sourceTree = "<group>"; };
 		249557102D86D6EC0094E1D8 /* LegitURL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LegitURL.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		24E299012DB7A8B30036E457 /* README.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		24E29B2B2DB829B20036E457 /* Exceptions for "Sources" folder in "LegitURL" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"LegitURL-Info.plist",
+			);
+			target = 2495570F2D86D6EC0094E1D8 /* LegitURL */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		24E29A0B2DB7DC9C0036E457 /* Archive */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Archive;
+			sourceTree = "<group>";
+		};
+		24E29A9F2DB7DCA20036E457 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				24E29B2B2DB829B20036E457 /* Exceptions for "Sources" folder in "LegitURL" target */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		24E29B0E2DB7DCA70036E457 /* Tools */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Tools;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		2495570D2D86D6EC0094E1D8 /* Frameworks */ = {
@@ -242,454 +61,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		2440A8BE2DB7556D000A621A /* ScriptAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8BC2DB7556D000A621A /* scriptInlineAnalyzer.swift */,
-				2440A8BD2DB7556D000A621A /* scriptSecurityAnalyzer.swift */,
-			);
-			path = ScriptAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8C02DB7556D000A621A /* BodyAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8BE2DB7556D000A621A /* ScriptAnalyzer */,
-				2440A8BF2DB7556D000A621A /* BodyAnalyzerFast.swift */,
-			);
-			path = BodyAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8C52DB7556D000A621A /* HostAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8C12DB7556D000A621A /* AnalyzeDomain.swift */,
-				2440A8C22DB7556D000A621A /* AnalyzeSubdomains.swift */,
-				2440A8C32DB7556D000A621A /* AnalyzeTLD.swift */,
-				2440A8C42DB7556D000A621A /* HostAnalysis.swift */,
-			);
-			path = HostAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8C72DB7556D000A621A /* KeyValuePairAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8C62DB7556D000A621A /* KeyValuePairAnalyzer.swift */,
-			);
-			path = KeyValuePairAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8CC2DB7556D000A621A /* PQFAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8C82DB7556D000A621A /* FragmentAnalyzer.swift */,
-				2440A8C92DB7556D000A621A /* PathAnalyzer.swift */,
-				2440A8CA2DB7556D000A621A /* PQFAnalyzer.swift */,
-				2440A8CB2DB7556D000A621A /* QueryAnalyzer.swift */,
-			);
-			path = PQFAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8CD2DB7556D000A621A /* ComponentAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8C52DB7556D000A621A /* HostAnalyzer */,
-				2440A8C72DB7556D000A621A /* KeyValuePairAnalyzer */,
-				2440A8CC2DB7556D000A621A /* PQFAnalyzer */,
-			);
-			path = ComponentAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8D12DB7556D000A621A /* CookiesAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8CE2DB7556D000A621A /* CookieAnalyzer.swift */,
-				2440A8CF2DB7556D000A621A /* CookieMetaData.swift */,
-				2440A8D02DB7556D000A621A /* CookiesAnalyzer.swift */,
-			);
-			path = CookiesAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8D52DB7556D000A621A /* HeadersAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8D12DB7556D000A621A /* CookiesAnalyzer */,
-				2440A8D22DB7556D000A621A /* CSPKeys.swift */,
-				2440A8D32DB7556D000A621A /* HeadersAnalyzer.swift */,
-				2440A8D42DB7556D000A621A /* HeadersTools.swift */,
-			);
-			path = HeadersAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8D72DB7556D000A621A /* HTLMHeadAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8D62DB7556D000A621A /* HtmlHeadAnalyzer.swift */,
-			);
-			path = HTLMHeadAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8DD2DB7556D000A621A /* Lamai */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8D82DB7556D000A621A /* DecodingNode.swift */,
-				2440A8D92DB7556D000A621A /* LamaiAnalyzerHub.swift */,
-				2440A8DA2DB7556D000A621A /* LamaiDecoding.swift */,
-				2440A8DB2DB7556D000A621A /* NodeAnalyzer.swift */,
-				2440A8DC2DB7556D000A621A /* WalkTheNode.swift */,
-			);
-			path = Lamai;
-			sourceTree = "<group>";
-		};
-		2440A8DF2DB7556D000A621A /* RedirectAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8DE2DB7556D000A621A /* RedirectAnalyzer.swift */,
-			);
-			path = RedirectAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8E32DB7556D000A621A /* TLSCertificateAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8E02DB7556D000A621A /* ParsedEKU.swift */,
-				2440A8E12DB7556D000A621A /* TLSCertificateAnalyzer.swift */,
-				2440A8E22DB7556D000A621A /* TLSHeuristics.swift */,
-			);
-			path = TLSCertificateAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8E62DB7556D000A621A /* URLGetAnalyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8E42DB7556D000A621A /* GetAnalyzerUtils.swift */,
-				2440A8E52DB7556D000A621A /* URLGetAnalyzer.swift */,
-			);
-			path = URLGetAnalyzer;
-			sourceTree = "<group>";
-		};
-		2440A8E92DB7556D000A621A /* Analyzer */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8C02DB7556D000A621A /* BodyAnalyzer */,
-				2440A8CD2DB7556D000A621A /* ComponentAnalyzer */,
-				2440A8D52DB7556D000A621A /* HeadersAnalyzer */,
-				2440A8D72DB7556D000A621A /* HTLMHeadAnalyzer */,
-				2440A8DD2DB7556D000A621A /* Lamai */,
-				2440A8DF2DB7556D000A621A /* RedirectAnalyzer */,
-				2440A8E32DB7556D000A621A /* TLSCertificateAnalyzer */,
-				2440A8E62DB7556D000A621A /* URLGetAnalyzer */,
-				2440A8E72DB7556D000A621A /* URLAnalyzer.swift */,
-				2440A8E82DB7556D000A621A /* URLAnalyzerUtils.swift */,
-			);
-			path = Analyzer;
-			sourceTree = "<group>";
-		};
-		2440A8EB2DB7556D000A621A /* ContextManager */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8EA2DB7556D000A621A /* AnalysisContextManager.swift */,
-			);
-			path = ContextManager;
-			sourceTree = "<group>";
-		};
-		2440A8ED2DB7556D000A621A /* KeyValuePairExtract */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8EC2DB7556D000A621A /* KeyValuePairExtract.swift */,
-			);
-			path = KeyValuePairExtract;
-			sourceTree = "<group>";
-		};
-		2440A8F02DB7556D000A621A /* ScriptsExtract */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8EE2DB7556D000A621A /* HelperFunctions.swift */,
-				2440A8EF2DB7556D000A621A /* ScriptExtractor.swift */,
-			);
-			path = ScriptsExtract;
-			sourceTree = "<group>";
-		};
-		2440A8F32DB7556D000A621A /* URLComponentsExtract */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8F12DB7556D000A621A /* DomainAndTLDExtract.swift */,
-				2440A8F22DB7556D000A621A /* URLExtractComponents.swift */,
-			);
-			path = URLComponentsExtract;
-			sourceTree = "<group>";
-		};
-		2440A8F72DB7556D000A621A /* URLGetExtract */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8F42DB7556D000A621A /* ExtractAsync.swift */,
-				2440A8F52DB7556D000A621A /* HTTPResponseExtract.swift */,
-				2440A8F62DB7556D000A621A /* TLSExtract.swift */,
-			);
-			path = URLGetExtract;
-			sourceTree = "<group>";
-		};
-		2440A8F82DB7556D000A621A /* Extractor */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8ED2DB7556D000A621A /* KeyValuePairExtract */,
-				2440A8F02DB7556D000A621A /* ScriptsExtract */,
-				2440A8F32DB7556D000A621A /* URLComponentsExtract */,
-				2440A8F72DB7556D000A621A /* URLGetExtract */,
-			);
-			path = Extractor;
-			sourceTree = "<group>";
-		};
-		2440A8FB2DB7556D000A621A /* User */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8F92DB7556D000A621A /* UserHeuristicCache.swift */,
-				2440A8FA2DB7556D000A621A /* UserWatchList.swift */,
-			);
-			path = User;
-			sourceTree = "<group>";
-		};
-		2440A9042DB7556D000A621A /* Data */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8FB2DB7556D000A621A /* User */,
-				2440A8FC2DB7556D000A621A /* BadJSFunctions.swift */,
-				2440A8FD2DB7556D000A621A /* ByteSignature.swift */,
-				2440A8FE2DB7556D000A621A /* DataSignatures.swift */,
-				2440A8FF2DB7556D000A621A /* HeadersKeyWords.swift */,
-				2440A9002DB7556D000A621A /* KnowBrands.swift */,
-				2440A9012DB7556D000A621A /* public_suffix_list.sqlite */,
-				2440A9022DB7556D000A621A /* SuspiciousKeyWords.swift */,
-				2440A9032DB7556D000A621A /* WhiteList.swift */,
-			);
-			path = Data;
-			sourceTree = "<group>";
-		};
-		2440A9082DB7556D000A621A /* SecurityWarningAndPenalty */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9052DB7556D000A621A /* PenaltySystem.swift */,
-				2440A9062DB7556D000A621A /* SecurityWarnings.swift */,
-				2440A9072DB7556D000A621A /* WarningFlags.swift */,
-			);
-			path = SecurityWarningAndPenalty;
-			sourceTree = "<group>";
-		};
-		2440A90F2DB7556D000A621A /* URLDataModels */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9092DB7556D000A621A /* URLCertificate.swift */,
-				2440A90A2DB7556D000A621A /* URLComponentsInfo.swift */,
-				2440A90B2DB7556D000A621A /* URLInfo.swift */,
-				2440A90C2DB7556D000A621A /* URLOnlineInfo.swift */,
-				2440A90D2DB7556D000A621A /* URLQueue.swift */,
-				2440A90E2DB7556D000A621A /* URLScripts.swift */,
-			);
-			path = URLDataModels;
-			sourceTree = "<group>";
-		};
-		2440A9122DB7556D000A621A /* Model */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9042DB7556D000A621A /* Data */,
-				2440A9082DB7556D000A621A /* SecurityWarningAndPenalty */,
-				2440A90F2DB7556D000A621A /* URLDataModels */,
-				2440A9102DB7556D000A621A /* HandleHTTPResponse.swift */,
-				2440A9112DB7556D000A621A /* PSLDataBase.swift */,
-			);
-			path = Model;
-			sourceTree = "<group>";
-		};
-		2440A9142DB7556D000A621A /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9132DB7556D000A621A /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-		2440A91B2DB7556D000A621A /* Utilities */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9152DB7556D000A621A /* DecodingTools.swift */,
-				2440A9162DB7556D000A621A /* DeepScamHellCheck.swift */,
-				2440A9172DB7556D000A621A /* Extensions.swift */,
-				2440A9182DB7556D000A621A /* LegitURLTools.swift */,
-				2440A9192DB7556D000A621A /* Regex.swift */,
-				2440A91A2DB7556D000A621A /* UnicodeScriptClassifier.swift */,
-			);
-			path = Utilities;
-			sourceTree = "<group>";
-		};
-		2440A91D2DB7556D000A621A /* AppCoordinator */ = {
-			isa = PBXGroup;
-			children = (
-				2440A91C2DB7556D000A621A /* AppCoordinatorView.swift */,
-			);
-			path = AppCoordinator;
-			sourceTree = "<group>";
-		};
-		2440A9202DB7556D000A621A /* DestinationInfo */ = {
-			isa = PBXGroup;
-			children = (
-				2440A91E2DB7556D000A621A /* DestinationInfoView.swift */,
-				2440A91F2DB7556D000A621A /* DestinatuionInfoViewModel.swift */,
-			);
-			path = DestinationInfo;
-			sourceTree = "<group>";
-		};
-		2440A9242DB7556D000A621A /* HelpGlossary */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9212DB7556D000A621A /* HelpGlossaryBubbleView.swift */,
-				2440A9222DB7556D000A621A /* HelpGlossaryView.swift */,
-				2440A9232DB7556D000A621A /* HelpGlossaryViewModel.swift */,
-			);
-			path = HelpGlossary;
-			sourceTree = "<group>";
-		};
-		2440A9262DB7556D000A621A /* Lamai */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9252DB7556D000A621A /* LamaiTreeViewComponent.swift */,
-			);
-			path = Lamai;
-			sourceTree = "<group>";
-		};
-		2440A9292DB7556D000A621A /* QRScanner */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9272DB7556D000A621A /* QRScannerView.swift */,
-				2440A9282DB7556D000A621A /* QRScannerViewModel.swift */,
-			);
-			path = QRScanner;
-			sourceTree = "<group>";
-		};
-		2440A92C2DB7556D000A621A /* ScoreSummary */ = {
-			isa = PBXGroup;
-			children = (
-				2440A92A2DB7556D000A621A /* ScoreSummaryView.swift */,
-				2440A92B2DB7556D000A621A /* ScoreSummaryViewModel.swift */,
-			);
-			path = ScoreSummary;
-			sourceTree = "<group>";
-		};
-		2440A9302DB7556D000A621A /* SecurityWarnings */ = {
-			isa = PBXGroup;
-			children = (
-				2440A92D2DB7556D000A621A /* WarningBannerComponent.swift */,
-				2440A92E2DB7556D000A621A /* WarningsDetailView.swift */,
-				2440A92F2DB7556D000A621A /* WarningsViewModel.swift */,
-			);
-			path = SecurityWarnings;
-			sourceTree = "<group>";
-		};
-		2440A9332DB7556D000A621A /* SettingView */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9312DB7556D000A621A /* SettingView.swift */,
-				2440A9322DB7556D000A621A /* SettingViewModel.swift */,
-			);
-			path = SettingView;
-			sourceTree = "<group>";
-		};
-		2440A9352DB7556D000A621A /* ToolBar */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9342DB7556D000A621A /* ToolBarComponent.swift */,
-			);
-			path = ToolBar;
-			sourceTree = "<group>";
-		};
-		2440A9402DB7556D000A621A /* ULRComponents */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9362DB7556D000A621A /* CookieListView.swift */,
-				2440A9372DB7556D000A621A /* CookieViewModel.swift */,
-				2440A9382DB7556D000A621A /* RedirectChainSection.swift */,
-				2440A9392DB7556D000A621A /* URLCertificateDetailView.swift */,
-				2440A93A2DB7556D000A621A /* URLComponentsViewModel.swift */,
-				2440A93B2DB7556D000A621A /* URlDetailRow.swift */,
-				2440A93C2DB7556D000A621A /* URLInfoDetailHeaderView.swift */,
-				2440A93D2DB7556D000A621A /* URLInfoDetailView.swift */,
-				2440A93E2DB7556D000A621A /* URLOfflineDetailView.swift */,
-				2440A93F2DB7556D000A621A /* URLOnlineDetailView.swift */,
-			);
-			path = ULRComponents;
-			sourceTree = "<group>";
-		};
-		2440A9432DB7556D000A621A /* URLAnalysis */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9412DB7556D000A621A /* URLAnalysisView.swift */,
-				2440A9422DB7556D000A621A /* URLAnalysisViewModel.swift */,
-			);
-			path = URLAnalysis;
-			sourceTree = "<group>";
-		};
-		2440A9462DB7556D000A621A /* URLInput */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9442DB7556D000A621A /* URLInputView.swift */,
-				2440A9452DB7556D000A621A /* URLInputViewModel.swift */,
-			);
-			path = URLInput;
-			sourceTree = "<group>";
-		};
-		2440A94B2DB7556D000A621A /* UserList */ = {
-			isa = PBXGroup;
-			children = (
-				2440A9472DB7556D000A621A /* UserScamwordView.swift */,
-				2440A9482DB7556D000A621A /* UserScamwordViewModel.swift */,
-				2440A9492DB7556D000A621A /* UserWatchListView.swift */,
-				2440A94A2DB7556D000A621A /* UserWatchListViewModel.swift */,
-			);
-			path = UserList;
-			sourceTree = "<group>";
-		};
-		2440A94C2DB7556D000A621A /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				2440A91D2DB7556D000A621A /* AppCoordinator */,
-				2440A9202DB7556D000A621A /* DestinationInfo */,
-				2440A9242DB7556D000A621A /* HelpGlossary */,
-				2440A9262DB7556D000A621A /* Lamai */,
-				2440A9292DB7556D000A621A /* QRScanner */,
-				2440A92C2DB7556D000A621A /* ScoreSummary */,
-				2440A9302DB7556D000A621A /* SecurityWarnings */,
-				2440A9332DB7556D000A621A /* SettingView */,
-				2440A9352DB7556D000A621A /* ToolBar */,
-				2440A9402DB7556D000A621A /* ULRComponents */,
-				2440A9432DB7556D000A621A /* URLAnalysis */,
-				2440A9462DB7556D000A621A /* URLInput */,
-				2440A94B2DB7556D000A621A /* UserList */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		2440A9522DB7556D000A621A /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				2440A8E92DB7556D000A621A /* Analyzer */,
-				2440A8EB2DB7556D000A621A /* ContextManager */,
-				2440A8F82DB7556D000A621A /* Extractor */,
-				2440A9122DB7556D000A621A /* Model */,
-				2440A9142DB7556D000A621A /* Preview Content */,
-				2440A91B2DB7556D000A621A /* Utilities */,
-				2440A94C2DB7556D000A621A /* Views */,
-				2440A94E2DB7556D000A621A /* Assets.xcassets */,
-				2440A94F2DB7556D000A621A /* LegitURL-Info.plist */,
-				2440A9502DB7556D000A621A /* URLChecker.entitlements */,
-				2440A9512DB7556D000A621A /* URLCheckerApp.swift */,
-			);
-			path = Sources;
-			sourceTree = "<group>";
-		};
 		249557072D86D6EC0094E1D8 = {
 			isa = PBXGroup;
 			children = (
 				249557112D86D6EC0094E1D8 /* Products */,
-				2440A9522DB7556D000A621A /* Sources */,
+				24E29A0B2DB7DC9C0036E457 /* Archive */,
+				24E299012DB7A8B30036E457 /* README.txt */,
+				24E29A9F2DB7DCA20036E457 /* Sources */,
+				24E29B0E2DB7DCA70036E457 /* Tools */,
 			);
 			sourceTree = "<group>";
 		};
@@ -715,6 +94,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				24E29A9F2DB7DCA20036E457 /* Sources */,
 			);
 			name = LegitURL;
 			packageProductDependencies = (
@@ -768,9 +150,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2440A9542DB7556D000A621A /* public_suffix_list.sqlite in Resources */,
-				2440A9552DB7556D000A621A /* Assets.xcassets in Resources */,
-				2440A9572DB7556D000A621A /* Preview Assets.xcassets in Resources */,
+				24E29A032DB7A8B30036E457 /* README.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -781,109 +161,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2440A9582DB7556D000A621A /* URLInputView.swift in Sources */,
-				2440A9592DB7556D000A621A /* DataSignatures.swift in Sources */,
-				2440A95A2DB7556D000A621A /* LegitURLTools.swift in Sources */,
-				2440A95B2DB7556D000A621A /* URLGetAnalyzer.swift in Sources */,
-				2440A95C2DB7556D000A621A /* BodyAnalyzerFast.swift in Sources */,
-				2440A95D2DB7556D000A621A /* UserScamwordViewModel.swift in Sources */,
-				2440A95E2DB7556D000A621A /* HeadersTools.swift in Sources */,
-				2440A95F2DB7556D000A621A /* WhiteList.swift in Sources */,
-				2440A9602DB7556D000A621A /* WarningFlags.swift in Sources */,
-				2440A9612DB7556D000A621A /* UserScamwordView.swift in Sources */,
-				2440A9622DB7556D000A621A /* SettingView.swift in Sources */,
-				2440A9632DB7556D000A621A /* ByteSignature.swift in Sources */,
-				2440A9642DB7556D000A621A /* RedirectAnalyzer.swift in Sources */,
-				2440A9652DB7556D000A621A /* BadJSFunctions.swift in Sources */,
-				2440A9662DB7556D000A621A /* URLQueue.swift in Sources */,
-				2440A9672DB7556D000A621A /* HostAnalysis.swift in Sources */,
-				2440A9682DB7556D000A621A /* scriptInlineAnalyzer.swift in Sources */,
-				2440A9692DB7556D000A621A /* CSPKeys.swift in Sources */,
-				2440A96A2DB7556D000A621A /* UnicodeScriptClassifier.swift in Sources */,
-				2440A96B2DB7556D000A621A /* CookieAnalyzer.swift in Sources */,
-				2440A96C2DB7556D000A621A /* SuspiciousKeyWords.swift in Sources */,
-				2440A96D2DB7556D000A621A /* DecodingNode.swift in Sources */,
-				2440A96E2DB7556D000A621A /* WalkTheNode.swift in Sources */,
-				2440A96F2DB7556D000A621A /* HeadersAnalyzer.swift in Sources */,
-				2440A9702DB7556D000A621A /* Regex.swift in Sources */,
-				2440A9712DB7556D000A621A /* HtmlHeadAnalyzer.swift in Sources */,
-				2440A9722DB7556D000A621A /* LamaiAnalyzerHub.swift in Sources */,
-				2440A9732DB7556D000A621A /* QRScannerView.swift in Sources */,
-				2440A9742DB7556D000A621A /* CookieListView.swift in Sources */,
-				2440A9752DB7556D000A621A /* PQFAnalyzer.swift in Sources */,
-				2440A9762DB7556D000A621A /* URLScripts.swift in Sources */,
-				2440A9772DB7556D000A621A /* DomainAndTLDExtract.swift in Sources */,
-				2440A9782DB7556D000A621A /* FragmentAnalyzer.swift in Sources */,
-				2440A9792DB7556D000A621A /* HTTPResponseExtract.swift in Sources */,
-				2440A97A2DB7556D000A621A /* KeyValuePairAnalyzer.swift in Sources */,
-				2440A97B2DB7556D000A621A /* TLSCertificateAnalyzer.swift in Sources */,
-				2440A97C2DB7556D000A621A /* URLCheckerApp.swift in Sources */,
-				2440A97D2DB7556D000A621A /* URLExtractComponents.swift in Sources */,
-				2440A97E2DB7556D000A621A /* HelpGlossaryBubbleView.swift in Sources */,
-				2440A97F2DB7556D000A621A /* UserWatchList.swift in Sources */,
-				2440A9802DB7556D000A621A /* KeyValuePairExtract.swift in Sources */,
-				2440A9812DB7556D000A621A /* HelpGlossaryViewModel.swift in Sources */,
-				2440A9822DB7556D000A621A /* URLInputViewModel.swift in Sources */,
-				2440A9832DB7556D000A621A /* ScoreSummaryView.swift in Sources */,
-				2440A9842DB7556D000A621A /* QRScannerViewModel.swift in Sources */,
-				2440A9852DB7556D000A621A /* Extensions.swift in Sources */,
-				2440A9862DB7556D000A621A /* URLAnalysisViewModel.swift in Sources */,
-				2440A9872DB7556D000A621A /* HelpGlossaryView.swift in Sources */,
-				2440A9882DB7556D000A621A /* HandleHTTPResponse.swift in Sources */,
-				2440A9892DB7556D000A621A /* NodeAnalyzer.swift in Sources */,
-				2440A98A2DB7556D000A621A /* scriptSecurityAnalyzer.swift in Sources */,
-				2440A98B2DB7556D000A621A /* HeadersKeyWords.swift in Sources */,
-				2440A98C2DB7556D000A621A /* WarningsDetailView.swift in Sources */,
-				2440A98D2DB7556D000A621A /* KnowBrands.swift in Sources */,
-				2440A98E2DB7556D000A621A /* ScoreSummaryViewModel.swift in Sources */,
-				2440A98F2DB7556D000A621A /* ScriptExtractor.swift in Sources */,
-				2440A9902DB7556D000A621A /* GetAnalyzerUtils.swift in Sources */,
-				2440A9912DB7556D000A621A /* WarningBannerComponent.swift in Sources */,
-				2440A9922DB7556D000A621A /* URLComponentsViewModel.swift in Sources */,
-				2440A9932DB7556D000A621A /* URLInfo.swift in Sources */,
-				2440A9942DB7556D000A621A /* PSLDataBase.swift in Sources */,
-				2440A9952DB7556D000A621A /* UserWatchListViewModel.swift in Sources */,
-				2440A9962DB7556D000A621A /* DestinatuionInfoViewModel.swift in Sources */,
-				2440A9972DB7556D000A621A /* URLAnalysisView.swift in Sources */,
-				2440A9982DB7556D000A621A /* LamaiTreeViewComponent.swift in Sources */,
-				2440A9992DB7556D000A621A /* CookieViewModel.swift in Sources */,
-				2440A99A2DB7556D000A621A /* PathAnalyzer.swift in Sources */,
-				2440A99B2DB7556D000A621A /* UserWatchListView.swift in Sources */,
-				2440A99C2DB7556D000A621A /* DecodingTools.swift in Sources */,
-				2440A99D2DB7556D000A621A /* DestinationInfoView.swift in Sources */,
-				2440A99E2DB7556D000A621A /* AnalyzeSubdomains.swift in Sources */,
-				2440A99F2DB7556D000A621A /* HelperFunctions.swift in Sources */,
-				2440A9A02DB7556D000A621A /* DeepScamHellCheck.swift in Sources */,
-				2440A9A12DB7556D000A621A /* URlDetailRow.swift in Sources */,
-				2440A9A22DB7556D000A621A /* CookiesAnalyzer.swift in Sources */,
-				2440A9A32DB7556D000A621A /* URLAnalyzerUtils.swift in Sources */,
-				2440A9A42DB7556D000A621A /* TLSHeuristics.swift in Sources */,
-				2440A9A52DB7556D000A621A /* URLCertificateDetailView.swift in Sources */,
-				2440A9A62DB7556D000A621A /* TLSExtract.swift in Sources */,
-				2440A9A72DB7556D000A621A /* WarningsViewModel.swift in Sources */,
-				2440A9A82DB7556D000A621A /* URLComponentsInfo.swift in Sources */,
-				2440A9A92DB7556D000A621A /* AnalysisContextManager.swift in Sources */,
-				2440A9AA2DB7556D000A621A /* RedirectChainSection.swift in Sources */,
-				2440A9AB2DB7556D000A621A /* PenaltySystem.swift in Sources */,
-				2440A9AC2DB7556D000A621A /* URLCertificate.swift in Sources */,
-				2440A9AD2DB7556D000A621A /* URLOnlineDetailView.swift in Sources */,
-				2440A9AE2DB7556D000A621A /* AppCoordinatorView.swift in Sources */,
-				2440A9AF2DB7556D000A621A /* UserHeuristicCache.swift in Sources */,
-				2440A9B02DB7556D000A621A /* URLInfoDetailHeaderView.swift in Sources */,
-				2440A9B12DB7556D000A621A /* URLAnalyzer.swift in Sources */,
-				2440A9B22DB7556D000A621A /* URLOnlineInfo.swift in Sources */,
-				2440A9B32DB7556D000A621A /* SettingViewModel.swift in Sources */,
-				2440A9B42DB7556D000A621A /* AnalyzeTLD.swift in Sources */,
-				2440A9B52DB7556D000A621A /* AnalyzeDomain.swift in Sources */,
-				2440A9B62DB7556D000A621A /* URLOfflineDetailView.swift in Sources */,
-				2440A9B72DB7556D000A621A /* SecurityWarnings.swift in Sources */,
-				2440A9B82DB7556D000A621A /* ToolBarComponent.swift in Sources */,
-				2440A9B92DB7556D000A621A /* ParsedEKU.swift in Sources */,
-				2440A9BA2DB7556D000A621A /* LamaiDecoding.swift in Sources */,
-				2440A9BB2DB7556D000A621A /* ExtractAsync.swift in Sources */,
-				2440A9BC2DB7556D000A621A /* URLInfoDetailView.swift in Sources */,
-				2440A9BD2DB7556D000A621A /* CookieMetaData.swift in Sources */,
-				2440A9BE2DB7556D000A621A /* QueryAnalyzer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
