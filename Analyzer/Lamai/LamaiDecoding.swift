@@ -15,13 +15,13 @@ struct LamaiDecoding {
     static func decode(input: String, maxDepth: Int = 4) -> DecodedNode {
         let root = DecodedNode(value: input, depth: 0)
         decodeNode(root, maxDepth: maxDepth)
-            
+        
         if !root.wasRelevant, root.children.isEmpty {
             root.runAllAnalyses()
             if !root.wasRelevant {
                 root.checkEntropy()
             }
-
+            
         }
         root.printTree()
         return root
@@ -87,7 +87,6 @@ struct LamaiDecoding {
     }
     
     private static func decodeUntilItStopsMakingSense(encodedBlob: Data) -> String? {
-        print("ENCODED BLOB: ", encodedBlob)
         guard let fullString = String(data: encodedBlob, encoding: .utf8) else {
             print("💥 [Lamai] Could not decode base64 blob to UTF-8 string.")
             return nil
@@ -104,7 +103,6 @@ struct LamaiDecoding {
                 return utf8
             }
         }
-        
         return nil
     }
     

@@ -16,7 +16,6 @@ struct LamaiAnalyzerHub {
 
         // Run splits first if nothing obvious was found
         if !child.wasRelevant {
-            print("ENDGAME")
             speculativeSplitStrategies(from: value, under: child, maxDepth: maxDepth)
         }
         

@@ -96,7 +96,6 @@ struct PathAnalyzer {
 //                }
 //            }
             
-            
             var parts: [String]
             if segment.count > 64 {
                 urlInfo.warnings.append(SecurityWarning(
@@ -110,7 +109,7 @@ struct PathAnalyzer {
             }
             let isSuspiciouslyLong = segment.count > 64
             let hasHyphen = segment.contains("-")
-            
+            //TODO: Add logic to check the user hyphen scams and brands against the hyphen words before the split
 //            Irrelevant without the pathcombo logic
 //            if comboWasRelevant { return }
             if !comboWasRelevant {
