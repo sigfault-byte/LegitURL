@@ -151,12 +151,11 @@ class HTTPResponseExtract: NSObject, URLSessionDelegate, URLSessionTaskDelegate 
             
             // TODO: Detect and respect encoding using BOM or <meta charset="..."> in the first 500 bytes
             // Example: <!DOCTYPE html><html lang="fr"><head><meta charset="iso-8859-1"> -> french website living in 1980
+            // NO BOM most fo the time :((((
             let bodyText: String? =
                 String(data: processedBody, encoding: .utf8) ??
                 String(data: processedBody, encoding: .isoLatin1) ??
                 String(data: processedBody, encoding: .utf16)
-            
-            if let bodyText { print ("📝 Body text: \(bodyText.count)")}
             
             if let bodyText = bodyText {
                 onlineInfo.humanReadableBody = bodyText

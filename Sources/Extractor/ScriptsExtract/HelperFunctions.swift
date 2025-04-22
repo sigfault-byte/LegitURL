@@ -4,13 +4,14 @@
 //
 //  Created by Chief Hakka on 14/04/2025.
 //
+// TODO: DOMlite HTML tree (Script visibility + risk map) -> save it and output to the component info
 import Foundation
 
 struct ScriptHelperFunction {
     static func pairScriptsWithClosings(scripts: inout [ScriptScanTarget], closingTags: [Int], body: Data) {
         guard scripts.count == closingTags.count else {
-            //            this is redundnat we have a guard before the function
-            print("❗ Cannot zip scripts with closings — count mismatch.")
+            //TODO:            this is  redundnat there s a guard before the function call
+            print("Cannot zip scripts with closings count mismatch.")
             return
         }
         
@@ -268,22 +269,75 @@ struct ScriptHelperFunction {
         let valueRange = (qStart + 1)..<qEnd
         let value = body[valueRange]
         
-        if value.starts(with: [UInt8(ascii: "/")]) {
-            return (.relative, String(data: value, encoding: .utf8))
-        }
-        if value.starts(with: [UInt8(ascii: "/"), UInt8(ascii: "/")]) {
-            return (.protocolRelative, String(data: value, encoding: .utf8))
-        }
-        if value.starts(with: Array("data:".utf8)) {
-            return (.dataURI, String(data: value, encoding: .utf8))
-        }
-        if value.starts(with: Array("http://".utf8)) {
-            return (.httpExternal, String(data: value, encoding: .utf8))
-        }
-        if value.starts(with: Array("https://".utf8)) {
-            return (.httpsExternal, String(data: value, encoding: .utf8))
+//        we are in the quotes after a src, so this is meaningless for Swift
+        var lowercased = Data(value)
+        for i in 0..<lowercased.count {
+            let b = lowercased[i]
+            if b >= 65 && b <= 90 { // ASCII 'A' to 'Z'
+                lowercased[i] = b | 0x20
+            }
         }
         
-        return (.unknown, String(data: value, encoding: .utf8))
+        // Inverted and explicit logic tree for script src classification
+        if lowercased.starts(with: Array("http://".utf8)) {
+            return (.httpExternal, String(data: value, encoding: .utf8))
+            
+        } else if lowercased.starts(with: Array("https://".utf8)) {
+            return (.httpsExternal, String(data: value, encoding: .utf8))
+            
+        } else if lowercased.starts(with: [UInt8(ascii: "/"), UInt8(ascii: "/")]) {
+            return (.protocolRelative, String(data: value, encoding: .utf8))
+            
+        } else if lowercased.starts(with: Array("data:".utf8)) {
+            return (.dataURI, String(data: value, encoding: .utf8))
+            
+        } else if lowercased.starts(with: [UInt8(ascii: "/")]) ||
+                  lowercased.starts(with: Array("./".utf8)) ||
+                  looksLikeRelativePath(quoteRange: lowercased) {
+            return (.relative, String(data: value, encoding: .utf8))
+            
+        } else {
+            return (.unknown, String(data: value, encoding: .utf8))
+        }
+    }
+    
+    private static func looksLikeRelativePath(quoteRange: Data) -> Bool {
+        guard !quoteRange.isEmpty else {
+            return false
+        }
+
+        var index = 0
+        var candidate = false
+
+        while index < quoteRange.count {
+            let byte = quoteRange[index]
+
+            if byte.isAlnum || byte == UInt8(ascii: "_") || byte == UInt8(ascii: "-") {
+                index += 1
+            } else {
+                if byte == UInt8(ascii: "/") {
+                    candidate = true
+                    index += 1  // Needed to avoid infinite loop!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                } else {
+                    break  // Stop on any other non-alnum char
+                }
+            }
+        }
+
+        if candidate {
+            // Strip query or fragment if present
+            let pathOnly: Data
+            if let queryIndex = quoteRange.firstIndex(of: UInt8(ascii: "?")) ?? quoteRange.firstIndex(of: UInt8(ascii: "#")) {
+                pathOnly = quoteRange.prefix(upTo: queryIndex)
+            } else {
+                pathOnly = quoteRange
+            }
+
+            if pathOnly.suffix(3) == Array(".js".utf8) || pathOnly.suffix(4) == Array(".mjs".utf8) {
+                return true
+            }
+        }
+
+        return false
     }
 }

@@ -37,7 +37,6 @@ struct TLSCertificateAnalyzer {
         if let fingerprint = certificate.fingerprintSHA256 {
             tlsSANReusedMemory[host] = (domain: domain, fingerprint: fingerprint)
         }
-        print("MEMORY: ", tlsSANReusedMemory)
         
         
         func addWarning(_ message: String, _ severity: SecurityWarning.SeverityLevel, penalty: Int, bitFlags: WarningFlags? = nil) {

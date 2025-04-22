@@ -118,6 +118,21 @@ struct ScriptInlineAnalyzer {
                 
                 let slice = soupData[start..<end]
                 if slice.elementsEqual(bytes) {
+                    if name == "atob" {
+                        let leadStart = max(0, start - 20)
+                        let contextSlice = soupData[leadStart..<end]
+                        if let contextStr = String(data: contextSlice, encoding: .utf8),
+                           contextStr.contains("JSON.parse") {
+                            warnings.append(SecurityWarning(
+                                message: "Inline JavaScript is decoding a base64 blob with `atob()` directly after `JSON.parse(...)`. This is highly suspicious.",
+                                severity: .dangerous,
+                                penalty: PenaltySystem.Penalty.atobJSONparserCombo,
+                                url: origin,
+                                source: .body,
+                                bitFlags: WarningFlags.BODY_JS_JSON_ATOB_CHAIN
+                            ))
+                        }
+                    }
                     if ["eval", "atob", "setItem", "btoa"].contains(name) {
                         setterDetected = true
                     }

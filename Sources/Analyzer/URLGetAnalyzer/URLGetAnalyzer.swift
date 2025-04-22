@@ -47,9 +47,12 @@ struct URLGetAnalyzer {
         }
         
         //Http response handler
-        let redirectURL = URLExtractComponents.extract(url: finalURL)
+        
         HandleHTTPResponse.cases(responseCode: responseCode, urlInfo: &urlInfo)
-        RedirectAnalyzer.analyzeRedirect(fromInfo: redirectURL, toInfo: &urlInfo, responseCode: responseCode)
+        if (300...399).contains(responseCode) {
+            let redirectURL = URLExtractComponents.extract(url: finalURL)
+            RedirectAnalyzer.analyzeRedirect(toInfo: redirectURL, fromInfo: &urlInfo, responseCode: responseCode)
+        }
         
         
         

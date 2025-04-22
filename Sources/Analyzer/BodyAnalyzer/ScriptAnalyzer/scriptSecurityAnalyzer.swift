@@ -125,13 +125,25 @@ struct ScriptSecurityAnalyzer {
 //        DEBUG
         print("📊 Inline JS Ratio: \(percent)% (\(scriptSize) bytes of \(htmlSize) HTML)")
 
+        if htmlSize < 896 && percent >= 50 {
+            warnings.append(SecurityWarning(
+                message: "This page relies almost entirely on JavaScript to function, yet contains no visible content or fallback for non-JS environments. This is highly indicative of cloaked content or malicious redirection.",
+                severity: .critical,
+                penalty: PenaltySystem.Penalty.scriptIs70Percent + 15,
+                url: originURL,
+                source: .body,
+                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO_SMALL_HTML
+            ))
+            return
+        }
+
         switch percent {
         case 0..<40:
             // no warning needed, but log for debug
             break
         case 40..<50:
             warnings.append(SecurityWarning(
-                message: "Inline JS makes up \(percent)% of the HTML content. This may indicate excessive inline scripting.",
+                message: "Inline JS makes up \(percent)% of the HTML content. This may indicate excessive inline scripting. Modern frontend frameworks often inline JS, but excessive use can impact clarity, security, and maintainability.",
                 severity: .info,
                 penalty: PenaltySystem.Penalty.informational + smallHTMLBonus,
                 url: originURL,
@@ -140,7 +152,7 @@ struct ScriptSecurityAnalyzer {
             ))
         case 50..<70:
             warnings.append(SecurityWarning(
-                message: "Inline JS dominates \(percent)% of the HTML content. This suggests heavy client-side scripting.",
+                message: "Inline JS dominates \(percent)% of the HTML content. This suggests heavy client-side scripting. Modern frontend frameworks often inline JS, but excessive use can impact clarity, security, and maintainability.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.scriptIs5070Percent + smallHTMLBonus,
                 url: originURL,
@@ -149,7 +161,7 @@ struct ScriptSecurityAnalyzer {
             ))
         case 70...:
             warnings.append(SecurityWarning(
-                message: "Inline JS makes up \(percent)% of the HTML. This is highly suspicious and may indicate obfuscation or cloaking.",
+                message: "Inline JS makes up \(percent)% of the HTML. This is highly suspicious and may indicate obfuscation or cloaking. Modern frontend frameworks often inline JS, but excessive use can impact clarity, security, and maintainability.",
                 severity: .dangerous,
                 penalty: PenaltySystem.Penalty.scriptIs70Percent + smallHTMLBonus,
                 url: originURL,

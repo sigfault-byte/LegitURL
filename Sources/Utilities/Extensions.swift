@@ -53,3 +53,9 @@ extension View {
 func hideKeyboard() {
     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 }
+
+extension UInt8 {
+    var isAZ: Bool { self | 0x20 >= 97 && self | 0x20 <= 122 }
+    var is09: Bool { self >= 48 && self <= 57 }
+    var isAlnum: Bool { isAZ || is09 }
+}

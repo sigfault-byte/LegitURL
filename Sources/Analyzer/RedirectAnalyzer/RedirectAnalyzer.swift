@@ -9,8 +9,8 @@ import Foundation
 
 struct RedirectAnalyzer {
     
-    static func analyzeRedirect(fromInfo: URLInfo, toInfo: inout URLInfo, responseCode: Int? = nil) {
-        let urlOrigin = toInfo.components.coreURL ?? ""
+    static func analyzeRedirect(toInfo: URLInfo, fromInfo: inout URLInfo, responseCode: Int? = nil) {
+        let urlOrigin = fromInfo.components.coreURL ?? ""
         guard let originalDomain = fromInfo.domain?.lowercased(),
               let targetDomain = toInfo.domain?.lowercased(),
               let originalTLD = fromInfo.tld?.lowercased(),
@@ -24,7 +24,7 @@ struct RedirectAnalyzer {
                   return .query
               }()
         else {
-            toInfo.warnings.append(SecurityWarning(
+            fromInfo.warnings.append(SecurityWarning(
                 message: "❌ Missing domain, TLD, or host information for redirect analysis.",
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
@@ -35,7 +35,7 @@ struct RedirectAnalyzer {
         }
 
         if originalDomain.lowercased() != targetDomain.lowercased() {
-            toInfo.warnings.append(SecurityWarning(
+            fromInfo.warnings.append(SecurityWarning(
                 message: "🚨 Redirect goes to a different domain: was \(originalDomain) now is \(targetDomain)",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.redirectToDifferentDomain,
@@ -44,7 +44,7 @@ struct RedirectAnalyzer {
             ))
             
         } else if originalTLD != targetTLD && originalDomain == targetDomain {
-            toInfo.warnings.append(SecurityWarning(
+            fromInfo.warnings.append(SecurityWarning(
                 message: "🚨 Redirect to a different TLD, was \(originalTLD) now is:\(targetTLD)",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.redirectToDifferentTLD,
@@ -53,7 +53,7 @@ struct RedirectAnalyzer {
             ))
             
         } else if originalHost != targetHost && originalDomain == targetDomain {
-            toInfo.warnings.append(SecurityWarning(
+            fromInfo.warnings.append(SecurityWarning(
                 message: "🔄 Internal redirect to different subdomain: \(targetHost)",
                 severity: .info,
                 penalty: 0,
@@ -62,7 +62,7 @@ struct RedirectAnalyzer {
             ))
         }
         else {
-            toInfo.warnings.append(SecurityWarning(
+            fromInfo.warnings.append(SecurityWarning(
                 message: "🔄 Internal redirect to same domain: \(targetHost)",
                 severity: .info,
                 penalty: 0,

@@ -46,6 +46,7 @@ struct WarningFlags: OptionSet {
     static let BODY_HIGH_SCRIPT_DENSITY = WarningFlags(rawValue: 1 << 35)
     static let BODY_JS_SET_EDIT_COOKIE = WarningFlags(rawValue: 1 << 36)
     static let BODY_JS_READ_COOKIE = WarningFlags(rawValue: 1 << 37)
+    static let BODY_JS_JSON_ATOB_CHAIN = WarningFlags(rawValue: 1 << 38)
     
     
     //TLS FLAGS
