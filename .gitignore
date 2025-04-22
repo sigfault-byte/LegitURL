@@ -1,19 +1,24 @@
-# Ignore user-specific Xcode files
+# MARK: - Xcode User-Specific
 *.xcuserdatad/
 *.xcscmblueprint
 *.xccheckout
 *.xcworkspace/
+*.xcuserstate
 
-# Ignore build artifacts
+# MARK: - macOS System Files
+.DS_Store
+
+# MARK: - Build Artifacts
 DerivedData/
 *.xcdebugger/
-*.swiftpm/
-*.DS_Store
-*.plist
 
-# Ignore Xcode project metadata
-*.pbxproj
-
-# Ignore Swift Package Manager and Cocoapods (if used)
+# MARK: - Swift Package Manager
+.swiftpm/
 .build/
+
+# MARK: - CocoaPods ( maybe in the future mi bredda )
 Pods/
+
+# MARK: - Preview Files
+*.preview-thumbnails
+
