@@ -4,7 +4,6 @@
 //
 //  Created by Chief Hakka on 07/03/2025.
 //
-//TODO: VERIFY PUNY CODE OF THE PASTED URL ASAP, AND DISCARD WITH WARNING ANYTHING THAT IS NOT REAL
 //<<<<<------- THERE IS NO SPOON ----->>>>
 import Foundation
 import Punycode
@@ -40,11 +39,12 @@ struct URLComponentExtractor {
         
         // Extract and decode the host manually to handle punycode URLs
         let (preExtractedHost, decodedHost, encodedHost) = extractAndDecodeHost(from: url)
+        let coreIDNA = decodedHost.idnaEncoded ?? ""
         
         // Build the initial URLComponentsInfo, prioritizing the manually decoded host
         var compInfo = URLComponentsInfo(
             fullURL: components.url?.absoluteString,
-            coreURL: decodedHost + (components.path.isEmpty ? "/" : components.path),
+            coreURL: coreIDNA + (components.path.isEmpty ? "/" : components.path),
             scheme: components.scheme,
             userinfo: components.user,
             userPassword: components.password,

@@ -200,10 +200,11 @@ struct ScriptInlineAnalyzer {
                     }
                     
                     matchCounts[name, default: 0] += 1
+                    let (_, severity) = PenaltySystem.getPenaltyAndSeverity(name: name)
                     if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
                         let index = match.scriptIndex
                         let current = scripts.scripts[index].findings4UI ?? []
-                        scripts.scripts[index].findings4UI = current + [("Suspicious function call", .suspicious)]
+                        scripts.scripts[index].findings4UI = current + [("\(name) call", severity)]
                     }
                 }
             }

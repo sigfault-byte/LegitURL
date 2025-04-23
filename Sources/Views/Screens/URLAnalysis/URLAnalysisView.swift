@@ -29,14 +29,31 @@ struct URLAnalysisView: View {
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
-
+                
                 ScoreSummaryComponent(viewModel: viewModel.scoreSummaryVM)
-
-                DestinationInfoComponent(viewModel: viewModel.destinationInfoVM)
                 
-                RedirectChainSection(viewModel: viewModel.urlComponentsVM)
-                
+                if viewModel.isAnalysisComplete {
+                    DestinationInfoComponent(viewModel: viewModel.destinationInfoVM)
+                    
+                    RedirectChainSection(viewModel: viewModel.urlComponentsVM)
+                }
+                else {
+                    HStack {
+                        Spacer()
+                        VStack {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                                .scaleEffect(2.0)
+                                .padding()
+                            Text("Analyzing…")
+                                .foregroundColor(.gray)
+                                .font(.footnote)
+                        }
+                        Spacer()
+                    }
+                }
             }
+            .navigationBarHidden(true)
             .listStyle(.insetGrouped)
             .safeAreaInset(edge: .bottom) {
                 WarningBannerComponent(viewModel: viewModel.warningsVM)
@@ -51,8 +68,6 @@ struct URLAnalysisView: View {
             .navigationDestination(isPresented: $showHelpPage) {
                 HelpPageView(scrollTarget: nil)
             }
-            
         }
     }
-    
 }

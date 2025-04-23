@@ -19,7 +19,6 @@ struct URLOnlineDetailComponent: View {
             if let finalRedirectURL = onlineInfo.finalRedirectURL {
                 URLDetailRow(label: "Server redirects to:", value: finalRedirectURL)
             }
-            URLDetailRow(label: "SSL Validity", value: onlineInfo.sslValidity ? "✅ Valid" : "❌ Invalid")
             if let cert = onlineInfo.parsedCertificate {
                 NavigationLink(destination: URLCertificateDetailView(cert: cert)) {
                 Text("View Certificate Details")
@@ -40,7 +39,7 @@ struct URLOnlineDetailComponent: View {
             let script4UI = onlineInfo.script4daUI
             if !script4UI.isEmpty {
                 NavigationLink(destination: HotDogWaterView(previews: script4UI)){
-                    Text("View scripts previews")
+                    Text("View scripts (\(script4UI.count))")
                 }
             }
             

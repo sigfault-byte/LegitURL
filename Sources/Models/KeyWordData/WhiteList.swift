@@ -28,4 +28,8 @@ struct WhiteList {
         // 🔹 Gaming
         "steampowered.com", "steamcommunity.com"
     ]
+    
+    static let supposelySafeEndpoints: Set<String> = [
+        "html", "txt"
+    ]
 }

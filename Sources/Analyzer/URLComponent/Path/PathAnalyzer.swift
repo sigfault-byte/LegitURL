@@ -8,6 +8,7 @@ struct PathAnalyzer {
         guard let rawPath = urlInfo.components.pathEncoded else {
             return
         }
+        guard let path = urlInfo.components.path else { return }
 
         if !rawPath.hasSuffix("/"), urlInfo.components.query != nil {
             urlInfo.warnings.append(SecurityWarning(
@@ -18,6 +19,7 @@ struct PathAnalyzer {
                 source: .path,
                 bitFlags: WarningFlags.PATH_ENDPOINTLIKE
             ))
+            CheckSuspiciousEndpoints.check(path: path, origin: urlOrigin, urlInfo: &urlInfo)
         }
         
         let pathRegex = #"^\/(?:[A-Za-z0-9\-._~!$&'()*+,;=:@%]+\/?)*$"#
@@ -109,7 +111,7 @@ struct PathAnalyzer {
             }
             let isSuspiciouslyLong = segment.count > 64
             let hasHyphen = segment.contains("-")
-            //TODO: Add logic to check the user hyphen scams and brands against the hyphen words before the split
+            //TODO: Add quick logic to check the user hyphen scams and brands against the hyphen words before the split
 //            Irrelevant without the pathcombo logic
 //            if comboWasRelevant { return }
             if !comboWasRelevant {
@@ -120,7 +122,8 @@ struct PathAnalyzer {
                 }
                 var partNumber: Int = 0
                 for part in parts {
-                    let delimiters: [Character] = ["+", "|", ":", ";", "~", "_"]
+                    // TODO: This simply breaks users added "brand or keywords" containing an hyphen...
+                    let delimiters: [Character] = ["+","-", "|", ":", ";", "~", "_"]
                     var subParts: [String] = [part]
                     
                     for delimiter in delimiters {

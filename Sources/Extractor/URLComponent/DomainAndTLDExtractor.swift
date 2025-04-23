@@ -4,7 +4,6 @@
 //
 //  Created by Chief Hakka on 07/03/2025.
 //
-
 struct DomainAndTLDExtractor {
     // Extracts domain & TLD from exploded host parts
     static func extract(hostidnaEncoded: String) -> (host: String?, tld: String?)? {

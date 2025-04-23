@@ -49,18 +49,23 @@ class URLAnalysisViewModel: ObservableObject {
         preGrouped: []
     )
     
+    var isAnalysisComplete: Bool {
+        return destinationInfoVM.isAnalysisComplete &&
+               urlComponentsVM.isAnalysisComplete &&
+               scoreSummaryVM.isAnalysisComplete &&
+               !warningsVM.grouped.isEmpty
+    }
+    
     
     init(urlInput: String, infoMessage: String) {
         self.urlInput = urlInput
         self.infoMessage = infoMessage
-        
         let scoreVM = ScoreSummaryComponentModel(
             legitScore: URLQueue.shared.legitScore,
             isAnalysisComplete: false
         )
         scoreVM.startFlicker()
         self.scoreSummaryVM = scoreVM
-        
         Task {
             await self.startAnalysis()
         }
@@ -73,7 +78,6 @@ class URLAnalysisViewModel: ObservableObject {
             await AnalysisEngine.analyze(urlString: urlInput)
         }
         self.updateAnalysisState()
-        
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 2 * 1_000_000_000)
             withAnimation(.easeInOut(duration: 1)) {

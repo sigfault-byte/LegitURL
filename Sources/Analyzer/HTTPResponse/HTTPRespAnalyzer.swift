@@ -1,6 +1,9 @@
 import Foundation
 
 struct HTTPRespAnalyzer {
+
+    
+
     static func analyze(urlInfo: URLInfo) async -> URLInfo {
         
         var urlInfo = urlInfo
@@ -23,27 +26,31 @@ struct HTTPRespAnalyzer {
             return modified
         }
         
-        //Should be Done in urlgGetExtract, in the meantime ill rawdog it here
-        let finalURL = onlineInfo.finalRedirectURL ?? originalURL
+        
         
         //TODO: Change normalized header to a more friendly logic so its acutally readable!
         
         let headers = onlineInfo.normalizedHeaders ?? [:]
         
-        let cookies = GetAnalyzerUtils.extract(HeaderExtractionType.setCookie, from: headers)
+        let cookies = HTTPRespUtils.extract(HeaderExtractionType.setCookie, from: headers)
         
         let responseCode = onlineInfo.serverResponseCode ?? 0
         
-        // TODO: Precheck for scammy relative redirect => Not scammy and RFC compliant... Shouldnt be a critical!
-        if let locationHeader = headers["location"], !locationHeader.contains("://") {
+        //Should be Done in urlgGetExtract, in the meantime ill rawdog it here
+//        or maybe not. -> extract extracts, but cannot carry the logic ?? arrg
+        let finalURL = onlineInfo.finalRedirectURL ?? originalURL
+        
+        // Handle relative redirects: follow them, but flag as suspicious
+        if let resolvedRelative = HTTPRespUtils.resolveRelativeRedirectIfNeeded(headers: headers, originalURL: originalURL) {
+            let redirectURL = URLComponentExtractor.extract(url: resolvedRelative)
+            RedirectAnalyzer.analyzeRedirect(toInfo: redirectURL, fromInfo: &urlInfo, responseCode: responseCode)
             urlInfo.warnings.append(SecurityWarning(
-            message: "🚨 The server redirected to a relative path starting with '\(locationHeader.prefix(16))...'. This is commonly used in scam kits or misconfigured servers. Analysis halted.",
-                severity: .critical,
-                penalty: -100,
+                message: "⚠️ The server used a relative path redirect to '\(resolvedRelative)'. While technically valid, it's uncommon and sometimes used by phishing kits.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.redirectRelative,
                 url: urlOrigin,
                 source: .redirect
             ))
-            return urlInfo
         }
         
         //Http response handler
@@ -138,3 +145,4 @@ struct HTTPRespAnalyzer {
         return urlInfo
     }
 }
+

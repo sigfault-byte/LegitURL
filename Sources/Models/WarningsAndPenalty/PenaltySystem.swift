@@ -27,7 +27,7 @@ struct PenaltySystem {
         
         // PATH-RELATED PENALTIES
         static let executableInPath                    = -20
-        static let pathHasExecutable                   = -20
+        static let pathHasExecutable                   = -10
         static let pathIsEndpointLike                  = -10
         static let highEntropyPathComponent            = -10
         static let scamWordsInPath                     = -10
@@ -131,6 +131,7 @@ struct PenaltySystem {
         static let silentRedirect                     = -20
         static let malformedRedirect                  = -20
         static let redirectToDifferentTLD             = -20
+        static let redirectRelative                   = -20
         static let redirectToDifferentDomain          = -10
         
         // INFORMATIVE (No penalty)

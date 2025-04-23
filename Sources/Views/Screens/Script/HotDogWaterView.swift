@@ -7,59 +7,79 @@
 import SwiftUI
 struct HotDogWaterView: View {
     let previews: [ScriptPreview]
-
+    @State private var copiedIndex: Int? = nil
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-            Text("🧠 Inline Scripts")
-                .font(.title2)
-                .bold()
-                .padding(.bottom, 8)
-
-            ForEach(previews.indices, id: \.self) { i in
-                let preview = previews[i]
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("📦 \(preview.origin?.rawValue.capitalized ?? "Unknown")")
-                            .font(.headline)
-
-                        if preview.isInline {
-                            Text("inline")
-                                .font(.caption)
-                                .foregroundColor(.blue)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.blue.opacity(0.1))
-                                .cornerRadius(5)
+                Text("Extracted Scripts")
+                    .font(.title2)
+                    .bold()
+                    .padding(.bottom, 8)
+                
+                ForEach(previews.indices, id: \.self) { index in
+                    let preview = previews[index]
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text("\(preview.origin?.rawValue.capitalized ?? "Unknown")")
+                                .font(.headline)
+                            
+                            if let context = preview.context {
+                                Text("\(context.rawValue)")
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.blue.opacity(0.1))
+                                    .cornerRadius(5)
+                            }
+                            Spacer()
+                            Button(action: {
+                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                generator.impactOccurred()
+                                UIPasteboard.general.string = preview.contentPreview
+                                copiedIndex = index
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                    if copiedIndex == index { copiedIndex = nil }
+                                }
+                            }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "doc.on.doc")
+                                        .foregroundColor(.blue)
+                                    if copiedIndex == index {
+                                        Text("Copied!")
+                                            .font(.caption)
+                                            .foregroundColor(.green)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
                         }
-
-                        if let context = preview.context {
-                            Text("🧭 \(context.rawValue)")
-                                .font(.caption2)
-                                .foregroundColor(.gray)
+                        
+                        if let findings = preview.findings, !findings.isEmpty {
+                            HStack{
+                                ForEach(findings.indices, id: \.self) { index in
+                                    Text("⚠️ \(findings[index].message)")
+                                        .font(.subheadline)
+                                        .foregroundColor(findings[index].severity.color)
+                                        .lineLimit(1)
+                                        .fixedSize(horizontal: true, vertical: false)
+                                }
+                            }
+                        }
+                        Divider()
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            Text(preview.contentPreview)
+                                .font(.system(.body, design: .monospaced))
+                                .padding(6)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(6)
                         }
                     }
-
-                    if let findings = preview.findings, !findings.isEmpty {
-                        ForEach(findings.indices, id: \.self) { j in
-                            Text("⚠️ \(findings[j].message)")
-                                .font(.subheadline)
-                                .foregroundColor(.orange)
-                        }
-                    }
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        Text(preview.contentPreview)
-                            .font(.system(.body, design: .monospaced))
-                            .padding(6)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(6)
-                    }
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(10)
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(10)
-            }
             }
             .padding()
         }

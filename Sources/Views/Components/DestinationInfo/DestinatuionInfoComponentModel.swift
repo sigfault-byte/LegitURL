@@ -5,10 +5,17 @@
 //  Created by Chief Hakka on 02/04/2025.
 //
 import SwiftUI
+
 class DestinationInfoComponentModel: ObservableObject {
+//    Placeholder to wait for the real deal
+    @Published var loadingDots: String
     
     @Published var inputDomain: String
-    @Published var finalHost: String
+    @Published var finalHost: String {
+        didSet {
+            self.punycodeMissmatch = self.finalHost.contains("xn--")
+        }
+    }
     @Published var summaryMessage: String
     @Published var hopCount: Int = 0
     @Published var domainLabel: String
@@ -17,11 +24,14 @@ class DestinationInfoComponentModel: ObservableObject {
     
     @Published var isAnalysisComplete: Bool = false
     
+    var punycodeMissmatch: Bool = false
+    
     var displayMessage: Bool {
         return self.isAnalysisComplete && self.summaryMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    init(inputDomain: String,
+    init(
+         inputDomain: String,
          finalHost: String,
          summaryMessage: String,
          hopCount: Int,
@@ -30,7 +40,8 @@ class DestinationInfoComponentModel: ObservableObject {
          isAnalysisComplete: Bool = false,
          score: Int)
     {
-        self.inputDomain = inputDomain
+        self.loadingDots = "."
+        self.inputDomain = ""
         self.finalHost = finalHost
         self.summaryMessage = summaryMessage
         self.hopCount = hopCount
@@ -38,15 +49,28 @@ class DestinationInfoComponentModel: ObservableObject {
         self.tldLabel = tldLabel
         self.isAnalysisComplete = isAnalysisComplete
         self.score = score
+        
+        
+        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
+            if self.isAnalysisComplete {
+                timer.invalidate()
+                return
+            }
+
+            if self.loadingDots.count >= 25 {
+                self.loadingDots = "."
+            } else {
+                self.loadingDots += "."
+            }
+        }
     }
     
-        
     var scoreColor: Color {
         switch self.score {
         case 80...100:
             return .green
         case 50..<80:
-            return .yellow
+            return .orange
         default:
             return .red
         }

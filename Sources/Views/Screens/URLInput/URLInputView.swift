@@ -9,6 +9,7 @@ import SwiftUI
 struct URLInputView: View {
     @StateObject  private var viewModel = URLInputViewModel()
     @State private var showSettings = false
+    @State private var showHelpPage = false
     
     var onAnalyze: (_ urlInput: String, _ infoMessage: String) -> Void
     
@@ -55,15 +56,11 @@ struct URLInputView: View {
                     BottomToolbar(
                         lButtonIcon: "⚙️",
                         lButtonText: "Settings",
-                        lButtonAction: {
-                            showSettings = true
-                        },
+                        lButtonAction: { showSettings = true}
+                        ,
                         rButtonIcon: "❓",
                         rButtonText: "Help",
-                        rButtonAction: {
-                            // Help action here
-                        }
-                    )
+                        rButtonAction: {showHelpPage = true})
                 }
             }
             .navigationDestination(isPresented: $showSettings) {
@@ -81,7 +78,7 @@ extension View {
 
 struct AppHeaderView: View {
     var body: some View {
-        Text("URLChecker")
+        Text("LegitURL")
             .font(.largeTitle)
             .fontWeight(.bold)
             .padding(.top, 40)

@@ -11,6 +11,8 @@ import Foundation
 //Because TLS Certificate is both highly important and not important, its easy for folks to get a "good" certificate, with with strong keys.
 //The only signal i see here, is the fresh certificate, the CN that is distributing certificate without seconds thoughts and
 //the wildcard san where user can create content sharing the certificate
+import Punycode
+
 
 struct TLSCertificateAnalyzer {
 //    tract tls accross the redirect chain to confirm heuristics or correct them
@@ -20,12 +22,14 @@ struct TLSCertificateAnalyzer {
         tlsSANReusedMemory.removeAll()
     }
     
-    
     static func analyze(certificate: ParsedCertificate,
                         host: String,
                         domain: String,
                         warnings: inout [SecurityWarning],
                         responseCode: Int, origin: String) {
+        
+        let domainIdna: String = domain.idnaEncoded ?? ""
+        let hostIdna: String = host.idnaEncoded ?? ""
         
         if let existing = tlsSANReusedMemory[host],
            existing.fingerprint == certificate.fingerprintSHA256 {
@@ -35,7 +39,7 @@ struct TLSCertificateAnalyzer {
 
         // Store the certificate fingerprint for potential comparison
         if let fingerprint = certificate.fingerprintSHA256 {
-            tlsSANReusedMemory[host] = (domain: domain, fingerprint: fingerprint)
+            tlsSANReusedMemory[hostIdna] = (domain: domainIdna, fingerprint: fingerprint)
         }
         
         
@@ -56,7 +60,7 @@ struct TLSCertificateAnalyzer {
             return
         }
         
-        guard TLSHeuristics.domainIsCoveredBySANs(domain: domain.lowercased(), host: host.lowercased(), sans: sans) else {
+        guard TLSHeuristics.domainIsCoveredBySANs(domain: domainIdna.lowercased(), host: hostIdna.lowercased(), sans: sans) else {
             addWarning("TLS Certificate does not cover domain \(domain) or host \(host)", .critical, penalty: PenaltySystem.Penalty.critical)
             return
         }
