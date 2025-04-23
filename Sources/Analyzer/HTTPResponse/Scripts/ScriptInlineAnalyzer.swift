@@ -284,6 +284,11 @@ struct ScriptInlineAnalyzer {
 
                     let displayName = (name == "cookie") ? "document.cookie" : name
                     matchCounts[displayName, default: 0] += 1
+                    if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
+                        let index = match.scriptIndex
+                        let current = scripts.scripts[index].findings4UI ?? []
+                        scripts.scripts[index].findings4UI = current + [("'\(displayName) detedcted", .suspicious)]
+                    }
                 }
             }
         }

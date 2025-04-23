@@ -57,13 +57,13 @@ struct HotDogWaterView: View {
                         }
                         
                         if let findings = preview.findings, !findings.isEmpty {
-                            HStack{
-                                ForEach(findings.indices, id: \.self) { index in
-                                    Text("⚠️ \(findings[index].message)")
+                            let summarized = summarizeFindings(findings)
+                            HStack {
+                                ForEach(summarized.indices, id: \.self) { index in
+                                    let item = summarized[index]
+                                    Text("⚠️ \(item.message) x\(item.count)")
                                         .font(.subheadline)
-                                        .foregroundColor(findings[index].severity.color)
-                                        .lineLimit(1)
-                                        .fixedSize(horizontal: true, vertical: false)
+                                        .foregroundColor(item.color)
                                 }
                             }
                         }
