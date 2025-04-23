@@ -37,6 +37,13 @@ struct URLOnlineDetailComponent: View {
                 }
             }
             bodyNavigationLink(for: onlineInfo)
+            let script4UI = onlineInfo.script4daUI
+            if !script4UI.isEmpty {
+                NavigationLink(destination: HotDogWaterView(previews: script4UI)){
+                    Text("View scripts previews")
+                }
+            }
+            
         }
     }
 }

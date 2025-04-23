@@ -24,6 +24,7 @@ struct OnlineURLInfo: Identifiable {
     var cookies: [String: String] = [:]
     var cookiesForUI: [CookieAnalysisResult?] = []
     var scriptSourcesForCSP: ScriptSourceToMatchCSP? = nil
+    var script4daUI: [ScriptPreview] = []
     
 //    //    Need to be either analysed, or cleaned because it can be way too big!
 //    var formattedBody: String {

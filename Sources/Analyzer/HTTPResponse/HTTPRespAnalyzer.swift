@@ -11,7 +11,7 @@ struct HTTPRespAnalyzer {
 //        let tld = urlInfo.tld
         
         // Retrieve OnlineURLInfo using the ID and guard for sanity check and sync mystery
-        guard let onlineInfo = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id }) else {
+        guard var onlineInfo = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id }) else {
             var modified = urlInfo
             modified.warnings.append(SecurityWarning(
                 message: "⚠️ No online analysis found for this URL. Analysis is halted.",
@@ -34,7 +34,7 @@ struct HTTPRespAnalyzer {
         
         let responseCode = onlineInfo.serverResponseCode ?? 0
         
-        // Precheck for scammy relative redirect
+        // TODO: Precheck for scammy relative redirect => Not scammy and RFC compliant... Shouldnt be a critical!
         if let locationHeader = headers["location"], !locationHeader.contains("://") {
             urlInfo.warnings.append(SecurityWarning(
             message: "🚨 The server redirected to a relative path starting with '\(locationHeader.prefix(16))...'. This is commonly used in scam kits or misconfigured servers. Analysis halted.",
@@ -73,19 +73,27 @@ struct HTTPRespAnalyzer {
         }
         
         var scriptValueToCheck: ScriptSourceToMatchCSP? = nil
-        if let result = findings, !result.scripts.isEmpty {
+        if var result = findings, !result.scripts.isEmpty {
             if let rawbody = onlineInfo.responseBody {
-                scriptValueToCheck = ScriptSecurityAnalyzer.analyze(scripts: result.scripts,
+                scriptValueToCheck = ScriptSecurityAnalyzer.analyze(scripts: &result,
                                                                     body: rawbody,
                                                                     origin: urlOrigin,
                                                                     htmlRange: result.htmlRange,
                                                                     into: &urlInfo.warnings)
+                
+                let preview = ScriptToPreview.prepareScriptPreviews(for: result.scripts, body: rawbody)
+                onlineInfo.script4daUI = preview
+                if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {
+                    URLQueue.shared.onlineQueue[index] = onlineInfo
+                }
+                
             }
         }
+        // Store script for user output
+        
         
         
         //Then TLS
-        
         
         if let tlsCertificate = onlineInfo.parsedCertificate {
             let domainAndTLD = [urlInfo.domain, urlInfo.tld].compactMap { $0 }.joined(separator: ".")

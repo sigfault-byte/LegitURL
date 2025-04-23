@@ -3,18 +3,23 @@
 //
 //  Created by Chief Hakka on ??/04/2025.
 //
-
+//TODO: Refactor the whole loop especially the findings / findings for UI logic, separate the functions, stop using let every 3 lines. Soup should be a struct, and carries the range of the script, to easily attached the findings
 import Foundation
 
 //TODO: d.innerHTML = "window.__CF$cv$params={ ->  fake cloudfare challenge injectedin inline js)))))
 struct ScriptInlineAnalyzer {
     
-    static func analyze(scripts: [ScriptScanTarget], body: Data, origin: String, into warnings: inout [SecurityWarning]) {
-        let start = Date()
+    static func analyze(scripts: inout ScriptExtractionResult, body: Data, origin: String, into warnings: inout [SecurityWarning]) {
+//        let start = Date()
         var hotDogWaterJSSoup: String?
         var setterDetected = false
+        //        Debug
+//        for script in scripts.scripts {
+//            print(script)
+//        }
         //        join all inline to a js soup
-        hotDogWaterJSSoup = generateInlineSoup(from: scripts, in: body)
+        let (soup, byteRangesByScript) = generateInlineSoup(from: scripts.scripts, in: body)
+        hotDogWaterJSSoup = soup
         //        print("soup is :", hotDogWaterJSSoup!.count)
         // fin all possible funtion call by locating the ( find all js accessor looking for .
         guard let soup = hotDogWaterJSSoup else { return }
@@ -22,7 +27,7 @@ struct ScriptInlineAnalyzer {
         let parenPositions = DataSignatures.extractAllTagMarkers(in: soupData, within: 0..<soupData.count, tag: UInt8(ascii: "("))
         let dotPositions = DataSignatures.extractAllTagMarkers(in: soupData, within: 0..<soupData.count, tag: UInt8(ascii: "."))
         
-        // pre filter by looking at the ( position -1 is its a letter of the bad js function
+        // pre filter by looking at the ( position -1 it's the letter of possible bad js function
         // TODO: Optimize by analyzing leading bytes before `(` to narrow down which keywords can still be matched
         let suspiciousCalls = filterSuspiciousJSCalls(
             in: soupData,
@@ -37,8 +42,9 @@ struct ScriptInlineAnalyzer {
             suspiciousBytes: SuspiciousJSAccessors.accessorsFirstBytes
         )
         // second pass with pos -2 on the second letter of bad js function
-        //        print("\(suspiciousCalls.count) Suspicious JS calls found from \(parenPositions.count) ")
-        //        print("\(suspiciousAncestors.count) Suspicious JS accessors calls found from \(dotPositions.count) ")
+//        Debug
+        //        print("\(suspiciousCalls.count)  JS calls found from \(parenPositions.count) ")
+        //        print("\(suspiciousAncestors.count) JS accessors calls found from \(dotPositions.count) ")
         
         let suspiciousCalls2 = filterSuspiciousJSCalls(
             in: soupData,
@@ -60,26 +66,49 @@ struct ScriptInlineAnalyzer {
             suspiciousBytes: SuspiciousJSAccessors.accessorsThirdBytes
         )
         
-        let start1 = Date()
-        matchConfirmedBadJSCalls(in: soupData, positions: suspiciousCalls2, origin: origin, into: &warnings, setterDetected: &setterDetected)
-        matchConfirmedJsAccessors(in: soupData, position: suspiciousAncestors3, origin: origin, into: &warnings, setterDetected: setterDetected)
+//        let start1 = Date()
+        matchConfirmedBadJSCalls(in: soupData,
+                                 positions: suspiciousCalls2,
+                                 origin: origin,
+                                 into: &warnings,
+                                 setterDetected: &setterDetected,
+                                 scripts: &scripts,
+                                 byteRangesByScript: byteRangesByScript)
+        
+        matchConfirmedJsAccessors(in: soupData,
+                                  position: suspiciousAncestors3,
+                                  origin: origin,
+                                  into: &warnings,
+                                  setterDetected: setterDetected,
+                                  scripts: &scripts,
+                                  byteRangesByScript: byteRangesByScript)
         
         
-        let timing = Date().timeIntervalSince(start1)
-        let duration = Date().timeIntervalSince(start)
-        print("gather the data took: ", duration, "filtering took: ", timing)
+//        let timing = Date().timeIntervalSince(start1)
+//        let duration = Date().timeIntervalSince(start)
+//        print("gather the data took: ", duration, "filtering took: ", timing)
     }
     
-    private static func generateInlineSoup(from scripts: [ScriptScanTarget], in body: Data) -> String {
-        let inlineChunks = scripts.compactMap { script -> String? in
-            guard script.findings == .inlineJS,
+    private static func generateInlineSoup(from scripts: [ScriptScanTarget], in body: Data) -> (soup: String, ranges: [(range: Range<Int>, scriptIndex: Int)]) {
+        var byteRangesByScript: [(range: Range<Int>, scriptIndex: Int)] = []
+        var currentStart = 0
+        var soup = ""
+
+        for (index, script) in scripts.enumerated() {
+            guard script.origin == .inline,
                   let start = script.end,
                   let end = script.endTagPos,
                   let jsContent = String(data: body[start..<end], encoding: .utf8)
-            else { return nil }
-            return jsContent
+            else { continue }
+
+            soup += jsContent + "\n"
+            let length = jsContent.utf8.count + 1 // +1 for newline
+            let range = currentStart..<(currentStart + length)
+            byteRangesByScript.append((range, index))
+            currentStart += length
         }
-        return inlineChunks.joined(separator: "\n")
+
+        return (soup, byteRangesByScript)
     }
     
     static func filterSuspiciousJSCalls(in soupData: Data, parenPositions: [Int], offset: Int = -1, suspiciousBytes: Set<UInt8>) -> [Int] {
@@ -108,7 +137,13 @@ struct ScriptInlineAnalyzer {
         return matches
     }
     
-    private static func matchConfirmedBadJSCalls(in soupData: Data, positions: [Int], origin: String, into warnings: inout [SecurityWarning], setterDetected: inout Bool) {
+    private static func matchConfirmedBadJSCalls(in soupData: Data,
+                                                 positions: [Int],
+                                                 origin: String,
+                                                 into warnings: inout [SecurityWarning],
+                                                 setterDetected: inout Bool,
+                                                 scripts: inout ScriptExtractionResult,
+                                                 byteRangesByScript: [(range: Range<Int>, scriptIndex: Int)]) {
         let knownPatterns: [(name: String, bytes: [UInt8])] = BadJSFunctions.suspiciousJsFunction.map {
             ($0, Array($0.utf8))
         }
@@ -127,6 +162,11 @@ struct ScriptInlineAnalyzer {
                         let contextSlice = soupData[leadStart..<end]
                         if let contextStr = String(data: contextSlice, encoding: .utf8),
                            contextStr.contains("JSON.parse") {
+                            if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
+                                let index = match.scriptIndex
+                                let current = scripts.scripts[index].findings4UI ?? []
+                                scripts.scripts[index].findings4UI = current + [("JSON decoding via atob", .dangerous)]
+                            }
                             warnings.append(SecurityWarning(
                                 message: "Inline JavaScript is decoding a base64 blob with `atob()` directly after `JSON.parse(...)`. This is highly suspicious.",
                                 severity: .dangerous,
@@ -142,6 +182,11 @@ struct ScriptInlineAnalyzer {
                     }
                     if name == "getElementById" {
                         let submit = DataSignatures.matchesAsciiTag(at: pos, in: soupData, asciiToCompare: BadJSFunctions.submit, lookAheadWindow: 32)
+                        if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
+                            let index = match.scriptIndex
+                            let current = scripts.scripts[index].findings4UI ?? []
+                            scripts.scripts[index].findings4UI = current + [("Auto Submit detected", .critical)]
+                        }
                         if submit {
                             warnings.append(SecurityWarning(
                                 message: "JS function: \(name)(...) detected inline followed by 'submit'.",
@@ -155,6 +200,11 @@ struct ScriptInlineAnalyzer {
                     }
                     
                     matchCounts[name, default: 0] += 1
+                    if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
+                        let index = match.scriptIndex
+                        let current = scripts.scripts[index].findings4UI ?? []
+                        scripts.scripts[index].findings4UI = current + [("Suspicious function call", .suspicious)]
+                    }
                 }
             }
         }
@@ -171,7 +221,13 @@ struct ScriptInlineAnalyzer {
         }
     }
     
-    private static func matchConfirmedJsAccessors(in soupData: Data, position: [Int], origin: String, into warnings: inout [SecurityWarning], setterDetected: Bool) {
+    private static func matchConfirmedJsAccessors(in soupData: Data,
+                                                  position: [Int],
+                                                  origin: String,
+                                                  into warnings: inout [SecurityWarning],
+                                                  setterDetected: Bool,
+                                                  scripts: inout ScriptExtractionResult,
+                                                  byteRangesByScript: [(range: Range<Int>, scriptIndex: Int)]) {
         var matchCounts: [String: Int] = [:]
         var setcookie = false
         var readcookie = false
@@ -192,6 +248,11 @@ struct ScriptInlineAnalyzer {
 //                    }
 
                     if name == "cookie" && isAssignment && !setcookie {
+                        if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
+                            let index = match.scriptIndex
+                            let current = scripts.scripts[index].findings4UI ?? []
+                            scripts.scripts[index].findings4UI = current + [("Setting cookies", .suspicious)]
+                        }
                         setcookie = true
                         warnings.append(SecurityWarning(
                             message: "JavaScript is modifying a cookie using `document.cookie = ...`",
@@ -204,6 +265,11 @@ struct ScriptInlineAnalyzer {
                         // TODO: Extract full JS block `{}` surrounding this write for context display in body view.
                         // This could help users understand the surrounding logic — e.g., fingerprinting, reload, cookie clearing.
                     } else if name == "cookie" && !readcookie {
+                        if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
+                            let index = match.scriptIndex
+                            let current = scripts.scripts[index].findings4UI ?? []
+                            scripts.scripts[index].findings4UI = current + [("Reading cookies", .suspicious)]
+                        }
                         readcookie = true
                         warnings.append(SecurityWarning(
                             message: "JavaScript is reading cookies via `document.cookie`. May be used for user tracking.",

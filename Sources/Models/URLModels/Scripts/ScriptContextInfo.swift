@@ -28,6 +28,7 @@ struct ScriptScanTarget {
     var isSelfClosing: Bool = false // Added property to determine if the script tag is self-closing
     var noncePos: Int? // Changed property to store the position of the nonce attribute
     var nonceValue: String? // Store the nonce value
+    var findings4UI: [(message: String, severity: SecurityWarning.SeverityLevel)]? = nil
     
     enum ScriptContext: String {
         case inHead = "In Head"
@@ -43,6 +44,6 @@ enum ScanFlag {
 }
 
 struct ScriptExtractionResult {
-    let scripts: [ScriptScanTarget]
+    var scripts: [ScriptScanTarget]
     let htmlRange: Range<Int>
 }
