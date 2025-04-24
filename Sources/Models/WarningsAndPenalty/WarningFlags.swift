@@ -47,10 +47,14 @@ struct WarningFlags: OptionSet {
     static let BODY_JS_SET_EDIT_COOKIE = WarningFlags(rawValue: 1 << 36)
     static let BODY_JS_READ_COOKIE = WarningFlags(rawValue: 1 << 37)
     static let BODY_JS_JSON_ATOB_CHAIN = WarningFlags(rawValue: 1 << 38)
+    static let BODY_HIGH_SCRIPT_COUNT_LARGE_PAGE = WarningFlags(rawValue: 1 << 39)
+    static let BODY_JS_SCRIPT_PROTOCOL = WarningFlags(rawValue: 1 << 40)
     
     
     //TLS FLAGS
-    static let TLS_IS_FRESH = WarningFlags(rawValue: 1 << 40)
+    static let TLS_IS_FRESH = WarningFlags(rawValue: 1 << 41)
+    static let TLS_SANS_FLOOD = WarningFlags(rawValue: 1 << 42)
+    static let TLS_IS_EV_OR_OV = WarningFlags(rawValue: 1 << 43)
     //COOKIE FLAGS
     
     //HEADERS FLAGS
@@ -58,4 +62,3 @@ struct WarningFlags: OptionSet {
     // ... add more
 }
     
-

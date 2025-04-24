@@ -38,10 +38,15 @@ struct HTTPRespAnalyzer {
         
         //Should be Done in urlgGetExtract, in the meantime ill rawdog it here
 //        or maybe not. -> extract extracts, but cannot carry the logic ?? arrg
-        let finalURL = onlineInfo.finalRedirectURL ?? originalURL
+        var finalURL = originalURL
+        if (300...399).contains(onlineInfo.serverResponseCode ?? 0),
+           let redirectTarget = onlineInfo.finalRedirectURL {
+            finalURL = redirectTarget
+        }
         
         // Handle relative redirects: follow them, but flag as suspicious
         if let resolvedRelative = HTTPRespUtils.resolveRelativeRedirectIfNeeded(headers: headers, originalURL: originalURL) {
+            finalURL = resolvedRelative
             let redirectURL = URLComponentExtractor.extract(url: resolvedRelative)
             RedirectAnalyzer.analyzeRedirect(toInfo: redirectURL, fromInfo: &urlInfo, responseCode: responseCode)
             urlInfo.warnings.append(SecurityWarning(
@@ -135,7 +140,7 @@ struct HTTPRespAnalyzer {
         // This shouldnt happen anymore, but in case it happens it's VERY BAD???
         if onlineInfo.serverResponseCode == 200, normalizedFinalURL != normalizedOriginalURL {
             urlInfo.warnings.append(SecurityWarning(
-                message: "🚨 Hidden / Silent redirect detected.\nOriginal URL: \(originalURL)\nFinal URL: \(finalURL)\nThis is either bad practice or a scam attempt.",
+                message: "Hidden / Silent redirect detected.\nOriginal URL: \(originalURL)\nFinal URL: \(finalURL)\nThis is either very bad practice or a scam attempt.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.silentRedirect,
                 url: urlOrigin,
@@ -145,4 +150,3 @@ struct HTTPRespAnalyzer {
         return urlInfo
     }
 }
-

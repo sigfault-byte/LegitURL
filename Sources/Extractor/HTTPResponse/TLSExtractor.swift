@@ -10,14 +10,27 @@ import CryptoKit
 
 struct TLSExtractor {
     
+//    Bypass all TS check from apple. This is not usable in prob
+//    <key>CFNetworkDiagnostics</key>
+//    <true/>
+//    <key>NSAppTransportSecurity</key>
+//    <dict>
+//        <key>NSAllowsArbitraryLoads</key>
+//        <true>
+//    </dict>
+    
+    
     // URLSessionDelegate method for handling SSL challenges.
     // When an SSL challenge is received, this method simply accepts the server's certificate.
     // It logs the host for which the SSL challenge is being processed.
     func extract(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
                     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+//              Unsure of what I am bypassing here. For instance a leaf only cert, throws.
+//              Can bypass editing plist, but this is forbidden. I can t find precisely what i am bypassing. I hate it
+//                I think no one really knows except Apple engineers. We can only guess.”
               let serverTrust = challenge.protectionSpace.serverTrust else {
-//            print("❌ No valid server trust found.")
+//            print("no valid  trust challenge.")
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }

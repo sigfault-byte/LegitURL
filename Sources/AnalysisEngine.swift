@@ -20,14 +20,14 @@ struct AnalysisEngine {
         UserHeuristicsCache.load()
         
         let extractedInfo = extractComponents(from: urlString)
-        
+
         if extractedInfo.warnings.contains(where: { $0.severity == .critical }) {
             URLQueue.shared.offlineQueue.append(extractedInfo)
+            Finalyzer.finalizeAnalysis()
             return
         }
-        
         URLQueue.shared.offlineQueue.append(extractedInfo)
-        
+
         if shouldStopAnalysis(atIndex: 0) { return }
         
         await processQueue()

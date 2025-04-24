@@ -9,21 +9,21 @@ struct AnalysisStateReset {
         URLQueue.shared.cookiesSeenByRedirectChain.removeAll()
         URLQueue.shared.offlineQueue.removeAll()
         URLQueue.shared.onlineQueue.removeAll()
+        URLQueue.shared.groupedWarnings.removeAll()
+        
         URLQueue.shared.legitScore.score = 100
         TLSCertificateAnalyzer.resetMemory()
-//        LegitRedirectMemory.reset()
-//        LegitTimingContext.reset()
         
         AnalysisEngine.hasManuallyStopped = false
         AnalysisEngine.hasFinalized = false
     }
 }
-//public static func resetQueue() {
-//    URLQueue.shared.cookiesSeenByRedirectChain.removeAll()
-//    URLQueue.shared.offlineQueue.removeAll()
-//    URLQueue.shared.onlineQueue.removeAll()
-//    URLQueue.shared.legitScore.score = 100
-//    TLSCertificateAnalyzer.resetMemory()
-//    hasManuallyStopped = false
-//    hasFinalized = false
-//}
+
+
+//   Reset Checklist
+// - All queues: offlineQueue, onlineQueue
+// - Score + flags: legitScore.score, legitScore.analysisCompleted
+// - Warnings: groupedWarnings -> pure UI
+// - Cookie memory: cookiesSeenByRedirectChain
+// - TLS cache: TLSCertificateAnalyzer.resetMemory()
+// - Async flags: hasManuallyStopped, hasFinalized

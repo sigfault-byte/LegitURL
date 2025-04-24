@@ -42,7 +42,7 @@ struct HandleHTTPResponse {
         case 301, 302, 307:
             let finalURL = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id })?.finalRedirectURL
             urlInfo.warnings.append(SecurityWarning(
-                message: "Redirect detected (\(statusCode)): Moved to \(finalURL ?? "unknown").",
+                message: "Redirect (\(statusCode)): Moved to \(finalURL ?? "unknown").",
                 severity: .info,
                 penalty: 0,
                 url: urlOrigin,

@@ -67,7 +67,17 @@ struct ScriptSecurityAnalyzer {
                     url: originURL,
                     source: .body
                 ))
-
+            case .protocolRelative:
+                    scripts.scripts[index].findings4UI = [("Protocol relative", SecurityWarning.SeverityLevel.suspicious)]
+                warnings.append(SecurityWarning(
+                        message: "Protocol relative script loaded. This is archaic and insecure and exposes users to injection risks.",
+                        severity: .suspicious,
+                        penalty: PenaltySystem.Penalty.protocolRelativeScriptSrc,
+                        url: originURL,
+                        source: .body,
+                        bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL,
+                    ))
+                    
             case .dataURI:
                 scripts.scripts[index].findings4UI = [("Data URI script detected", SecurityWarning.SeverityLevel.suspicious)]
                 dataUriCounter += 1
@@ -186,6 +196,18 @@ struct ScriptSecurityAnalyzer {
 //        scripts per 1000 bytes, a kind of “density per KB"
         let normalized = ratio * 1000
         let rounded = String(format: "%.3f", normalized)
+
+        // Detect excessive script count on large pages
+        if totalCount >= 100 && htmlSize >= 1_000_000 {
+            warnings.append(SecurityWarning(
+                message: "This page includes \(totalCount) script tags and over 1MB of HTML content. This is highly abnormal and may indicate a script payload (cloaking kit or obfuscated attack).",
+                severity: .critical,
+                penalty: PenaltySystem.Penalty.bomboclotScript,
+                url: originURL,
+                source: .body,
+                bitFlags: WarningFlags.BODY_HIGH_SCRIPT_COUNT_LARGE_PAGE
+            ))
+        }
 
         switch normalized {
         case 0..<0.05:

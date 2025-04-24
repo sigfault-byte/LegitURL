@@ -1,5 +1,8 @@
 import Foundation
 
+
+// Cursed list of a scammer nest SANs
+
 let sanList = [
     "info-emplois-collectivites.fr",
     "mail.aprem-wx.com",
@@ -103,7 +106,7 @@ for domain in stripped {
 
 let sorted = freq.sorted { $0.value > $1.value }
 for (gram, count) in sorted.prefix(10) {
-    print("🧬 \(gram): \(count) times")
+    print(" \(gram): \(count) times")
 }
 
 let ogDomain = "www.man-entreprise.com"
@@ -114,9 +117,9 @@ let numberOfSANsWithOG = sanCopy.count
 
 let setOFJoined: Set<String> = Set(sanCopy)
 
-print("Sans Number: \(numberOfSANs)")
-print("Sans + Og Number: \(numberOfSANsWithOG)")
-print("Unique Sans Number: \(setOFJoined.count)")
+print("Sans : \(numberOfSANs)")
+print("Sans + Og : \(numberOfSANsWithOG)")
+print("Unique Sans: \(setOFJoined.count)")
 
 let duplicates = sanCopy.filter { item in
     sanCopy.firstIndex(of: item) != sanCopy.lastIndex(of: item)
@@ -124,7 +127,7 @@ let duplicates = sanCopy.filter { item in
 
 let uniqueDuplicates = Set(duplicates)
 
-print("🕵️‍♂️ Duplicated Entries Detected:")
+print("Duplicated entries:")
 for dup in uniqueDuplicates {
     print("🔁 \(dup)")
 }

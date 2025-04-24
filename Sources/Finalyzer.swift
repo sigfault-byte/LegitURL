@@ -1,11 +1,12 @@
 struct Finalyzer {
     static func computeFinalScore(for urlInfos: [URLInfo]) -> Int {
         let warnings = urlInfos.flatMap { $0.warnings }
-        // let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
-
+        
+//      DEBUG
         let totalPenalty = warnings.map { $0.penalty }.reduce(0, +)
-//        let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
-//        penaltyDetails.forEach { print($0) }
+        let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
+        penaltyDetails.forEach { print($0) }
+//       END
         var newScore = 100 + totalPenalty
         if newScore < 0 {
             newScore = 0
@@ -42,8 +43,9 @@ struct Finalyzer {
 
             let groupedBySource = Dictionary(grouping: warnings, by: { $0.source })
 
+//            Order for the view display
             let preferredSourceOrder: [SecurityWarning.SourceType] = [
-                .host, .path, .query, .fragment, .responseCode, .redirect, .cookie, .body, .tls, .header, .getError
+                .host, .path, .query, .fragment, .responseCode, .cookie, .body, .tls, .header, .redirect , .getError
             ]
             
             let sourceGroups: [WarningSourceGroup] = preferredSourceOrder.compactMap { preferred in

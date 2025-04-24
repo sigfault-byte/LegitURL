@@ -3,17 +3,17 @@ let compound = "+MTs0O2h0dHBzOi8vYXNzdXJhbmNlLW1hbGFkaWUudm9jYXphLm5ldC9jZ2ktYml
 
 let parts = compound.components(separatedBy: "+")
 for (i, part) in parts.enumerated() {
-    print("\n🚧 Analyzing part \(i + 1): \(part.prefix(30))...")
+    print("\nPart \(i + 1): \(part.prefix(30))...")
     guard let padded = normalizeBase64(part) else {
-        print("🧱 Not base64-like (failed normalize)")
+        print("Not base64-like (failed normalize)")
         continue
     }
     if let data = Data(base64Encoded: padded) {
-        print("✅ Valid base64! Length: \(data.count) bytes")
+        print("valid base64: ngth: \(data.count) bytes")
 
-        print("🔬 All bytes (hex): \(data.map { String(format: "%02x", $0) }.joined(separator: " "))")
+        print(" All bytes (hex): \(data.map { String(format: "%02x", $0) }.joined(separator: " "))")
 
-        print("🧾 Character-by-character breakdown:")
+        print("Chara breakdown:")
         for (i, byte) in data.enumerated() {
             if byte >= 32 && byte <= 126 {
                 print(" \(i): '\(Character(UnicodeScalar(byte)))'")
@@ -26,21 +26,21 @@ for (i, part) in parts.enumerated() {
         if let string = string {
             print("Decoded UTF-8 string:", string)
         } else {
-            print("❌ Not valid UTF-8 — but still valid data")
+            print("not  UTF-8 but valid data?")
         }
 
         if let (printable, range) = data.longestPrintableASCIISequence() {
-            print("🔍 Extracted printable ASCII string:")
+            print("printable ASCII string:")
             print(String(decoding: printable, as: UTF8.self))
-            print("📍 Located at byte range: \(range)")
+            print("Located at byte range: \(range)")
             let preview = String(decoding: printable, as: UTF8.self)
-            print("🔍 ASCII bytes: \(printable as NSData)")
-            print("🖼 Preview: \(preview)")
+            print("ASCII bytes: \(printable as NSData)")
+            print("Preview: \(preview)")
         } else {
-            print("💀 No printable ASCII found")
+            print("No printable ASCII found")
         }
     } else {
-        print("❌ Invalid base64")
+        print("Invalid base64")
     }
 }
 
@@ -52,21 +52,21 @@ func normalizeBase64(_ str: String) -> String? {
     
     // Strip leading "+" characters
     while let first = clean.first, first == "+" {
-        print("🍰 [Lamai] Stripping misleading leading + character")
+        print("[Lamai] Stripping misleading leading + character")
         clean.removeFirst()
     }
     
-    // Step 1: Reject if it doesn't look like base64
+    // Step 1: Reject if no look like no base64
     let pattern = #"^[A-Za-z0-9+/=_-]{16,}$"#
     guard clean.range(of: pattern, options: .regularExpression) != nil else {
-        print("🧱 [Lamai] Failed base64 structure check")
+        print("[Lamai] Failed base64 structure check")
         return nil
     }
     
-    // Step 2: Reject if first character strongly implies non-printable result
+    // Step 2: Reject if first character implies non-printable result
     let suspiciousStarters: Set<Character> = ["/", "+", "9", "8", "7", "6", "5"]
     if let firstChar = clean.first, suspiciousStarters.contains(firstChar) {
-        print("🧱 [Lamai] First base64 character is suspicious: \(firstChar)")
+        print("[Lamai] First base64 character is suspicious: \(firstChar)")
         return nil
     }
     

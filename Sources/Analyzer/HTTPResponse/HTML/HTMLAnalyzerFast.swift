@@ -29,8 +29,9 @@ struct HTMLAnalyzerFast {
             return nil
         }
 
-        if bodySize > 1_500_000 {
+        if bodySize > 1_600_000 {
             warnings.append(SecurityWarning(message: "Body too large for fast scan.", severity: .suspicious, penalty: -20 , url: origin, source: .body))
+            print("hiii")
             return nil
         }
         else {

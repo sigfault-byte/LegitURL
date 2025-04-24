@@ -17,7 +17,7 @@ import Punycode
 struct TLSCertificateAnalyzer {
 //    tract tls accross the redirect chain to confirm heuristics or correct them
     
-    static var tlsSANReusedMemory: [String: (domain: String, fingerprint: String)] = [:]
+    static var tlsSANReusedMemory: [String: (domain: String, fingerprint: String, wasFlooded: Bool)] = [:]
     static func resetMemory() {
         tlsSANReusedMemory.removeAll()
     }
@@ -39,7 +39,7 @@ struct TLSCertificateAnalyzer {
 
         // Store the certificate fingerprint for potential comparison
         if let fingerprint = certificate.fingerprintSHA256 {
-            tlsSANReusedMemory[hostIdna] = (domain: domainIdna, fingerprint: fingerprint)
+            tlsSANReusedMemory[hostIdna] = (domain: domainIdna, fingerprint: fingerprint, wasFlooded: false)
         }
         
         
@@ -133,23 +133,21 @@ struct TLSCertificateAnalyzer {
             // Positive signal: EV or strong OV indication
             
             switch certificate.inferredValidationLevel {
-            case .ev:
-                addWarning("✅ Certificate is Extended Validation (EV)", .info, penalty: 10)
-            case .ov:
-                addWarning("✅ Certificate is Organization Validated (OV)", .info, penalty: 10)
+            case .ev, .ov:
+                let label = (certificate.inferredValidationLevel == .ev) ? "Extended Validation (EV)" : "Organization Validated (OV)"
+                let alreadyRewarded = tlsSANReusedMemory.contains { (_, value) in
+                    value.domain == domain && URLQueue.shared.hasWarning(withFlag: [.TLS_IS_EV_OR_OV])
+                }
+                
+                if alreadyRewarded {
+                    addWarning("Another certificate for this domain is already marked \(label) — skipping reward.", .info, penalty: 0, bitFlags: [.TLS_IS_EV_OR_OV])
+                } else {
+                    addWarning("✅ Certificate is \(label)", .info, penalty: 10, bitFlags: [.TLS_IS_EV_OR_OV])
+                }
             case .dv:
                 addWarning("✅ Certificate is Domain Validated (DV)", .info, penalty: 0)
-                //                This either need more digging into the shaddy world of CN, or womething was missed on the TLS logic
-                //                if certificate.issuerCommonName == "WE1"{
-                //                    // TODO: Replace with real labels and maybe a list of weird CN bulk giving tls
-                //                    addWarning("✅ DV Cert issued by a Hotdogwater CN (WE1)", .info, penalty: PenaltySystem.Penalty.hotDogwaterCN)
-                ////                    swift autocompletion proposed: Certificate is Domain Validated (DV) by a bullshit CA.
-                //                }
-                
-                break // DV is the default, nothing to reward, on the contrary
             case .unknown:
                 addWarning("✅ Certificate is not EV, OV or DV", .suspicious, penalty: -10)
-                break
             }
         }
         
@@ -180,25 +178,23 @@ struct TLSCertificateAnalyzer {
                 return normalizedSAN == normalizedHost || normalizedSAN == normalizedDomain
             }
             
-            if matchedSANs.count == 1 && sans.count > 20 && !hasWildcard{
-                switch certificate.inferredValidationLevel {
-                case .dv:
-                    addWarning("TLS Certificate includes \(sans.count) SANs, but only 1 matches the current domain — likely reused across unrelated infrastructure", .suspicious, penalty: PenaltySystem.Penalty.reusedTLS1FDQN)
-                    // Save it for retroactive downgrade later
-                    // tlsSANReusedMemory[host] = (domain: domain, fingerprint: certificate.fingerprintSHA256 ?? "unknown")
-                    //            case .ov, .ev:
-                    //                addWarning("TLS Certificate includes \(sans.count) SANs, only 1 matches the domain — allowed for OV/EV, but may indicate reuse", .info, penalty: 0)
-                default:
-                    break
+            if matchedSANs.count == 1 && sans.count > 20 && !hasWildcard {
+                addWarning("TLS Certificate includes \(sans.count) SANs, but only 1 matches the current domain — likely reused across unrelated infrastructure", .suspicious, penalty: PenaltySystem.Penalty.reusedTLS1FDQN, bitFlags: WarningFlags.TLS_SANS_FLOOD)
+                if let fingerprint = certificate.fingerprintSHA256 {
+//                    “Capture once. Store locally. Never trust global memory for retroactive judgment.”
+                    tlsSANReusedMemory[hostIdna] = (domain: domainIdna, fingerprint: fingerprint, wasFlooded: true)
                 }
             }
         }
 
         // 8. Retroactive SAN Heuristic Reversal
+        print("ICI: ", tlsSANReusedMemory)
         if let previous = tlsSANReusedMemory.first(where: { $0.value.domain == domain }),
            previous.value.fingerprint != certificate.fingerprintSHA256,
-           certificate.inferredValidationLevel == .ev || sans.count <= 5 {
-            addWarning("Previously flagged TLS certificate on this domain appeared suspicious, but was followed by a clean certificate (EV or low SAN count). Penalty waived.", .info, penalty: 20)
+//           “Capture once. Store locally. Never trust global memory for retroactive judgment.”
+           previous.value.wasFlooded,
+           certificate.inferredValidationLevel == .ev || certificate.inferredValidationLevel == .ov {
+            addWarning("Previously flagged TLS certificate on this domain appeared suspicious, but was followed by a clean certificate (EV or OV). Penalty waived.", .info, penalty: 20)
             tlsSANReusedMemory.removeValue(forKey: previous.key)
         }
     }

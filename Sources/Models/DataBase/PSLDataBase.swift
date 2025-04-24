@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  isValidTLD.swift
 //  LegitURL
 //
 //  Created by Chief Hakka on 07/03/2025.

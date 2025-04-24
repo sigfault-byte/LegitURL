@@ -77,6 +77,7 @@ struct PenaltySystem {
         static let hotdogWaterDev                      = -30
         static let unusualScritSrcFormat               = -30
         static let atobJSONparserCombo                 = -25
+        static let bomboclotScript                     = -25
         static let metaRefreshInBody                   = -25
         static let scriptMalformed                     = -20
         static let scriptIsMoreThan512                 = -20
@@ -86,6 +87,7 @@ struct PenaltySystem {
         static let extScriptSrc                        = -20
         static let highScriptDensity20                 = -20
         static let scriptDataURI                       = -20
+        static let protocolRelativeScriptSrc           = -5
         static let scriptIs70Percent                   = -10
         static let jsCookieAccess                      = -10
         static let smallHTMLless896                    = -10

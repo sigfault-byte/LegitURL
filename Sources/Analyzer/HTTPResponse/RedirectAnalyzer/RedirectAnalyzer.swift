@@ -25,7 +25,7 @@ struct RedirectAnalyzer {
               }()
         else {
             fromInfo.warnings.append(SecurityWarning(
-                message: "❌ Missing domain, TLD, or host information for redirect analysis.",
+                message: "Missing or malformed domain, TLD, or host information for redirect: \(toInfo.components.fullURL ?? "Error no fullURL to display").",
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
                 url: urlOrigin,

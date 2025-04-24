@@ -39,12 +39,11 @@ struct URLComponentExtractor {
         
         // Extract and decode the host manually to handle punycode URLs
         let (preExtractedHost, decodedHost, encodedHost) = extractAndDecodeHost(from: url)
-        let coreIDNA = decodedHost.idnaEncoded ?? ""
         
         // Build the initial URLComponentsInfo, prioritizing the manually decoded host
         var compInfo = URLComponentsInfo(
             fullURL: components.url?.absoluteString,
-            coreURL: coreIDNA + (components.path.isEmpty ? "/" : components.path),
+            coreURL: decodedHost + (components.path.isEmpty ? "/" : components.path),
             scheme: components.scheme,
             userinfo: components.user,
             userPassword: components.password,
@@ -88,7 +87,7 @@ struct URLComponentExtractor {
         let hostToValidate = compInfo.punycodeHostEncoded ?? host
         if hostToValidate.range(of: hostnameRegex, options: .regularExpression) == nil {
             warnings.append(SecurityWarning(
-                message: "⚠️ Host is malformed: \(host). No reason to analyze.",
+                message: "⚠️ Host is malformed: \(host).",
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
                 url: components.url?.absoluteString ?? url,
@@ -101,10 +100,7 @@ struct URLComponentExtractor {
         var extractedDomain: String? = nil
         var extractedTLD: String? = nil
 
-        if let result = DomainAndTLDExtractor.extract(hostidnaEncoded: decodedHost) {
-            extractedDomain = result.0
-            extractedTLD = result.1
-        } else {
+        guard let extractionResult = DomainAndTLDExtractor.extract(hostidnaEncoded: encodedHost ?? preExtractedHost ?? "") else {
             warnings.append(SecurityWarning(
                 message: "⚠️ Failed to identify Domain and TLD from the PSL",
                 severity: .critical,
@@ -114,6 +110,9 @@ struct URLComponentExtractor {
             ))
             return URLInfo(components: compInfo, warnings: warnings)
         }
+
+        extractedDomain = extractionResult.0
+        extractedTLD = extractionResult.1
 
         // Update compInfo with the extracted values (they remain optional as defined in compInfo)
         compInfo.extractedDomain = extractedDomain

@@ -109,7 +109,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
             
             let sslCertificateDetails = sharedInstance.sslCertificateDetails
             
-            let maxSafeBodySize = 1_500_000 // 1500 KB
+            let maxSafeBodySize = 1_600_000 // 1600 KB
             var processedBody: Data
             var isBodyTooLarge = false
 
@@ -198,15 +198,15 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         TLSExtractor().extract(session, didReceive: challenge, completionHandler: completionHandler)
     }
     
-    // TODO: This can be cross-checked with headers to help infer server types and behavior. Not exploited for now.
-    // Leaving print logic commented for future analysis and debugging.
+    // TODO: This could be cross-checked with headers to help infer server types and behavior
+    // logic commented for future analysis and debugging
 //    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
 //        for transaction in metrics.transactionMetrics {
-//            print("🌍 DNS Lookup: \(transaction.domainLookupStartDate ?? .distantPast) to \(transaction.domainLookupEndDate ?? .distantFuture)")
-//            print("📡 Remote IP: \(transaction.remoteAddress ?? "unknown")")
-//            print("📶 Protocol: \(transaction.networkProtocolName ?? "unknown")")
-//            print("⏱ TTFB: \(transaction.responseStartDate?.timeIntervalSince(transaction.requestStartDate ?? Date()) ?? -1) seconds")
-//            print("🔐 TLS Duration: \(transaction.secureConnectionEndDate?.timeIntervalSince(transaction.secureConnectionStartDate ?? Date()) ?? -1) seconds")
+//            print("DNS : \(transaction.domainLookupStartDate ?? .distantPast) to \(transaction.domainLookupEndDate ?? .distantFuture)")
+//            print("Remote IP: \(transaction.remoteAddress ?? "unknown")")
+//            print("Protocol: \(transaction.networkProtocolName ?? "unknown")")
+//            print("TTFB: \(transaction.responseStartDate?.timeIntervalSince(transaction.requestStartDate ?? Date()) ?? -1) seconds")
+//            print("TLS Duration: \(transaction.secureConnectionEndDate?.timeIntervalSince(transaction.secureConnectionStartDate ?? Date()) ?? -1) seconds")
 //        }
 //    }
         
@@ -215,8 +215,8 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         
         // ✅ Convert headers to lowercase for case-insensitivity
         for (key, value) in responseHeaders {
-            if let keyString = key as? String, let valueString = value as? String {
-                normalizedHeaders[keyString.lowercased()] = valueString
+            if let keyString = key as? String {
+                normalizedHeaders[keyString.lowercased()] = "\(value)"
             }
         }
         
