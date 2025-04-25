@@ -29,6 +29,12 @@ struct URLOnlineDetailComponent: View {
                     Text("View Response Headers")
                 }
             }
+            if let cspOfHeader = onlineInfo.cspOfHeader {
+                NavigationLink(destination: CSPInspectorView(csp: cspOfHeader)){
+                    Text("View Content Security Policy details")
+                }
+            }
+            
             let cookies = onlineInfo.cookiesForUI.compactMap { $0 }
             if !cookies.isEmpty {
                 NavigationLink(destination: CookieListView(cookies: cookies)) {

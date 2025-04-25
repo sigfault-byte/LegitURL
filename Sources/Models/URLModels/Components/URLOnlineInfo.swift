@@ -29,6 +29,7 @@ struct OnlineURLInfo: Identifiable {
     var cookies: [String: String] = [:]
     var cookiesForUI: [CookieAnalysisResult?] = []
     var scriptSourcesForCSP: ScriptSourceToMatchCSP? = nil
+    var cspOfHeader: ClassifiedCSPResult? = nil
     
     var script4daUI: [ScriptPreview] = []
     

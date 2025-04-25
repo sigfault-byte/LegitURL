@@ -96,10 +96,6 @@ struct HTTPRespAnalyzer {
                 
                 let preview = ScriptToPreview.prepareScriptPreviews(for: result.scripts, body: rawbody)
                 onlineInfo.script4daUI = preview
-                if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {
-                    URLQueue.shared.onlineQueue[index] = onlineInfo
-                }
-                
             }
         }
 
@@ -131,10 +127,22 @@ struct HTTPRespAnalyzer {
 //            print("\(keyValue.key): \(keyValue.value)")
 //        }
         //  Analyze headers for content security policy
+        var cspResult: ClassifiedCSPResult? = nil
         if responseCode == 200 {
-            let warningsCSP = CSPAndPPAnalyzer.analyze(headers, urlOrigin: urlOrigin)
+            let (warningsCSP, result) = CSPAndPPAnalyzer.analyze(headers, urlOrigin: urlOrigin)
             urlInfo.warnings.append(contentsOf: warningsCSP)
-            
+            cspResult = result
+        }
+
+        // Only act if result was actually analyzed
+        if let result = cspResult, !result.structuredCSP.isEmpty {
+            // Do something with result
+            onlineInfo.cspOfHeader = result
+        }
+        
+        // Syncronize the onlineInfo back into the singleotn
+        if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {
+            URLQueue.shared.onlineQueue[index] = onlineInfo
         }
         
         let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin, responseCode: responseCode)

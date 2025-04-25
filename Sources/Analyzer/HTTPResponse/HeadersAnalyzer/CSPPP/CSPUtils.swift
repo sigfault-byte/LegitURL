@@ -4,7 +4,21 @@
 //
 //  Created by Chief Hakka on 25/04/2025.
 //
+
 import Foundation
+
+struct ClassifiedCSPResult {
+    var structuredCSP: [String: [Data: CSPValueType]]
+    var directiveBitFlags: [String: Int32]
+    var directiveSourceTraits: [String: DirectiveSourceInfo]
+}
+
+struct DirectiveSourceInfo {
+    var urlCount: Int
+    var hasHTTP: Bool
+    var hasWildcard: Bool
+    var onlySelf: Bool
+}
 
 struct CSPUtils {
     static func cleaningCSPSlice(slice: Range<Int>, in data: Data) -> Data {
@@ -55,7 +69,7 @@ struct CSPUtils {
     }
     
     static func parseDirectiveSlice(_ slice: Data) -> [Data: [Data]]? {
-//  TODO: Without a second cleaning some crashes occurs, need to investigate
+        //  TODO: Without a second cleaning some crashes occurs, need to investigate
         let cleanedSlice = cleaningCSPSlice(slice: slice.startIndex..<slice.endIndex, in: slice)
         let parts = exploseCSPSlicesOnSpace(in: cleanedSlice)
         
@@ -72,7 +86,7 @@ struct CSPUtils {
     
     static func classifyCSPValue(_ value: Data) -> CSPValueType {
         if value.first == HeadHeaderByteSignatures.singleQuote,
-            value.last == HeadHeaderByteSignatures.singleQuote {
+           value.last == HeadHeaderByteSignatures.singleQuote {
             if value.starts(with: safeCSPValue.nonce){
                 return .nonce
             }
@@ -93,4 +107,18 @@ enum CSPValueType {
     case url
     case wildcard
     case nonce
+    case unknown
+}
+
+extension CSPValueType {
+    var description: String {
+        switch self {
+        case .keyword: return "keyword"
+        case .url: return "url"
+        case .scheme: return "scheme"
+        case .wildcard: return "wildcard"
+        case .nonce: return "nonce"
+        case .unknown: return "unknown"
+        }
+    }
 }

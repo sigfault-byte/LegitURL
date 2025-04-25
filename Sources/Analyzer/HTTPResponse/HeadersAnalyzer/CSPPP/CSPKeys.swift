@@ -10,11 +10,14 @@
 
 import Foundation
 struct contentDirective {
+    static let requireTrustedTypes: Data = "require-trusted-types-for".data(using: .utf8) ?? Data() // New (? prototype?? ) to prevent xss. Didnt see much
     static let defaultSrc: Data = "default-src".data(using: .utf8) ?? Data() // Default policy for fetching any content (fallback if others aren't defined)
     static let scriptSrc: Data = "script-src".data(using: .utf8) ?? Data() // Governs the sources of JavaScript
     static let styleSrc: Data = "style-src".data(using: .utf8) ?? Data() // Governs the sources of CSS styles
     static let imgSrc: Data = "img-src".data(using: .utf8) ?? Data() // Governs the sources of images
+    
     static let connectSrc: Data = "connect-src".data(using: .utf8) ?? Data() // Governs network connections like XHR, WebSocket, fetch
+    
     static let fontSrc: Data = "font-src".data(using: .utf8) ?? Data() // Governs the sources of fonts
     static let objectSrc: Data = "object-src".data(using: .utf8) ?? Data() // Governs plugins like Flash, deprecated but still supported
     static let mediaSrc: Data = "media-src".data(using: .utf8) ?? Data() // Governs audio and video sources
@@ -41,20 +44,11 @@ struct reportingDirective {
     static let requireTrustedTypesFor: Data = "require-trusted-types-for".data(using: .utf8) ?? Data() // Restricts DOM sinks to accept only Trusted Types
 }
 
-
-
-// MARK: - Master Set (Optional: Union of All)
-//let allDirectives: Set<String> =
-//    .union(contentDirectives)
-//    .union(behaviorDirectives)
-//    .union(reportingDirectives)
-
-
 // MARK: - Dangerous CSP Values
 struct dangerousCSPValues {
-    static let unsafeInline: Data = "unsafe-inline".data(using: .utf8) ?? Data() // Allows inline scripts or styles — XSS risk
-    static let unsageEval: Data = "unsafe-eval".data(using: .utf8) ?? Data() // Allows eval() and similar — code injection risk
-    static let wasmUnsafeEval: Data = "wasm-unsafe-eval".data(using: .utf8) ?? Data() // Allows WebAssembly compile-time eval — modern risk
+    static let unsafeInline: Data = "'unsafe-inline'".data(using: .utf8) ?? Data() // Allows inline scripts or styles — XSS risk
+    static let unsafeEval: Data = "'unsafe-eval'".data(using: .utf8) ?? Data() // Allows eval() and similar — code injection risk
+    static let wasmUnsafeEval: Data = "'wasm-unsafe-eval'".data(using: .utf8) ?? Data() // Allows WebAssembly compile-time eval — modern risk
     static let data: Data = "data:".data(using: .utf8) ?? Data() // Allows data: URLs — risky, often abused
     static let blob: Data = "blob:".data(using: .utf8) ?? Data() // Allows blob: URLs — often used for dynamic JS payloads
     static let wildcard: Data = "'*'".data(using: .utf8) ?? Data() // Wildcard — allows everything from everywhere
@@ -67,6 +61,8 @@ struct safeCSPValue {
     static let strictDynamic: Data = "'strict-dynamic'".data(using: .utf8) ?? Data() // Allows dynamic scripts from nonce'd parents
     static let reportSample: Data = "'report-sample'".data(using: .utf8) ?? Data() // Sends sample of blocked content in CSP reports
     static let nonce: Data = "'nonce-'".data(using: .utf8) ?? Data()
+    
+    static let scriptSrc: Data = "'script'".data(using: .utf8) ?? Data()
 }
 
 struct HeadHeaderByteSignatures {
