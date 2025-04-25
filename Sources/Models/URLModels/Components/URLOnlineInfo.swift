@@ -33,6 +33,8 @@ struct OnlineURLInfo: Identifiable {
     
     var script4daUI: [ScriptPreview] = []
     
+    var cspRecommendation: CSPRecommendation?
+    
 //    //    Need to be either analysed, or cleaned because it can be way too big!
 //    var formattedBody: String {
 //        guard let data = responseBody else { return "No body available" }

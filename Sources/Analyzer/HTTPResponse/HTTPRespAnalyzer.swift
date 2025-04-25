@@ -141,16 +141,23 @@ struct HTTPRespAnalyzer {
         }
         
         // Syncronize the onlineInfo back into the singleotn
-        if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {
-            URLQueue.shared.onlineQueue[index] = onlineInfo
-        }
         
         let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin, responseCode: responseCode)
         urlInfo.warnings.append(contentsOf: headerWarnings)
         
+        if let findings = findings {
+            onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings)
+        }
         
+        if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {
+            URLQueue.shared.onlineQueue[index] = onlineInfo
+        }
+
         
-        
+
+
+
+
         //  Detect silent redirect (200 OK but URL changed)
         let normalizedOriginalURL = originalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let normalizedFinalURL = finalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
