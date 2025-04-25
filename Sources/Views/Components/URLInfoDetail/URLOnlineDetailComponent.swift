@@ -48,6 +48,7 @@ struct URLOnlineDetailComponent: View {
                     Text("View scripts (\(script4UI.count))")
                 }
             }
+            bodyNavigationLink(for: onlineInfo)
             
         }
     }
