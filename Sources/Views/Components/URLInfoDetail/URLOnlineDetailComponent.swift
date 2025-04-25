@@ -47,6 +47,7 @@ struct URLOnlineDetailComponent: View {
     }
 }
 
+
 /// Need to find how to safely protects this against massive body content
 private func bodyNavigationLink(for info: OnlineURLInfo) -> some View {
     Group {

@@ -58,14 +58,15 @@ struct HotDogWaterView: View {
                         
                         if let findings = preview.findings, !findings.isEmpty {
                             let summarized = summarizeFindings(findings)
-                            HStack {
+//                            Doestn work when there are many eement. NEed to build a custom component.... 
+//                            HStack {
                                 ForEach(summarized.indices, id: \.self) { index in
                                     let item = summarized[index]
                                     Text("⚠️ \(item.message) x\(item.count)")
                                         .font(.subheadline)
                                         .foregroundColor(item.color)
                                 }
-                            }
+//                            }
                         }
                         Divider()
                         ScrollView(.horizontal, showsIndicators: false) {

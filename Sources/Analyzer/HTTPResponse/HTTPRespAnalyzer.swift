@@ -5,6 +5,7 @@ struct HTTPRespAnalyzer {
     
 
     static func analyze(urlInfo: URLInfo) async -> URLInfo {
+        let start = Date()
         
         var urlInfo = urlInfo
         
@@ -71,7 +72,7 @@ struct HTTPRespAnalyzer {
         // Analyze body response Body first, returns "script" found in the html, if it's perfect
         // TODO : multi check the final url, there can be only one! -> we do not extract final url from the body for now... But we should!
         var findings: ScriptExtractionResult?
-        if let rawbody = onlineInfo.responseBody,
+        if let rawbody = onlineInfo.rawBody,
            let contentType = headers["content-type"]?.lowercased(),
            let responseCode = onlineInfo.serverResponseCode {
             
@@ -86,7 +87,7 @@ struct HTTPRespAnalyzer {
         
         var scriptValueToCheck: ScriptSourceToMatchCSP? = nil
         if var result = findings, !result.scripts.isEmpty {
-            if let rawbody = onlineInfo.responseBody {
+            if let rawbody = onlineInfo.rawBody {
                 scriptValueToCheck = ScriptSecurityAnalyzer.analyze(scripts: &result,
                                                                     body: rawbody,
                                                                     origin: urlOrigin,
@@ -101,10 +102,7 @@ struct HTTPRespAnalyzer {
                 
             }
         }
-        // Store script for user output
-        
-        
-        
+
         //Then TLS
         
         if let tlsCertificate = onlineInfo.parsedCertificate {
@@ -128,14 +126,27 @@ struct HTTPRespAnalyzer {
                                    urlInfo: &urlInfo)
         
         
+//        print("REAL HEADERS: ")
+//        for keyValue in headers {
+//            print("\(keyValue.key): \(keyValue.value)")
+//        }
         //  Analyze headers for content security policy
-        let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin)
+        if responseCode == 200 {
+            let warningsCSP = CSPAndPPAnalyzer.analyze(headers, urlOrigin: urlOrigin)
+            urlInfo.warnings.append(contentsOf: warningsCSP)
+            
+        }
+        
+        let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin, responseCode: responseCode)
         urlInfo.warnings.append(contentsOf: headerWarnings)
+        
+        
         
         
         //  Detect silent redirect (200 OK but URL changed)
         let normalizedOriginalURL = originalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let normalizedFinalURL = finalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        
         
         // This shouldnt happen anymore, but in case it happens it's VERY BAD???
         if onlineInfo.serverResponseCode == 200, normalizedFinalURL != normalizedOriginalURL {
@@ -147,6 +158,11 @@ struct HTTPRespAnalyzer {
                 source: .header
             ))
         }
+        let end = Date()
+        let durationMS = end.timeIntervalSince(start) * 1000
+        print("Time taken: \(durationMS) ms, for a \(onlineInfo.rawBody?.count ?? 0) byte response body")
+        print("Number of script extracted and classified :", findings?.scripts.count ?? 0)
+        print("header analysis done, csp parsed")
         return urlInfo
     }
 }

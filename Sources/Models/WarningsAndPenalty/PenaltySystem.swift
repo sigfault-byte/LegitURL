@@ -123,9 +123,15 @@ struct PenaltySystem {
         //RESPONSE HEADER ISSUE
         static let blockedByFirewall                   = -100
         static let serverError                         = -100
-        static let missConfiguredOrScam                = -20
         static let hidden200Redirect                   = -20
         static let suspiciousStatusCode                = -15
+        
+        //HEADERS
+        static let missingHSTS                         = -50
+        static let missingCSP                          = -30
+        static let missConfiguredOrScam                = -20
+        static let lowHSTSValue                        = -5
+        static let malformedIncompleteCSP              = -5
         
         
         
@@ -140,7 +146,8 @@ struct PenaltySystem {
         static let informational                       = 0
     }
     
-    // ✅ Suspicious TLDs and their penalties
+    // Suspicious TLDs and their penalties
+//    TODO: Replaced with a normalized source of real data and not random findings on te web
     static let suspiciousTLDs: [String: Int] = [
         ".tk":          -20,
         ".ml":          -20,

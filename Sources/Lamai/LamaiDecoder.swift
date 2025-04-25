@@ -98,10 +98,12 @@ struct LamaiDecoder {
     
     private static func looksLikeMime(_ str: String) -> Bool {
         let lower = str.lowercased()
+        //TODO: Look for a better logic
         return lower.contains("=?utf-8?q?") || lower.contains("=?utf-8?b?")
     }
     
     private static func looksLikeUnicode(_ str: String) -> Bool {
+        //TODO: Look for a better logic
         return str.contains("\\u003") || str.contains("\\u00") || str.contains("&#x")
     }
 }

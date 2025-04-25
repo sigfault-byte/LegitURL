@@ -55,10 +55,15 @@ struct WarningFlags: OptionSet {
     static let TLS_IS_FRESH = WarningFlags(rawValue: 1 << 41)
     static let TLS_SANS_FLOOD = WarningFlags(rawValue: 1 << 42)
     static let TLS_IS_EV_OR_OV = WarningFlags(rawValue: 1 << 43)
+    
+    
     //COOKIE FLAGS
     
-    //HEADERS FLAGS
     
-    // ... add more
+    //HEADERS FLAGS
+    static let HEADERS_CSP_MALFORMED = WarningFlags(rawValue: 1 << 50)
+    static let HEADERS_CSP_MISSING = WarningFlags(rawValue: 1 << 51)
+    
+    
 }
     

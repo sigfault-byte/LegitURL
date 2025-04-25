@@ -5,24 +5,25 @@
 //  Created by Chief Hakka on 20/03/2025.
 //
 struct HeadersAnalyzer {
-    static func analyze(responseHeaders: [String: String], urlOrigin: String) -> [SecurityWarning] {
+    static func analyze(responseHeaders: [String: String], urlOrigin: String, responseCode: Int) -> [SecurityWarning] {
+//        Only evaluate 200 code response, other repsponse need a different logic.
+//        particulary the 302 found common in scam and compromised CRM used as proxies
+        guard responseCode == 200 else {
+            return []
+        }
+        
         var warnings: [SecurityWarning] = []
         
-        //        warnings.append(contentsOf: checkMissingSecurityHeaders(responseHeaders: responseHeaders))
-        //        warnings.append(contentsOf: checkCookieSecurityFlags(responseHeaders: responseHeaders))
-        warnings.append(contentsOf: detectServerMisconfigurations(responseHeaders: responseHeaders, urlOrigin: urlOrigin))
+        warnings.append(contentsOf: checkStrictTransportSecurity(responseHeaders: responseHeaders, urlOrigin: urlOrigin, warnings: warnings))
         
+        
+        
+        
+
+        warnings.append(contentsOf: detectServerMisconfigurations(responseHeaders: responseHeaders, urlOrigin: urlOrigin))
         return warnings
     }
-    
-    //    private static func checkMissingSecurityHeaders(responseHeaders: [String: String]) -> [SecurityWarning] {
-    //        // Implementation of the check for missing security headers
-    //    }
-    //
-    //    private static func checkCookieSecurityFlags(responseHeaders: [String: String]) -> [SecurityWarning] {
-    //        // Implementation of the check for cookie security flags
-    //    }
-    //
+
     private static func detectServerMisconfigurations(responseHeaders: [String: String], urlOrigin: String) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
         var detectedValues: [String: String] = [:]
@@ -65,6 +66,53 @@ struct HeadersAnalyzer {
                 url: urlOrigin,
                 source: .header
                 ))
+        }
+        return warnings
+    }
+    
+    private static func checkStrictTransportSecurity(responseHeaders: [String: String], urlOrigin: String, warnings: [SecurityWarning]) -> [SecurityWarning] {
+        // Check HSTS (Strict-Transport-Security)
+        var warnings = warnings
+        if let hsts = responseHeaders.first(where: { $0.key.lowercased() == "strict-transport-security" })?.value {
+            if hsts.lowercased().contains("max-age=") {
+                // Check if the max-age value is sufficiently long (at least 6 months)
+                let maxAgeMatch = hsts.range(of: #"max-age=(\d+)"#, options: .regularExpression)
+                if let match = maxAgeMatch,
+                   let maxAgeValue = Int(hsts[match].split(separator: "=").last ?? ""),
+                   maxAgeValue >= 10886400 {
+                    warnings.append(SecurityWarning(
+                        message: "HSTS header is present with a strong max-age.",
+                        severity: .info,
+                        penalty: 0,
+                        url: urlOrigin,
+                        source: .header
+                    ))
+                } else {
+                    warnings.append(SecurityWarning(
+                        message: "⚠️ HSTS header is present but the max-age is low. Recommended at least 6 months (10886400 seconds).",
+                        severity: .suspicious,
+                        penalty: PenaltySystem.Penalty.lowHSTSValue,
+                        url: urlOrigin,
+                        source: .header
+                    ))
+                }
+            } else {
+                warnings.append(SecurityWarning(
+                    message: "HSTS header is present but malformed — missing max-age directive.",
+                    severity: .suspicious,
+                    penalty: PenaltySystem.Penalty.missingHSTS,
+                    url: urlOrigin,
+                    source: .header
+                ))
+            }
+        } else {
+            warnings.append(SecurityWarning(
+                message: "Missing HSTS (Strict-Transport-Security) header. This allows downgrade attacks.",
+                severity: .dangerous,
+                penalty: PenaltySystem.Penalty.missingHSTS,
+                url: urlOrigin,
+                source: .header
+            ))
         }
         return warnings
     }
@@ -129,7 +177,7 @@ struct HeadersAnalyzer {
     //        }
     //    }
 //    //}
-//    
+//
 //    These headers enhance security and should be present:
 //        •    "strict-transport-security" (HSTS)
 //        •    "content-security-policy" (CSP)
@@ -142,11 +190,11 @@ struct HeadersAnalyzer {
 //        •    "cross-origin-resource-policy"
 //        •    "origin-agent-cluster"
 //
-//    📌 If any of these are missing, we flag it!
+//    If any of these are missing, we flag it!
 //
 //    ⸻
 //
-//    ⚠️ Tracking & Potential Privacy Risks
+//    Tracking & Potential Privacy Risks
 //
 //    These headers indicate tracking, session behavior, or analytics:
 //        •    "set-cookie" (Session persistence)
@@ -154,11 +202,11 @@ struct HeadersAnalyzer {
 //        •    "permissions-policy" (Can also be abused)
 //        •    "report-to" / "nel" (Network error logging, could track user failures)
 //
-//    📌 If found, we log them, but they aren’t automatically bad.
+//    If found, we log them, but they aren’t automatically bad.
 //
 //    ⸻
 //
-//    ❌ Server Exposure (Bad)
+//    Server Exposure (Bad)
 //
 //    These headers expose information about the web server:
 //        •    "server" (Should be hidden)
@@ -169,7 +217,7 @@ struct HeadersAnalyzer {
 //        •    "x-drupal-cache" (Drupal-specific)
 //        •    "x-backend-server" (Exposes infrastructure)
 //
-//    📌 If found, we penalize based on content.
+//    If found, we penalize based on content.
 //        •    Apache/Nginx? Minor penalty (-5)
 //        •    Exposed framework (Express, Django, etc.)? Major penalty (-15)
 //        •    PaaS hosting (Vercel, Firebase, etc.)? Moderate penalty (-10)

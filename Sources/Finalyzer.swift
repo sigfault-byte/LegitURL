@@ -2,10 +2,10 @@ struct Finalyzer {
     static func computeFinalScore(for urlInfos: [URLInfo]) -> Int {
         let warnings = urlInfos.flatMap { $0.warnings }
         
-//      DEBUG
         let totalPenalty = warnings.map { $0.penalty }.reduce(0, +)
-        let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
-        penaltyDetails.forEach { print($0) }
+//      DEBUG
+//        let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
+//        penaltyDetails.forEach { print($0) }
 //       END
         var newScore = 100 + totalPenalty
         if newScore < 0 {

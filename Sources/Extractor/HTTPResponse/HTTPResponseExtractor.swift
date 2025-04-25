@@ -106,64 +106,42 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
             }
             let parsedHeaders = parseHeaders(httpResponse.allHeaderFields)
             
-            
             let sslCertificateDetails = sharedInstance.sslCertificateDetails
             
-            let maxSafeBodySize = 1_600_000 // 1600 KB
-            var processedBody: Data
-            var isBodyTooLarge = false
-
-            if let data = data {
-                if data.count > maxSafeBodySize {
-                    print(" Body too large: \(data.count) bytes. Truncating to \(maxSafeBodySize) bytes.")
-//                   TODO: Need to warn user that the body was truncated
-                    // Truncate the data
-                    processedBody = Data(data.prefix(maxSafeBodySize))
-                    isBodyTooLarge = true
-                } else {
-                    processedBody = data
-                }
-            } else {
-                // If no data was received, use an empty Data or any default value.
-                processedBody = Data()
-            }
-
-            let humanReadableBody = String(data: processedBody, encoding: .utf8) ?? "[Body not decodable]"
+//            let maxSafeBodySize = 4_000_000 // ~ 4MB
+            
 
             // Now, create your OnlineURLInfo using the processed data:
-            var onlineInfo = OnlineURLInfo(
+            let onlineInfo = OnlineURLInfo(
                 from: urlInfo,
                 responseCode: statusCode,
                 statusText: statusText,
                 normalizedHeaders: normalizedHeaders,
                 parsedHeaders: parsedHeaders,
-                body: processedBody,
+                rawBody: data,
                 certificateAuthority: sslCertificateDetails["Issuer"] as? String,
                 sslValidity: !(sslCertificateDetails["Warning"] != nil),
                 finalRedirectURL: parsedHeaders.otherHeaders["location"]
             )
-            // Set additional properties:
-            onlineInfo.humanReadableBody = humanReadableBody
-            onlineInfo.isBodyTooLarge = isBodyTooLarge
-            
-            let parsedCert = sslCertificateDetails["ParsedCertificate"] as? ParsedCertificate
-            onlineInfo.parsedCertificate = parsedCert
+
             
             // TODO: Detect and respect encoding using BOM or <meta charset="..."> in the first 500 bytes
             // Example: <!DOCTYPE html><html lang="fr"><head><meta charset="iso-8859-1"> -> french website living in 1980
             // NO BOM most fo the time :((((
-            let bodyText: String? =
-                String(data: processedBody, encoding: .utf8) ??
-                String(data: processedBody, encoding: .isoLatin1) ??
-                String(data: processedBody, encoding: .utf16)
-            
-            if let bodyText = bodyText {
-                onlineInfo.humanReadableBody = bodyText
-                onlineInfo.humanBodySize = processedBody.count
-            } else {
-//                print("🪵 Raw body bytes prefix: \(processedBody.prefix(100).map { String(format: "%02X", $0) }.joined(separator: " "))")
-                onlineInfo.humanReadableBody = "⚠️ Unable to decode body"
-            }
+            // TODO: This block may still be assigning the full body even when humanReadableBody was already truncated earlier.
+            // Need to rework this logic to prevent overwriting the preview with the full body unintentionally.
+//            if processedBody.count <= 1_000_000 {
+//                let fullBodyText: String? =
+//                    String(data: processedBody, encoding: .utf8) ??
+//                    String(data: processedBody, encoding: .isoLatin1) ??
+//                    String(data: processedBody, encoding: .utf16)
+//                if let fullBodyText = fullBodyText {
+//                    onlineInfo.humanReadableBody = fullBodyText
+//                } else {
+//                    onlineInfo.humanReadableBody = "⚠️ Unable to decode body"
+//                }
+//            }
+//            onlineInfo.humanBodySize = processedBody.count
             
             // Pass the response and updated URLInfo to the completion handler.
             completion(onlineInfo, nil)
@@ -180,6 +158,15 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         }
     }
         
+//    TODO: Delegate to limit html size
+//    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+//        totalBytesReceived += data.count
+//        if totalBytesReceived > maxSafeSize {
+//            dataTask.cancel()
+//        } else {
+//            buffer.append(data)
+//        }
+//    }
     
     // URLSessionTaskDelegate method:
     // This method is called when a redirect response is received.
@@ -210,6 +197,8 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
 //        }
 //    }
         
+    
+    // TODO: This needs to move elsewhere, it has nothing to do here
     private static func parseHeaders(_ responseHeaders: [AnyHashable: Any]) -> ParsedHeaders {
         var normalizedHeaders: [String: String] = [:]
         
@@ -224,7 +213,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         var parsedHeaders = ParsedHeaders()
         
         for (key, value) in normalizedHeaders {
-            if ["strict-transport-security", "content-security-policy", "x-frame-options", "x-content-type-options", "referrer-policy"].contains(key) {
+            if ["strict-transport-security", "content-security-policy","content-security-policy-report-only", "x-frame-options", "x-content-type-options", "referrer-policy"].contains(key) {
                 parsedHeaders.securityHeaders[key] = value
             } else if ["set-cookie", "etag", "permissions-policy"].contains(key) {
                 parsedHeaders.trackingHeaders[key] = value
