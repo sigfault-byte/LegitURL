@@ -97,14 +97,15 @@ struct ScriptExtractor {
 //         Step 2.5 - Match confirmed scripts with closing </script> tags
 //            Ensure the pair are correct! If the closing tag is not found in 512 byt the dev is hotdogwater or a scam
 //        instgram closing tag is farther than 1024 fucking bytes
+        
 //        for script in initialScripts where script.end == nil {
 //            let previewStart = script.start
 //            let previewEnd = min(previewStart + 1024, body.count)
 //            let previewData = body[previewStart..<previewEnd]
 //            if let previewString = String(data: previewData, encoding: .utf8) {
-//                print("⚠️ Unclosed script tag at \(previewStart). First 1024 bytes:\n\(previewString)")
+//                print("Unclosed script tag at \(previewStart). First 1024 bytes:\n\(previewString)")
 //            } else {
-//                print("⚠️ Unclosed script tag at \(previewStart). Unable to decode preview.")
+//                print("Unclosed script tag at \(previewStart). Unable to decode preview.")
 //            }
 //        }
 
@@ -144,6 +145,7 @@ struct ScriptExtractor {
         let duration = Date().timeIntervalSince(startTime)
         print("✅ Total scan completed in \(Int(duration * 1000))ms")
         print("📦 Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
+        //            DEBUG
 //        for script in confirmedScripts {
 //            guard let endTag = script.endTagPos else { continue }
 //
@@ -152,7 +154,8 @@ struct ScriptExtractor {
 //            let type = script.findings == .inlineJS ? "Inline" : "External"
 //            let context = script.context
 //            let origin = script.origin?.rawValue ?? "unknown"
-//
+
+            
 //            print("📍 Script [\(type)] from \(script.start) to \(endTag) — origin: \(origin) in \(context?.rawValue)")
 //
 //            if let fullDecoded = String(data: fullSnippet, encoding: .utf8) {

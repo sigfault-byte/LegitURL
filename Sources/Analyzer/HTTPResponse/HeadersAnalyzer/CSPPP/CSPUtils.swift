@@ -16,6 +16,7 @@ struct ClassifiedCSPResult {
 struct DirectiveSourceInfo {
     var urlCount: Int
     var hasHTTP: Bool
+    var hasHTTPButLocalhost: Bool
     var hasWildcard: Bool
     var onlySelf: Bool
 }

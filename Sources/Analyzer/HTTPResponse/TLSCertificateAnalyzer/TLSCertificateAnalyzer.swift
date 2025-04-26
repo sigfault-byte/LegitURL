@@ -188,7 +188,7 @@ struct TLSCertificateAnalyzer {
         }
 
         // 8. Retroactive SAN Heuristic Reversal
-        print("ICI: ", tlsSANReusedMemory)
+//        print("ICI: ", tlsSANReusedMemory)
         if let previous = tlsSANReusedMemory.first(where: { $0.value.domain == domain }),
            previous.value.fingerprint != certificate.fingerprintSHA256,
 //           “Capture once. Store locally. Never trust global memory for retroactive judgment.”

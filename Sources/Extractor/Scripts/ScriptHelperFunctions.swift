@@ -123,36 +123,38 @@ struct ScriptHelperFunction {
         }
     }
     
-    static func scanScriptSrc(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 96, respectTagEnd: Bool = true) {
+    static func scanScriptSrc(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 128, respectTagEnd: Bool = true) {
         for i in 0..<scripts.count {
             let start = scripts[i].start
             
             // look for "=" in the first 32 bytes
             let earlyRange = start..<min(start + 32, body.count)
             let eqSigns = DataSignatures.extractAllTagMarkers(in: body, within: earlyRange, tag: UInt8(ascii: "="))
-            if let eq = eqSigns.first, eq >= 3 {
-                let s = body[eq - 3] | 0x20
-                let r = body[eq - 2] | 0x20
-                let c = body[eq - 1] | 0x20
-                
-                if s == UInt8(ascii: "s"), r == UInt8(ascii: "r"), c == UInt8(ascii: "c") {
-                    let scanRange: Range<Int>
-                    if respectTagEnd, let tagEnd = scripts[i].end {
-                        scanRange = start..<min(tagEnd + 1, body.count)
-                    } else {
-                        scanRange = start..<min(start + lookAhead, body.count)
-                    }
+            var foundSrc = false
+            for eq in eqSigns {
+                if eq >= 3 {
+                    let s = body[eq - 3] | 0x20
+                    let r = body[eq - 2] | 0x20
+                    let c = body[eq - 1] | 0x20
                     
-                    let (found, position) = body.containsBytesCaseInsensitive(of: interestingPrefix.src, startIndex: scanRange.lowerBound)
-                    if found, let pos = position, pos > start, pos < scanRange.upperBound {
-                        scripts[i].srcPos = pos
-                    } else {
-                        scripts[i].findings = .inlineJS
+                    if s == UInt8(ascii: "s"), r == UInt8(ascii: "r"), c == UInt8(ascii: "c") {
+
+                        let scanRange: Range<Int>
+                        if respectTagEnd, let tagEnd = scripts[i].end {
+                            scanRange = start..<min(tagEnd + 1, body.count)
+                        } else {
+                            scanRange = start..<min(start + lookAhead, body.count)
+                        }
+                        let (found, position) = body.containsBytesCaseInsensitive(of: interestingPrefix.src, startIndex: scanRange.lowerBound)
+                        if found, let pos = position, pos > start, pos < scanRange.upperBound {
+                            scripts[i].srcPos = pos
+                        }
+                        foundSrc = true
+                        break
                     }
-                } else {
-                    scripts[i].findings = .inlineJS
                 }
-            } else {
+            }
+            if !foundSrc {
                 scripts[i].findings = .inlineJS
             }
         }

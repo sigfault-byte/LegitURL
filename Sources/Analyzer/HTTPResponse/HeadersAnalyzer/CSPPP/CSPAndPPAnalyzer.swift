@@ -7,7 +7,12 @@
 import Foundation
 
 struct CSPAndPPAnalyzer {
-    static func analyze(_ headers: [String: String], urlOrigin: String) -> (warnings: [SecurityWarning], result: ClassifiedCSPResult) {
+    static func analyze(_ headers: [String: String],
+                        urlOrigin: String,
+                        scriptValueToCheck: ScriptSourceToMatchCSP?, // To check nonce and external
+                        script: inout ScriptExtractionResult?) // flag fails from the checks
+    
+    -> (warnings: [SecurityWarning], result: ClassifiedCSPResult) {
 //Only these headers key might require full byte-level parsing due to potential size or structural complexity.
 //All others can be handled with strin analysis.
         
@@ -19,6 +24,7 @@ struct CSPAndPPAnalyzer {
         var directiveSlices: [Range<Int>] = []
         var directiveValues: [[Data: [Data]]] = []
         var structuredCSP: [String: [Data: CSPValueType]] = [:]
+        let scriptValueToCheckUnwrapped = scriptValueToCheck ?? nil
 //        var SrcScriptConfig: [String: Int32] = [:]
         
         
@@ -140,30 +146,55 @@ struct CSPAndPPAnalyzer {
         
         let directiveBitFlags: [String: Int32] = parseCSP(structuredCSP)
         var scriptSrc: String = ""
-        for directive in structuredCSP.keys {
-            if directive == "script-src" || directive == "default-src" {
-                scriptSrc = directive
+        for _ in structuredCSP.keys {
+            if structuredCSP.keys.contains("script-src") {
+                scriptSrc = "script-src"
+            } else if structuredCSP.keys.contains("default-src") {
+                scriptSrc = "default-src"
             }
         }
+        let warningsToAppend = CSPDirective.analyzeScriptOrDefaultSrc(directiveName: scriptSrc,
+                                                                     bitFlagCSP: CSPBitFlag(rawValue: directiveBitFlags[scriptSrc] ?? 0),
+                                                                     url: urlOrigin)
+        warnings.append(contentsOf: warningsToAppend)
         
         
         
-        
-        warnings.append(contentsOf: CSPDirective.analyzeScriptOrDefaultSrc(directiveName: scriptSrc,
-                                                               bitFlagCSP: CSPBitFlag(rawValue: directiveBitFlags[scriptSrc] ?? 0),
-                                                               url: urlOrigin))
-        
+        // compare the script source and nonce only if the CSP directive script-src has urls except self or nonce value
+        if let scriptDirective = structuredCSP[scriptSrc] {
+            var hasNonce = false
+            var hasExternalURL = false
+
+            for (_, valueType) in scriptDirective {
+                if valueType == .nonce {
+                    hasNonce = true
+                }
+                if valueType == .url {
+                    hasExternalURL = true
+                }
+            }
+
+            if hasNonce || hasExternalURL {
+                let extraWarnings = NonceAndExternalScript.analyze(
+                    scriptValueToCheck: scriptValueToCheckUnwrapped,
+                    scriptDirective: scriptDirective,
+                    urlOrigin: urlOrigin,
+                    script: &script
+                )
+                warnings.append(contentsOf: extraWarnings)
+            }
+        }
         
 
-        //        DEBUG
-        for (directive, values) in structuredCSP {
-            print("🌐 Directive: \(directive)")
-            for (value, type) in values {
-                let valStr = String(data: value, encoding: .utf8) ?? "(unknown)"
-                print("  ├─ \(valStr) → \(type)")
-            }
-        }
-//
+//                DEBUG
+//        for (directive, values) in structuredCSP {
+//            print("🌐 Directive: \(directive)")
+//            for (value, type) in values {
+//                let valStr = String(data: value, encoding: .utf8) ?? "(unknown)"
+//                print("  ├─ \(valStr) → \(type)")
+//            }
+//        }
+
         var directiveSourceTraits: [String: DirectiveSourceInfo] = [:]
 
         for (directive, values) in structuredCSP {
@@ -171,6 +202,7 @@ struct CSPAndPPAnalyzer {
             var hasHTTP = false
             var hasWildcard = false
             var hasOnlySelf = true
+            var hasHTTPButLocalhost: Bool = false
 
             for (value, type) in values {
                 if type == .url {
@@ -178,6 +210,10 @@ struct CSPAndPPAnalyzer {
                     hasOnlySelf = false
 
                     if value.starts(with: Data("http:".utf8)) {
+                        if value.starts(with: Data("http://localhost:".utf8)) || value.starts(with: Data("http://127.".utf8))  {
+                            hasHTTPButLocalhost = true
+                            break
+                        }
                         hasHTTP = true
                     }
                     if value.starts(with: Data("*".utf8)) {
@@ -193,16 +229,21 @@ struct CSPAndPPAnalyzer {
                     }
                 }
             }
+            
+            
 
             directiveSourceTraits[directive] = DirectiveSourceInfo(
                 urlCount: urlCount,
                 hasHTTP: hasHTTP,
+                hasHTTPButLocalhost: hasHTTPButLocalhost,
                 hasWildcard: hasWildcard,
                 onlySelf: hasOnlySelf
             )
         }
 
-        //TODO: Add logic to check the nonce Value and the script Source with the CSP values
+        
+        
+        
         
 //        Crazy tracking bullshit website like x.com
 //        if scriptSrcCount > 20 && connectSrcCount > 50 {

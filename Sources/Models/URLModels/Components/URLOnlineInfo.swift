@@ -94,4 +94,5 @@ struct ParsedHeaders {
 struct ScriptSourceToMatchCSP {
     var nonceList: [String]
     var externalSources: [String]
+    
 }

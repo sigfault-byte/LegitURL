@@ -10,13 +10,20 @@ import Foundation
 struct ScriptInlineAnalyzer {
     
     static func analyze(scripts: inout ScriptExtractionResult, body: Data, origin: String, into warnings: inout [SecurityWarning]) {
-//        let start = Date()
+        //        let start = Date()
         var hotDogWaterJSSoup: String?
         var setterDetected = false
         //        Debug
-//        for script in scripts.scripts {
-//            print(script)
+//        Too early !
+//        let isNonce = scripts.scripts.contains(where: { $0.nonceValue != nil })
+//        if isNonce {
+//            for i in scripts.scripts.indices {
+//                if scripts.scripts[i].origin == .inline && scripts.scripts[i].nonceValue == nil {
+//                    scripts.scripts[i].findings4UI = (scripts.scripts[i].findings4UI ?? []) + [("Inline Script Missing nonce Value", .info)]
+//                }
+//            }
 //        }
+        
         //        join all inline to a js soup
         let (soup, byteRangesByScript) = generateInlineSoup(from: scripts.scripts, in: body)
         hotDogWaterJSSoup = soup
@@ -42,7 +49,7 @@ struct ScriptInlineAnalyzer {
             suspiciousBytes: SuspiciousJSAccessors.accessorsFirstBytes
         )
         // second pass with pos -2 on the second letter of bad js function
-//        Debug
+        //        Debug
         //        print("\(suspiciousCalls.count)  JS calls found from \(parenPositions.count) ")
         //        print("\(suspiciousAncestors.count) JS accessors calls found from \(dotPositions.count) ")
         
@@ -66,7 +73,7 @@ struct ScriptInlineAnalyzer {
             suspiciousBytes: SuspiciousJSAccessors.accessorsThirdBytes
         )
         
-//        let start1 = Date()
+        //        let start1 = Date()
         matchConfirmedBadJSCalls(in: soupData,
                                  positions: suspiciousCalls2,
                                  origin: origin,
@@ -84,30 +91,30 @@ struct ScriptInlineAnalyzer {
                                   byteRangesByScript: byteRangesByScript)
         
         
-//        let timing = Date().timeIntervalSince(start1)
-//        let duration = Date().timeIntervalSince(start)
-//        print("gather the data took: ", duration, "filtering took: ", timing)
+        //        let timing = Date().timeIntervalSince(start1)
+        //        let duration = Date().timeIntervalSince(start)
+        //        print("gather the data took: ", duration, "filtering took: ", timing)
     }
     
     private static func generateInlineSoup(from scripts: [ScriptScanTarget], in body: Data) -> (soup: String, ranges: [(range: Range<Int>, scriptIndex: Int)]) {
         var byteRangesByScript: [(range: Range<Int>, scriptIndex: Int)] = []
         var currentStart = 0
         var soup = ""
-
+        
         for (index, script) in scripts.enumerated() {
             guard script.origin == .inline,
                   let start = script.end,
                   let end = script.endTagPos,
                   let jsContent = String(data: body[start..<end], encoding: .utf8)
             else { continue }
-
+            
             soup += jsContent + "\n"
             let length = jsContent.utf8.count + 1 // +1 for newline
             let range = currentStart..<(currentStart + length)
             byteRangesByScript.append((range, index))
             currentStart += length
         }
-
+        
         return (soup, byteRangesByScript)
     }
     
@@ -239,15 +246,15 @@ struct ScriptInlineAnalyzer {
                 let accessorStart = pos + 1
                 let accessorEnd = accessorStart + bytes.count
                 let slice = soupData[accessorStart..<accessorEnd]
-
+                
                 if slice.elementsEqual(bytes) {
                     let equalSignPos = accessorEnd - 1
                     let isAssignment = DataSignatures.fastScriptByteHint(at: equalSignPos, in: soupData, hint: [byteLetters.equalSign])
-//Debug
-//                    if let preview = String(data: soupData[max(0, pos - 40)..<min(soupData.count, pos + 60)], encoding: .utf8) {
-//                        print("🍪 Detected document.cookie context:\n\(preview)\n")
-//                    }
-
+                    //Debug
+                    //                    if let preview = String(data: soupData[max(0, pos - 40)..<min(soupData.count, pos + 60)], encoding: .utf8) {
+                    //                        print("🍪 Detected document.cookie context:\n\(preview)\n")
+                    //                    }
+                    
                     if name == "cookie" && isAssignment && !setcookie {
                         if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
                             let index = match.scriptIndex
@@ -281,7 +288,7 @@ struct ScriptInlineAnalyzer {
                             bitFlags: WarningFlags.BODY_JS_READ_COOKIE
                         ))
                     }
-
+                    
                     let displayName = (name == "cookie") ? "document.cookie" : name
                     matchCounts[displayName, default: 0] += 1
                     if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
@@ -297,16 +304,16 @@ struct ScriptInlineAnalyzer {
             let baseName = displayName.replacingOccurrences(of: "document.", with: "")
             let (penalty, severity): (Int, SecurityWarning.SeverityLevel) = {
                 switch baseName {
-                case "cookie":
-                    return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
-                case "localStorage":
-                    return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)
-                case "setItem":
-                    return (PenaltySystem.Penalty.jsSetItemAccess, .suspicious)
-                case "WebAssembly":
-                    return (PenaltySystem.Penalty.jsWebAssembly, .dangerous)
-                default:
-                    return (-10, .suspicious)
+                    case "cookie":
+                        return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
+                    case "localStorage":
+                        return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)
+                    case "setItem":
+                        return (PenaltySystem.Penalty.jsSetItemAccess, .suspicious)
+                    case "WebAssembly":
+                        return (PenaltySystem.Penalty.jsWebAssembly, .dangerous)
+                    default:
+                        return (-10, .suspicious)
                 }
             }()
             

@@ -131,9 +131,9 @@ struct HTTPRespAnalyzer {
                                                                     origin: urlOrigin,
                                                                     htmlRange: result.htmlRange,
                                                                     into: &urlInfo.warnings)
-                
-                let preview = ScriptToPreview.prepareScriptPreviews(for: result.scripts, body: rawbody)
-                onlineInfo.script4daUI = preview
+                findings = result // ✅ Sync mutated result back into findings ///LAST EDIT
+//                let preview = ScriptToPreview.prepareScriptPreviews(for: result.scripts, body: rawbody)
+//                onlineInfo.script4daUI = preview
             }
         }
 
@@ -168,26 +168,34 @@ struct HTTPRespAnalyzer {
         //  Analyze headers for content security policy
         var cspResult: ClassifiedCSPResult? = nil
         if responseCode == 200 {
-            let (warningsCSP, result) = CSPAndPPAnalyzer.analyze(headers, urlOrigin: urlOrigin)
+            let (warningsCSP, result) = CSPAndPPAnalyzer.analyze(headers,
+                                                                 urlOrigin: urlOrigin,
+                                                                 scriptValueToCheck: scriptValueToCheck,
+                                                                 script: &findings)
             urlInfo.warnings.append(contentsOf: warningsCSP)
             cspResult = result
         }
-
-        // Only act if result was actually analyzed
+        if let scritpsUIPreP = findings?.scripts, let rawBody = onlineInfo.rawBody {
+            let preview = ScriptToPreview.prepareScriptPreviews(for: scritpsUIPreP, body: rawBody)
+            onlineInfo.script4daUI = preview
+        }
+        
+        
+        // Only save if result was actually analyzed
         if let result = cspResult, !result.structuredCSP.isEmpty {
             // Do something with result
             onlineInfo.cspOfHeader = result
         }
         
-        // Syncronize the onlineInfo back into the singleotn
-        
         let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin, responseCode: responseCode)
         urlInfo.warnings.append(contentsOf: headerWarnings)
+        
         
         if let findings = findings {
             onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings)
         }
         
+        // Syncronize the onlineInfo back into the singleotn
         if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {
             URLQueue.shared.onlineQueue[index] = onlineInfo
         }

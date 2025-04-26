@@ -40,12 +40,13 @@ struct ScriptSecurityAnalyzer {
             ))
         }
         
+        //TODO: compute nonce value entropy, maybe add script hash to ?
         let (nonceList, srcList, internalCount) = extractScriptAttributes(from: scripts.scripts)
         
         checkScriptDensity(internalCount: internalCount, externalCount: srcList.count, htmlSize: htmlRange.count, originURL: origin, into: &warnings)
         
         ScriptInlineAnalyzer.analyze(scripts: &scripts, body: body, origin: origin, into: &warnings)
-
+        
         return ScriptSourceToMatchCSP(nonceList: nonceList, externalSources: srcList)
     }
     
