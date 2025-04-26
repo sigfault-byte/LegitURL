@@ -123,22 +123,28 @@ struct ScriptHelperFunction {
         }
     }
     
-    static func scanScriptSrc(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 128, respectTagEnd: Bool = true) {
+    static func scanScriptSrc(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 16, respectTagEnd: Bool = true) {
         for i in 0..<scripts.count {
             let start = scripts[i].start
             
-            // look for "=" in the first 32 bytes
-            let earlyRange = start..<min(start + 32, body.count)
+            // Scan for "=" from start up to tagEnd if available, else up to start+lookAhead
+            let earlyRange: Range<Int>
+            if respectTagEnd, let tagEnd = scripts[i].end {
+                earlyRange = start..<min(tagEnd + 1, body.count)
+            } else {
+                print("THIS SHOULD NOT HAPPEN ALALALALALALAALALALALALALALLAAL")
+                earlyRange = start..<min(start + lookAhead, body.count)
+            }
             let eqSigns = DataSignatures.extractAllTagMarkers(in: body, within: earlyRange, tag: UInt8(ascii: "="))
             var foundSrc = false
             for eq in eqSigns {
                 if eq >= 3 {
+                    // look backward
                     let s = body[eq - 3] | 0x20
                     let r = body[eq - 2] | 0x20
                     let c = body[eq - 1] | 0x20
-                    
                     if s == UInt8(ascii: "s"), r == UInt8(ascii: "r"), c == UInt8(ascii: "c") {
-
+                        // found src
                         let scanRange: Range<Int>
                         if respectTagEnd, let tagEnd = scripts[i].end {
                             scanRange = start..<min(tagEnd + 1, body.count)
@@ -153,11 +159,47 @@ struct ScriptHelperFunction {
                         break
                     }
                 }
+                if ScriptHelperFunction.containsApplicationDataType(in: body, eq: eq) {
+                    scripts[i].findings = .dataScript
+                    foundSrc = true // because even if it's application/json, it's a data blob, not inline
+                    break
+                }
             }
             if !foundSrc {
                 scripts[i].findings = .inlineJS
             }
         }
+    }
+    
+    // kick the data app
+    static func filterOutDataScripts(_ scripts: inout [ScriptScanTarget]) {
+        scripts.removeAll { $0.findings == .dataScript }
+    }
+    
+    //    babylon js bs
+    static func containsApplicationDataType(in body: Data, eq: Int) -> Bool {
+        var typeCheck = [UInt8]()
+        var offset = eq - 1
+        
+        while offset >= 0 && typeCheck.count < 4 {
+            let char = body[offset]
+            if char != UInt8(ascii: " ") && char != UInt8(ascii: "\t") && char != UInt8(ascii: "\n") {
+                typeCheck.append(char | 0x20) // Lowercase
+            }
+            offset -= 1
+        }
+        
+        if typeCheck.reversed() == [UInt8(ascii: "t"), UInt8(ascii: "y"), UInt8(ascii: "p"), UInt8(ascii: "e")] {
+            // After '=', look forward for "application/json" or "application/ld+json"
+            let typeStart = eq + 1
+            let lookahead = min(typeStart + 64, body.count)
+            let typeSlice = body[typeStart..<lookahead]
+            
+            if typeSlice.range(of: Data("application/".utf8)) != nil {
+                return true
+            }
+        }
+        return false
     }
     
     static func findNonceScript(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 64, respectTagEnd: Bool = true) -> Void {
@@ -271,7 +313,7 @@ struct ScriptHelperFunction {
         let valueRange = (qStart + 1)..<qEnd
         let value = body[valueRange]
         
-//        we are in the quotes after a src, so this is meaningless for Swift
+        //        we are in the quotes after a src, so this is meaningless for Swift
         var lowercased = Data(value)
         for i in 0..<lowercased.count {
             let b = lowercased[i]
@@ -294,8 +336,8 @@ struct ScriptHelperFunction {
             return (.dataURI, String(data: value, encoding: .utf8))
             
         } else if lowercased.starts(with: [UInt8(ascii: "/")]) ||
-                  lowercased.starts(with: Array("./".utf8)) ||
-                  looksLikeRelativePath(quoteRange: lowercased) {
+                    lowercased.starts(with: Array("./".utf8)) ||
+                    looksLikeRelativePath(quoteRange: lowercased) {
             return (.relative, String(data: value, encoding: .utf8))
             
         } else {
@@ -307,13 +349,13 @@ struct ScriptHelperFunction {
         guard !quoteRange.isEmpty else {
             return false
         }
-
+        
         var index = 0
         var candidate = false
-
+        
         while index < quoteRange.count {
             let byte = quoteRange[index]
-
+            
             if byte.isAlnum || byte == UInt8(ascii: "_") || byte == UInt8(ascii: "-") {
                 index += 1
             } else {
@@ -325,7 +367,7 @@ struct ScriptHelperFunction {
                 }
             }
         }
-
+        
         if candidate {
             // Strip query or fragment if present
             let pathOnly: Data
@@ -334,12 +376,12 @@ struct ScriptHelperFunction {
             } else {
                 pathOnly = quoteRange
             }
-
+            
             if pathOnly.suffix(3) == Array(".js".utf8) || pathOnly.suffix(4) == Array(".mjs".utf8) {
                 return true
             }
         }
-
+        
         return false
     }
 }

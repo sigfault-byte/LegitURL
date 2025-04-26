@@ -41,6 +41,7 @@ enum ScanFlag {
     case script
     case inlineJS
     case suspectedObfuscation
+    case dataScript
 }
 
 struct ScriptExtractionResult {

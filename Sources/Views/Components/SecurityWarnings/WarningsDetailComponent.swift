@@ -2,7 +2,9 @@ import SwiftUI
 
 struct WarningsDetailComponent: View {
     @ObservedObject var viewModel: WarningsComponentModel
-    @State private var expandedWarningID: UUID?
+    @State private var expandedWarningIDs: Set<UUID> = []
+    @State private var showInfoWarnings: Bool = true
+    
     var onDismissAndNavigate: ((String) -> Void)?
 
     var body: some View {
@@ -27,6 +29,16 @@ struct WarningsDetailComponent: View {
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
+                        VStack(spacing: 4) {
+                            Toggle("", isOn: $showInfoWarnings)
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                            Text("INFO")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(width: 60)
+                        .padding(.horizontal)
                     }
                     .padding()
                     .background(.ultraThinMaterial)
@@ -47,8 +59,15 @@ struct WarningsDetailComponent: View {
 
                         LegitURLReplyView(
                             domainGroup: domainGroup,
-                            expandedWarningID: expandedWarningID,
-                            setExpandedWarningID: { expandedWarningID = $0 },
+                            expandedWarningIDs: expandedWarningIDs,
+                            toggleExpandedWarningID: { warningID in
+                                if expandedWarningIDs.contains(warningID) {
+                                    expandedWarningIDs.remove(warningID)
+                                } else {
+                                    expandedWarningIDs.insert(warningID)
+                                }
+                            },
+                            showInfoWarnings: showInfoWarnings,
                             onSourceTap: { tappedSource in
                                 onDismissAndNavigate?(tappedSource)
                             }
@@ -65,9 +84,11 @@ struct WarningsDetailComponent: View {
 
 struct LegitURLReplyView: View {
     let domainGroup: WarningDomainGroup
-    let expandedWarningID: UUID?
-    let setExpandedWarningID: (UUID?) -> Void
+    let expandedWarningIDs: Set<UUID>
+    let toggleExpandedWarningID: (UUID) -> Void
+    let showInfoWarnings: Bool
     let onSourceTap: (String) -> Void
+    let truncatedLimit: Int = 128
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -76,7 +97,9 @@ struct LegitURLReplyView: View {
                 
                 ForEach(SecurityWarning.SeverityLevel.allWarnings, id: \.self) { severity in
                     
-                    if let warnings = sourceGroup.severityMap[severity], !warnings.isEmpty {
+                    if (severity != .info || showInfoWarnings),
+                       let warnings = sourceGroup.severityMap[severity],
+                       !warnings.isEmpty {
                         
                         ForEach(warnings) { warning in
                             
@@ -85,20 +108,21 @@ struct LegitURLReplyView: View {
                                     .fill(severity.iconColor)
                                     .frame(width: 4)
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(warning.message)
+                                    Text(expandedWarningIDs.contains(warning.id) || warning.message.count <= truncatedLimit
+                                         ? warning.message
+                                         : String(warning.message.prefix(truncatedLimit)) + "[...]")
                                         .font(.subheadline)
                                         .foregroundColor(.primary)
+                                        .onTapGesture {
+                                            toggleExpandedWarningID(warning.id)
+                                        }
                                     Text(sourceGroup.source.displayLabel)
                                         .font(.caption)
                                         .foregroundColor(.blue)
                                         .onTapGesture {
-                                            if expandedWarningID == warning.id {
-                                                setExpandedWarningID(nil)
-                                            } else {
-                                                setExpandedWarningID(warning.id)
-                                            }
+                                            toggleExpandedWarningID(warning.id)
                                         }
-                                    if expandedWarningID == warning.id {
+                                    if expandedWarningIDs.contains(warning.id) {
                                         GlossaryBubbleView(source: sourceGroup.source)
                                     }
                                 }
@@ -106,11 +130,13 @@ struct LegitURLReplyView: View {
                             .padding(10)
                             .background(Color(uiColor: .secondarySystemBackground))
                             .cornerRadius(10)
+                            .transition(.opacity)
                         }
                     }
                 }
             }
         }
         .padding(.leading, 8)
+        .animation(.easeInOut, value: showInfoWarnings)
     }
 }

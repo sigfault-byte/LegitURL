@@ -6,12 +6,15 @@
 //
 
 import Foundation
+import CryptoKit
 
 class RecommendedCSPGenerator {
     
     // MARK: - Inputs
     var detectedScriptHosts: Set<String> = []
     var hasInlineScripts: Bool = false
+    var detectedInlineScriptContents: [String] = []
+    var detectedScriptNonces: Set<String> = []
     
     // (Optional later) Other assets: images, frames, etc.
     
@@ -27,9 +30,18 @@ class RecommendedCSPGenerator {
         var scriptSources = ["'self'"]
         scriptSources.append(contentsOf: detectedScriptHosts)
 
-        if hasInlineScripts {
-            scriptSources.append("'unsafe-inline'")
-            findings.append(.unsafeInlineDetected)
+        if !detectedScriptNonces.isEmpty {
+            scriptSources.append("'nonce-<your_nonce_here>'")
+        } else if hasInlineScripts {
+            if detectedInlineScriptContents.count <= 5 {
+                for inlineContent in detectedInlineScriptContents {
+                    let hash = RecommendedCSPGenerator.hashInlineScript(inlineContent)
+                    scriptSources.append("'sha256-\(hash)'")
+                }
+            } else {
+                scriptSources.append("'unsafe-inline'")
+                findings.append(.unsafeInlineDetected)
+            }
         }
 
         directives["script-src"] = Array(Set(scriptSources)) // Deduplicate
@@ -45,6 +57,12 @@ class RecommendedCSPGenerator {
         }.joined(separator: " ")
 
         return CSPRecommendation(cspHeader: "Content-Security-Policy: \(header)", findings: findings)
+    }
+    
+    private static func hashInlineScript(_ script: String) -> String {
+        guard let data = script.data(using: .utf8) else { return "" }
+        let hashed = SHA256.hash(data: data)
+        return Data(hashed).base64EncodedString()
     }
 }
 

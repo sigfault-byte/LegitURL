@@ -191,8 +191,8 @@ struct HTTPRespAnalyzer {
         urlInfo.warnings.append(contentsOf: headerWarnings)
         
         
-        if let findings = findings {
-            onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings)
+        if let findings = findings, let rawBody = onlineInfo.rawBody {
+            onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings, rawBody: rawBody)
         }
         
         // Syncronize the onlineInfo back into the singleotn

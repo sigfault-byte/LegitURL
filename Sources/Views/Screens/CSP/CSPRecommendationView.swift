@@ -15,7 +15,7 @@ struct CSPRecommendationView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Recommended CSP Header")
+                    Text("Recommended script-src directive")
                         .font(.headline)
                     
                     Text(recommendation.cspHeader)
@@ -55,16 +55,21 @@ struct CSPRecommendationView: View {
                     .background(Color(.secondarySystemBackground))
                     .cornerRadius(12)
                 } else {
-                    Text("✅ No critical findings. Good job!")
+                    Text("No critical findings.")
                         .font(.caption)
                         .foregroundColor(.green)
                         .padding(.vertical)
                 }
 
-                Text("Full CSP generation (img-src, frame-src, style-src) coming soon!")
+                Text("Script-src CSP recommendation generated successfully.")
                     .font(.footnote)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.green)
                     .padding(.top, 8)
+                
+                Text("ℹ️ Note: CSP nonces must be dynamically generated for each HTTP response. Do not use a static or hardcoded nonce value. Use secure random generation.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
             }
             .padding()
         }

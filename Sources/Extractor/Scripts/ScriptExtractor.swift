@@ -93,7 +93,7 @@ struct ScriptExtractor {
             ))
             return nil
         }
-        ScriptHelperFunction.lookForScriptTagEnd(in: body, confirmedScripts: &initialScripts, asciiToCompare: byteLetters.endTag, lookAhead: 2048)
+        ScriptHelperFunction.lookForScriptTagEnd(in: body, confirmedScripts: &initialScripts, asciiToCompare: byteLetters.endTag, lookAhead: 3072)
 //         Step 2.5 - Match confirmed scripts with closing </script> tags
 //            Ensure the pair are correct! If the closing tag is not found in 512 byt the dev is hotdogwater or a scam
 //        instgram closing tag is farther than 1024 fucking bytes
@@ -111,7 +111,7 @@ struct ScriptExtractor {
 
         guard initialScripts.allSatisfy({ $0.end != nil }) && !closingScriptPositions.isEmpty else {
             warnings.append(SecurityWarning(
-                message: "Script tag could not be closed within 2048 bytes. This is highly unusual and may indicate malformed or suspicious HTML. HTML body was not analyzed",
+                message: "Script tag could not be closed within 3072 bytes. This is highly unusual and may indicate malformed or suspicious HTML. HTML body was not analyzed",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.scriptIsMoreThan512,
                 url: origin,
@@ -131,6 +131,8 @@ struct ScriptExtractor {
         print("⏱️ Step 4 - Context classification took \(Int(t5.timeIntervalSince(t4) * 1000))ms")
         // look for src
         ScriptHelperFunction.scanScriptSrc(in: body, scripts: &confirmedScripts)
+        //filter out js application data!
+        ScriptHelperFunction.filterOutDataScripts(&confirmedScripts)
         let t6 = Date()
         print("⏱️ Step 5 - Src position scan took \(Int(t6.timeIntervalSince(t5) * 1000))ms")
         // sort the scripts to their origin

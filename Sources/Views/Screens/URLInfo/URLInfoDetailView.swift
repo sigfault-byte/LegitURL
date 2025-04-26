@@ -34,9 +34,9 @@ struct URLInfoDetailView: View {
                 onlineSection
             }
             if let recommendation = onlineInfo?.cspRecommendation {
-                Section(header: Text("🛡️ Security Recommendations")) {
+                Section(header: Text("Security Recommendations")) {
                     NavigationLink(destination: CSPRecommendationView(recommendation: recommendation)) {
-                        Text("View Recommended CSP")
+                        Text("Exemple of script-src recommendation")
                     }
                 }
             }
