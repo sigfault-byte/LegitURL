@@ -21,35 +21,34 @@ struct URLOnlineDetailComponent: View {
             }
             if let cert = onlineInfo.parsedCertificate {
                 NavigationLink(destination: URLCertificateDetailView(cert: cert)) {
-                Text("View Certificate Details")
+                Text("Certificate")
                 }
             }
+            bodyNavigationLink(for: onlineInfo)
             if let parsedHeaders = onlineInfo.parsedHeaders {
                 NavigationLink(destination: RawToFormated(title: "Response Headers", content: formatParsedHeaders(parsedHeaders))) {
-                    Text("View Response Headers")
+                    Text("Response Headers")
                 }
             }
             if let cspOfHeader = onlineInfo.cspOfHeader {
                 NavigationLink(destination: CSPInspectorView(csp: cspOfHeader)){
-                    Text("View Content Security Policy details")
+                    Text("Content-Security-Policy")
                 }
             }
             
             let cookies = onlineInfo.cookiesForUI.compactMap { $0 }
             if !cookies.isEmpty {
                 NavigationLink(destination: CookieListView(cookies: cookies)) {
-                    Text("View Cookies (\(cookies.count))")
+                    Text("Cookies (\(cookies.count))")
                 }
             }
-            bodyNavigationLink(for: onlineInfo)
+            
             let script4UI = onlineInfo.script4daUI
             if !script4UI.isEmpty {
                 NavigationLink(destination: HotDogWaterView(previews: script4UI)){
-                    Text("View scripts (\(script4UI.count))")
+                    Text("Scripts (\(script4UI.count))")
                 }
             }
-            bodyNavigationLink(for: onlineInfo)
-            
         }
     }
 }
@@ -59,27 +58,21 @@ struct URLOnlineDetailComponent: View {
 private func bodyNavigationLink(for info: OnlineURLInfo) -> some View {
     Group {
         if let humanReadableBody = info.humanReadableBody, !humanReadableBody.isEmpty {
-            let bodyView: some View = {
-                let bodySize = info.humanBodySize ?? 0
-                if bodySize > 150_000 {
-                    return AnyView(RawToFormatedForHeavyBody(title: "Response Body", content: humanReadableBody))
-                } else {
-                    return AnyView(RawToFormated(title: "Response Body", content: humanReadableBody))
+            let bodySizeKB = (info.humanBodySize ?? 0) / 1024
+            let isHeavyBody = info.isBodyTooLarge
+            
+            NavigationLink(
+                destination: {
+                    if isHeavyBody {
+                        RawToFormatedForHeavyBody(title: "Response Body", content: humanReadableBody)
+                    } else {
+                        RawToFormated(title: "Response Body", content: humanReadableBody)
+                    }
+                },
+                label: {
+                    Text(isHeavyBody ? "Heavy Response Body (⚠️~\(bodySizeKB) KB)" : "Response Body")
                 }
-            }()
-
-            let bodySize = info.humanBodySize ?? 0
-            let label: String = {
-                if bodySize > 150_000 {
-                    return "⚠️ Heavy Response Body (~\(bodySize / 1024) KB)"
-                } else {
-                    return "View Response Body"
-                }
-            }()
-
-            NavigationLink(destination: bodyView) {
-                Text(label)
-            }
+            )
         }
     }
 }

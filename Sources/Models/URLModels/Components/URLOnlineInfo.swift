@@ -20,6 +20,7 @@ struct OnlineURLInfo: Identifiable {
     var humanBodySize: Int? = 0
     
     var normalizedCertificate: [String:String] = [:]
+    
     var parsedCertificate: ParsedCertificate?
     var certificateAuthority: String?
     var sslValidity: Bool = false
@@ -54,6 +55,7 @@ struct OnlineURLInfo: Identifiable {
          certificateAuthority: String? = nil,
          
          sslValidity: Bool = false,
+         parsedCertificate: ParsedCertificate? = nil,
          finalRedirectURL: String? = nil,
          
          cookies: [String:String] = [:],
@@ -73,6 +75,7 @@ struct OnlineURLInfo: Identifiable {
         
         self.certificateAuthority = certificateAuthority
         self.sslValidity = sslValidity
+        self.parsedCertificate = parsedCertificate
         
         self.finalRedirectURL = finalRedirectURL
         

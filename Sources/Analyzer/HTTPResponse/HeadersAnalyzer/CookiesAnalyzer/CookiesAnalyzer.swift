@@ -22,7 +22,8 @@ struct CookiesAnalyzer {
     static func analyzeAll(from headersCookies: [String]?,
                            httpResponseCode: Int,
                            url: String,
-                           urlInfo: inout URLInfo) -> Void {
+                           urlInfo: inout URLInfo,
+                           onlineInfo: inout OnlineURLInfo) -> Void {
         guard let headersCookies = headersCookies, !headersCookies.isEmpty else {
             return
         }
@@ -84,10 +85,7 @@ struct CookiesAnalyzer {
             ))
             
             URLQueue.shared.cookiesSeenByRedirectChain[urlInfo.id, default: Set<String>()].insert(cookie.name)
-            if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == urlInfo.id }) {
-                URLQueue.shared.onlineQueue[index].cookiesForUI.append(result)
-            }
-            
+            onlineInfo.cookiesForUI.append(result)
         }
     }
 }

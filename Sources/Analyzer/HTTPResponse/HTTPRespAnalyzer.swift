@@ -85,6 +85,44 @@ struct HTTPRespAnalyzer {
             )
         }
         
+        //TODO: Move the logic back to the extractor, it has nothing to do here.... How to mutate the warning within extractor?
+        let maxBodyForUI: Int = 1_200_000
+        let bodysize: Int = onlineInfo.rawBody?.count ?? 0
+        onlineInfo.humanBodySize = bodysize
+        bodysize > 120_000 ? onlineInfo.isBodyTooLarge = true : ()
+
+
+        if let body = onlineInfo.rawBody {
+            let slice = body.prefix(maxBodyForUI)
+
+            //TODO: might need to use the encoding "detected" here for the <scrip> encoding in the script analysis, some script are not decoded properly. eg: societe.com
+            let decodedText =
+                String(data: slice, encoding: .utf8) ??
+                String(data: slice, encoding: .isoLatin1) ??
+                String(data: slice, encoding: .utf16)
+
+            if let readable = decodedText {
+                onlineInfo.humanReadableBody = readable
+            } else {
+                onlineInfo.humanReadableBody = "Response body could not be decoded (unknown encoding or corrupted data)."
+            }
+
+            if body.count > maxBodyForUI {
+                onlineInfo.isBodyTooLarge = true
+                urlInfo.warnings.append(SecurityWarning(
+                    message: "Response body larger than 1.2MB. Display is truncated for safety.",
+                    severity: .info,
+                    penalty: 0,
+                    url: urlOrigin,
+                    source: .body
+                ))
+            }
+        } else {
+            onlineInfo.humanReadableBody = "No response body available."
+        }
+        
+        
+        // TODO: Match against the CSP values
         var scriptValueToCheck: ScriptSourceToMatchCSP? = nil
         if var result = findings, !result.scripts.isEmpty {
             if let rawbody = onlineInfo.rawBody {
@@ -99,8 +137,8 @@ struct HTTPRespAnalyzer {
             }
         }
 
-        //Then TLS
         
+        //Then TLS
         if let tlsCertificate = onlineInfo.parsedCertificate {
             let domainAndTLD = [urlInfo.domain, urlInfo.tld].compactMap { $0 }.joined(separator: ".")
             let host = urlInfo.host ?? ""
@@ -119,7 +157,8 @@ struct HTTPRespAnalyzer {
         CookiesAnalyzer.analyzeAll(from: cookies,
                                    httpResponseCode: responseCode,
                                    url: urlOrigin,
-                                   urlInfo: &urlInfo)
+                                   urlInfo: &urlInfo,
+                                   onlineInfo: &onlineInfo)
         
         
 //        print("REAL HEADERS: ")
@@ -152,11 +191,6 @@ struct HTTPRespAnalyzer {
         if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {
             URLQueue.shared.onlineQueue[index] = onlineInfo
         }
-
-        
-
-
-
 
         //  Detect silent redirect (200 OK but URL changed)
         let normalizedOriginalURL = originalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))

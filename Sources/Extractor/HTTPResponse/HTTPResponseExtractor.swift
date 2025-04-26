@@ -107,6 +107,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
             let parsedHeaders = parseHeaders(httpResponse.allHeaderFields)
             
             let sslCertificateDetails = sharedInstance.sslCertificateDetails
+            let parsedCert = sslCertificateDetails["ParsedCertificate"] as? ParsedCertificate
             
 //            let maxSafeBodySize = 4_000_000 // ~ 4MB
             
@@ -121,9 +122,12 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
                 rawBody: data,
                 certificateAuthority: sslCertificateDetails["Issuer"] as? String,
                 sslValidity: !(sslCertificateDetails["Warning"] != nil),
+                parsedCertificate: parsedCert,
                 finalRedirectURL: parsedHeaders.otherHeaders["location"]
             )
-
+            
+           
+            
             
             // TODO: Detect and respect encoding using BOM or <meta charset="..."> in the first 500 bytes
             // Example: <!DOCTYPE html><html lang="fr"><head><meta charset="iso-8859-1"> -> french website living in 1980
