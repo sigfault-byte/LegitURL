@@ -95,7 +95,7 @@ struct SubdomainAnalyzer {
                 
                 checkPhishingAndScamTerms(part, urlInfo: &urlInfo, allScamwords: allScamwords)
                 
-                let isWord = CoomonTools.isRealWord(part)
+                let isWord = CommonTools.isRealWord(part)
                 if !isWord {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "ℹ️ Subdomain segment '\(part)' is not found in the reference dictionary.",
@@ -106,7 +106,7 @@ struct SubdomainAnalyzer {
                     ))
                 }
                 
-                let (entropyFlag, score) = CoomonTools.isHighEntropy(part, 4.2)
+                let (entropyFlag, score) = CommonTools.isHighEntropy(part, 4.2)
                 if entropyFlag {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "⚠️ Subdomain segment '\(part)' appears random or obfuscated (high entropy \(String(format: "%.2f", score ?? 0))).",
@@ -150,7 +150,7 @@ struct SubdomainAnalyzer {
                 ))
                 
             } else {
-                let distance = CoomonTools.levenshtein(lowered, brandLower)
+                let distance = CommonTools.levenshtein(lowered, brandLower)
                 if distance == 1 && part.count >= 3 {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "⚠️ Subdomain segment '\(part)' is very similar to the brand '\(brand)' (Levenshtein = 1).",
@@ -162,7 +162,7 @@ struct SubdomainAnalyzer {
                     ))
                 }
                 
-                let ngram = CoomonTools.twoGramSimilarity(lowered, brandLower)
+                let ngram = CommonTools.twoGramSimilarity(lowered, brandLower)
                 if ngram > 0.6 {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "⚠️ Subdomain segment '\(part)' is structurally similar to brand '\(brand)' (2-gram similarity = \(String(format: "%.2f", ngram))).",
@@ -204,7 +204,7 @@ struct SubdomainAnalyzer {
     private static func checkWordOrEntropy(_ part: String, urlInfo: inout URLInfo) {
         let urlOrigin = urlInfo.components.host ?? ""
         
-        let isKnownWord = CoomonTools.isRealWord(part)
+        let isKnownWord = CommonTools.isRealWord(part)
         if !isKnownWord {
             urlInfo.warnings.append(SecurityWarning(
                 message: "ℹ️ Subdomain segment '\(part)' is not found in the reference dictionary.",
@@ -215,7 +215,7 @@ struct SubdomainAnalyzer {
             ))
         }
         
-        let (isEntropyHigh, entropyScore) = CoomonTools.isHighEntropy(part, 4.3)
+        let (isEntropyHigh, entropyScore) = CommonTools.isHighEntropy(part, 4.3)
         if isEntropyHigh {
             urlInfo.warnings.append(SecurityWarning(
                 message: "⚠️ Subdomain segment '\(part)' appears random or obfuscated (high entropy \(String(format: "%.2f", entropyScore ?? 0))).",

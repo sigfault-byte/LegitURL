@@ -63,7 +63,7 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     var bitFlags: CookieFlagBits = []
 
     let valueSize = cookie.value.utf8.count
-    let (isHighEntropyValue, entropyScore) = CoomonTools.isHighEntropy(cookie.value, 4.4)
+    let (isHighEntropyValue, entropyScore) = CommonTools.isHighEntropy(cookie.value, 4.4)
     if isHighEntropyValue {
         bitFlags.insert(.highEntropyValue)
         

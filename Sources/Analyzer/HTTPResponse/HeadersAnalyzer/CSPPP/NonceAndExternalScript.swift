@@ -9,6 +9,7 @@ import Foundation
 // Assess that the the scriptDirective either have nonce or external url except self
 // If scriptValutToCheck is empty here, there is nothing to do, this would be a server config error?
 //TODO: Add SHA check ! This should be cheap to compute, need some test run
+//TODO: Fix the scoring from this static crap to using the penalty system
 
 //1
 //Count scripts vs count nonces
@@ -46,7 +47,7 @@ struct NonceAndExternalScript {
         }
         
         // script values to check nonce and external urls
-        let nonceValueFromScipt = Set(scriptValueToCheck.nonceList)
+        let nonceValueFromScript = Set(scriptValueToCheck.nonceList)
         let srcValueFromScript = scriptValueToCheck.externalSources
         
         // The compact map is eaiser to understand than using .some syntax ->
@@ -55,7 +56,7 @@ struct NonceAndExternalScript {
         let nonceScriptCount = script?.scripts.compactMap { $0.noncePos != nil ? $0 : nil}.count
         
         var nonceValueFromDirective: [String] = []
-        var srcValueFromDirective : [String] = []
+        var srcValueFromDirective : Set<String> = []
         
         
         // Flag the missing nonce script, no penalty
@@ -66,7 +67,7 @@ struct NonceAndExternalScript {
         {
             if script != nil {
                 for index in script!.scripts.indices {
-                    if script!.scripts[index].nonceValue == nil {
+                    if script!.scripts[index].nonceValue == nil && script!.scripts[index].origin == .inline {
                         script!.scripts[index].findings4UI = (script!.scripts[index].findings4UI ?? []) + [("Missing nonce value", .info)]
                     }
                 }
@@ -77,55 +78,142 @@ struct NonceAndExternalScript {
                                             url: urlOrigin,
                                             source: .header))
         }
-    
-    
-    
-    for (data, valueType) in scriptDirective {
-        if let stringValue = String(data: data, encoding: .utf8) {
-            switch valueType {
-                case .nonce:
+        
+        for (data, valueType) in scriptDirective {
+            if let stringValue = String(data: data, encoding: .utf8) {
+                if stringValue.contains("nonce") {
                     nonceValueFromDirective.append(stringValue)
-                case .url:
-                    srcValueFromDirective.append(stringValue)
-                default:
-                    break // Ignore 'self', 'unsafe-inline', sha256 hashes, etc. for now
+                }
+                else if valueType == .url && !stringValue.contains("'self'") {
+                    srcValueFromDirective.insert(stringValue)
+                }
+            } else {
+                warnings.append(SecurityWarning(
+                    message: "Unable to decode directive value.",
+                    severity: .suspicious,
+                    penalty: -10,
+                    url: urlOrigin,
+                    source: .header
+                ))
+            }
+        }
+        print("Directive: ", nonceValueFromDirective)
+        var cleanedNonceFromDirective = Set(nonceValueFromDirective.map { $0.replacingOccurrences(of: "nonce-", with: "") })
+        cleanedNonceFromDirective =  Set(cleanedNonceFromDirective.map { String($0.dropFirst().dropLast()) })
+        print("Cleaned directive: ", cleanedNonceFromDirective)
+        
+        if cleanedNonceFromDirective.count == nonceValueFromScript.count {
+            // Imba one liner to clean the comparison, thanks chat GPT
+            let missingNonces = nonceValueFromScript.subtracting(cleanedNonceFromDirective)
+
+            if !missingNonces.isEmpty {
+                let displayList = CommonTools.formatLimitedList(missingNonces, limit : 5)
+                // There are some missing nonces
+                warnings.append(SecurityWarning(
+                    message: "Nonce mismatch detected. The following script nonces were not found in the CSP header: [\(displayList)]",
+                    severity: .suspicious,
+                    penalty: -10,
+                    url: urlOrigin,
+                    source: .header
+                ))
             }
         } else {
             warnings.append(SecurityWarning(
-                message: "Unable to decode directive value.",
+                message: "Nonce values in CSP header and script do not match.",
                 severity: .suspicious,
                 penalty: -10,
                 url: urlOrigin,
                 source: .header
             ))
         }
-    }
-    
-    
-    
-    
-    for nonceValue in nonceValueFromScipt {
-        print ("nonceValue: \(nonceValue)")
-    }
-    
-    for externalSource in srcValueFromScript {
-        print ("externalSource: \(externalSource)")
-    }
-    
-    return warnings
-}
+        
+        // Track how many scripts actually matched the CSP sources
+        var usedScriptCount = 0
 
-/// Checks if the script's nonce matches any allowed CSP header nonces
-static func isScriptNonceMatching(headerNonces: Set<String>, scriptNonce: String?) -> Bool {
-    guard let scriptNonce = scriptNonce else { return false }
-    
-    for headerNonce in headerNonces {
-        let cleanHeaderNonce = headerNonce.replacingOccurrences(of: "nonce-", with: "")
-        if scriptNonce == cleanHeaderNonce {
-            return true
+        for a in srcValueFromScript {
+            print("url: ", a)
         }
+        
+        for scriptSource in srcValueFromScript {
+            if !isExternalScriptAllowed(scriptURL: scriptSource, allowedSources: srcValueFromDirective) {
+                warnings.append(SecurityWarning(
+                    message: "External script '\(scriptSource)' not covered by CSP policy.",
+                    severity: .suspicious,
+                    penalty: -10,
+                    url: urlOrigin,
+                    source: .header
+                ))
+            } else {
+                usedScriptCount += 1
+            }
+        }
+
+        // After checking each external script
+        let authorizedSourceCount = srcValueFromDirective.count
+        let excessiveSourceCount = authorizedSourceCount - usedScriptCount
+
+        if excessiveSourceCount >= 2 {
+            let softPenalty = max(excessiveSourceCount * -1, -20) // cap maximum penalty to -20
+            warnings.append(SecurityWarning(
+                message: "CSP script-src authorizes \(authorizedSourceCount) external sources, but only \(usedScriptCount) are used. Excessive permissions weaken the policy.",
+                severity: .suspicious,
+                penalty: softPenalty,
+                url: urlOrigin,
+                source: .header
+            ))
+        }
+        
+        return warnings
     }
     
-    return false
-}
+    
+    static func isExternalScriptAllowed(scriptURL: String, allowedSources: Set<String>) -> Bool {
+        // Normalize the script URL
+        guard let scriptComponents = URL(string: scriptURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))) else {
+            return false
+        }
+        
+        let scriptHost = scriptComponents.host ?? ""
+
+        for rawAllowedSource in allowedSources {
+            var allowedSource = rawAllowedSource.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+
+            // Normalize allowedSource into a parseable URL
+            if !allowedSource.hasPrefix("http") {
+                allowedSource = "https://" + allowedSource
+            }
+
+            print("allowedSource: \(allowedSource) vs scriptHost: \(scriptHost)")
+
+            // 1. Wildcard "*"
+            if allowedSource == "*" {
+                return true
+            }
+
+            // 2. Allow any HTTPS
+            if allowedSource == "https:" {
+                if scriptComponents.scheme == "https" {
+                    return true
+                }
+            }
+
+            // 3. Wildcard domain "*.example.com"
+            if allowedSource.hasPrefix("https://*.") {
+                let baseDomain = allowedSource.replacingOccurrences(of: "https://*.", with: "")
+                if scriptHost.hasSuffix(baseDomain) {
+                    return true
+                }
+            }
+
+            // 4. Full host match
+            if let allowedComponents = URL(string: allowedSource),
+               let allowedHost = allowedComponents.host {
+                if scriptHost == allowedHost {
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
 }

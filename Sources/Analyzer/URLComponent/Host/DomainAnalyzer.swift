@@ -112,7 +112,7 @@ struct DomainAnalyzer {
                         source: .host
                     ))
                 } else if part.count >= 3 {
-                    let levenshtein = CoomonTools.levenshtein(part.lowercased(), brand)
+                    let levenshtein = CommonTools.levenshtein(part.lowercased(), brand)
                     if levenshtein == 1 {
                         urlInfo.warnings.append(SecurityWarning(
                             message: "Domain segment '\(part)' is a likely typo of '\(brand)' (Levenshtein = 1).",
@@ -124,7 +124,7 @@ struct DomainAnalyzer {
                         ))
                     }
                     
-                    let ngram = CoomonTools.twoGramSimilarity(part.lowercased(), brand)
+                    let ngram = CommonTools.twoGramSimilarity(part.lowercased(), brand)
                     if ngram > 0.6 {
                         urlInfo.warnings.append(SecurityWarning(
                             message: "Domain segment '\(part)' is structurally similar to brand '\(brand)' (2-gram similarity = \(String(format: "%.2f", ngram))).",
@@ -165,7 +165,7 @@ struct DomainAnalyzer {
                 }
             }
             
-            let (isHighEntropy, entropyScore) = CoomonTools.isHighEntropy(part, 4.2)
+            let (isHighEntropy, entropyScore) = CommonTools.isHighEntropy(part, 4.2)
             if isHighEntropy {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Domain segment '\(part)' appears random or obfuscated (high entropy \(String(format: "%.2f", entropyScore ?? 0))).",

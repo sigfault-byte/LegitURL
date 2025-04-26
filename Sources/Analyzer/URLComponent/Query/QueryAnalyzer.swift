@@ -69,7 +69,7 @@ struct QueryAnalyzer {
             }
             
             if key == key.uppercased(), key.count > 8 {
-                let (isHigh, score) = CoomonTools.isHighEntropy(String(key), 4.3)
+                let (isHigh, score) = CommonTools.isHighEntropy(String(key), 4.3)
                 if isHigh, let entropy = score {
                     urlInfo.warnings.append(SecurityWarning(
                         message: "Query key '\(key)' is all uppercase and appears to be random or encoded (entropy ≈ \(String(format: "%.2f", entropy))).",

@@ -13,7 +13,7 @@ struct HostAnalyser {
         let tld = urlObject.components.extractedTLD ?? ""
         let subdomains: [String] = extractSubdomains(from: host, domain: domainRoot, tld: tld)
         
-        if CoomonTools.isIPv4(host) || CoomonTools.isIPv6(host) {
+        if CommonTools.isIPv4(host) || CommonTools.isIPv6(host) {
             urlObject.warnings.append(SecurityWarning(
                 message: "🚨 The host \(host) is an IP address.",
                 severity: .critical,

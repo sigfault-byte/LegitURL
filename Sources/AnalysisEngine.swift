@@ -201,7 +201,7 @@ struct AnalysisEngine {
     }
     
     private static func sanitizeAndValidate(_ urlString: String, _ infoMessage: inout String?) -> (String?, String?) {
-        return CoomonTools.sanitizeInputURL(urlString)
+        return CommonTools.sanitizeInputURL(urlString)
     }
     
     private static func extractComponents(from url: String) -> URLInfo {

@@ -25,7 +25,7 @@ class URLInputViewModel: ObservableObject{
     }
 
     func analyzeURL() -> Bool {
-        let (finalURL, message) = CoomonTools.sanitizeInputURL(urlInput)
+        let (finalURL, message) = CommonTools.sanitizeInputURL(urlInput)
 
         if let finalURL = finalURL {
             urlInput = finalURL

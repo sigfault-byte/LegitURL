@@ -11,19 +11,19 @@ struct NodeAnalyzer {
     /// Detect email addresses in a string.
     /// - Returns: `[String]?` — `nil` if no emails were found, otherwise an array of found emails.
     static func detectEmail(_ value: String) -> [String]? {
-        let emails = CoomonTools.detectEmailAddresses(in: value)
+        let emails = CommonTools.detectEmailAddresses(in: value)
         return emails.isEmpty ? nil : emails
     }
     
     /// Check if an IP is detected (IPv4 or IPv6)
     static func checkIfIp4(_ value: String) -> String? {
-        if CoomonTools.isIPv4(value) {
+        if CommonTools.isIPv4(value) {
             return value
         }
         return nil
     }
     static func checkIfIPv6(_ value: String) -> String? {
-        if CoomonTools.isIPv6(value) {
+        if CommonTools.isIPv6(value) {
             return value
         }
         return nil
@@ -31,7 +31,7 @@ struct NodeAnalyzer {
     
     // Look if the value is a url
     static func detectURL(_ value: String) -> String? {
-        if CoomonTools.isValueURL(value) {
+        if CommonTools.isValueURL(value) {
             return value
         }
         return nil
@@ -167,8 +167,8 @@ struct NodeAnalyzer {
     
     // Check if its a word in the dictionnary, if not, check its entropy
     static func checkIfRealWordAndEntropy(_ value: String) -> DecodedNode.NodeFinding? {
-        if !CoomonTools.isRealWord(value) {
-            let (isHighEntropy, entropyValue) = CoomonTools.isHighEntropy(value, 4.3)
+        if !CommonTools.isRealWord(value) {
+            let (isHighEntropy, entropyValue) = CommonTools.isHighEntropy(value, 4.3)
             if isHighEntropy, let entropy = entropyValue {
                 return .entropy(score: Double(entropy), value: value)
             }

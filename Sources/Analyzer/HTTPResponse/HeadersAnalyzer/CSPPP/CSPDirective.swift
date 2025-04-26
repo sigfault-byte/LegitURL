@@ -19,7 +19,7 @@ struct CSPDirective {
 
         if bitFlagCSP.contains(.unsafeInline) {
             warnings.append(SecurityWarning(
-                message: "'unsafe-inline' is present in \(directiveName) — inline script execution allowed.",
+                message: "'unsafe-inline' is present in directive: \(directiveName) — inline script execution allowed.",
                 severity: .dangerous,
                 penalty: -25,
                 url: url,
@@ -29,7 +29,7 @@ struct CSPDirective {
 
         if bitFlagCSP.contains(.unsafeEval) {
             warnings.append(SecurityWarning(
-                message: "'unsafe-eval' is present in \(directiveName) — eval() can execute dynamic strings.",
+                message: "'unsafe-eval' is present in directive: \(directiveName) — eval() can execute dynamic strings.",
                 severity: .dangerous,
                 penalty: -25,
                 url: url,
@@ -39,7 +39,7 @@ struct CSPDirective {
 
         if bitFlagCSP.contains(.wildcard) {
             warnings.append(SecurityWarning(
-                message: "Wildcard (*) detected in \(directiveName) — allows scripts from any origin.",
+                message: "Wildcard (*) detected in directive: \(directiveName) — allows scripts from any origin.",
                 severity: .dangerous,
                 penalty: -40,
                 url: url,

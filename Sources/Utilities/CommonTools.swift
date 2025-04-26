@@ -9,7 +9,7 @@ import Foundation
 
 //TODO : reject anything not compliant to RFC1738
 
-struct CoomonTools {
+struct CommonTools {
     /// **Checks and prepares user input URL before deeper analysis**
     ///
     /// - Ensures input has a valid scheme (`http://` or `https://`).
@@ -68,7 +68,7 @@ struct CoomonTools {
         }
         
         // ✅ Step 2: Check for IP addresses (IPv4 or IPv6).
-        if CoomonTools.isIPv4(value) || CoomonTools.isIPv6(value) {
+        if CommonTools.isIPv4(value) || CommonTools.isIPv6(value) {
             return true
         }
         
@@ -286,5 +286,22 @@ struct CoomonTools {
         }
 
         return Float(matchCount) / Float(input.count)
+    }
+    
+    /// Formats a set or array of strings, limiting the displayed items and appending "and X more" if needed.
+    /// - Parameters:
+    ///   - items: The set or array of items to format.
+    ///   - limit: Maximum number of items to display before summarizing.
+    /// - Returns: A single string ready to insert into user-facing messages.
+    static func formatLimitedList<T: Collection>(_ items: T, limit: Int = 5) -> String where T.Element == String {
+        let displayedItems = items.prefix(limit)
+        let hiddenCount = items.count - displayedItems.count
+        
+        var result = displayedItems.joined(separator: ", ")
+        if hiddenCount > 0 {
+            result += ", and \(hiddenCount) more"
+        }
+        
+        return result
     }
 }

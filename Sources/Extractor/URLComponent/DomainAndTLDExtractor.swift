@@ -8,7 +8,7 @@ struct DomainAndTLDExtractor {
     // Extracts domain & TLD from exploded host parts
     static func extract(hostidnaEncoded: String) -> (host: String?, tld: String?)? {
 
-        let explodedParts = CoomonTools.explodeURL(host: hostidnaEncoded)
+        let explodedParts = CommonTools.explodeURL(host: hostidnaEncoded)
 
         guard !explodedParts.isEmpty else { return nil }
         
