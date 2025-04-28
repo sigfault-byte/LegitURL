@@ -132,7 +132,7 @@ struct ScriptHelperFunction {
             if respectTagEnd, let tagEnd = scripts[i].end {
                 earlyRange = start..<min(tagEnd + 1, body.count)
             } else {
-                print("THIS SHOULD NOT HAPPEN ALALALALALALAALALALALALALALLAAL")
+                print("THIS SHOULD NOT HAPPEN ALALALALALALAALALALALALALALLAALLALALALAALLALALALALALA THIS IS IN SCANSCRIPT AFTER THE ENDTAG LOOKING FOR THE RANGE OF THE SRC")
                 earlyRange = start..<min(start + lookAhead, body.count)
             }
             let eqSigns = DataSignatures.extractAllTagMarkers(in: body, within: earlyRange, tag: UInt8(ascii: "="))
@@ -204,7 +204,8 @@ struct ScriptHelperFunction {
     
     static func findNonceScript(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 64, respectTagEnd: Bool = true) -> Void {
         for i in 0..<scripts.count {
-            guard scripts[i].findings == .inlineJS else { continue }
+// data uri can also be anonce
+            guard scripts[i].findings == .inlineJS || scripts[i].origin == .dataURI else { continue }
             guard let tagEnd = scripts[i].end else { continue }
             
             let start = scripts[i].start

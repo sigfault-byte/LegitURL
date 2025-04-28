@@ -28,21 +28,7 @@ struct TLSCertificateAnalyzer {
                         warnings: inout [SecurityWarning],
                         responseCode: Int, origin: String) {
         
-        let domainIdna: String = domain.idnaEncoded ?? ""
-        let hostIdna: String = host.idnaEncoded ?? ""
-        
-        if let existing = tlsSANReusedMemory[host],
-           existing.fingerprint == certificate.fingerprintSHA256 {
-            addWarning("TLS certificate for this host has already been analyzed (same fingerprint reused). Skipping redundant checks.", .info, penalty: 0)
-            return // Already analyzed this certificate for this host
-        }
-
-        // Store the certificate fingerprint for potential comparison
-        if let fingerprint = certificate.fingerprintSHA256 {
-            tlsSANReusedMemory[hostIdna] = (domain: domainIdna, fingerprint: fingerprint, wasFlooded: false)
-        }
-        
-        
+        // move to a static
         func addWarning(_ message: String, _ severity: SecurityWarning.SeverityLevel, penalty: Int, bitFlags: WarningFlags? = nil) {
             warnings.append(SecurityWarning(
                 message: message,
@@ -52,6 +38,22 @@ struct TLSCertificateAnalyzer {
                 source: .tls,
                 bitFlags: bitFlags
             ))
+        }
+        
+        let domainIdna: String = domain.idnaEncoded ?? ""
+        let hostIdna: String = host.idnaEncoded ?? ""
+        
+        if tlsSANReusedMemory.contains(where: {
+            $0.value.domain == domain &&
+            $0.value.fingerprint == certificate.fingerprintSHA256
+        }) {
+            addWarning("TLS certificate with the same fingerprint. Skipping TLS checks.", .info, penalty: 0)
+            return
+        }
+
+        // Store the certificate fingerprint for potential comparison
+        if let fingerprint = certificate.fingerprintSHA256 {
+            tlsSANReusedMemory[hostIdna] = (domain: domainIdna, fingerprint: fingerprint, wasFlooded: false)
         }
         
         // 1. Domain Coverage via SANs
@@ -64,7 +66,6 @@ struct TLSCertificateAnalyzer {
             addWarning("TLS Certificate does not cover domain \(domain) or host \(host)", .critical, penalty: PenaltySystem.Penalty.critical)
             return
         }
-        
         
         
         // 2. Trust Anchor (Self-signed)
@@ -89,7 +90,7 @@ struct TLSCertificateAnalyzer {
                 if daysOld <= 7 {
                     addWarning("TLS Certificate was issued very recently (\(daysOld) days ago) on \(TLSHeuristics.formattedDate(notBefore))", .suspicious, penalty: PenaltySystem.Penalty.tlsIsNew7days, bitFlags: WarningFlags.TLS_IS_FRESH)
                 } else if daysOld <= 30 {
-                    addWarning("TLS Certificate was issued recently (\(daysOld) days ago) on \(TLSHeuristics.formattedDate(notBefore))", .info, penalty: PenaltySystem.Penalty.tlsIsNew30days, bitFlags: WarningFlags.TLS_IS_FRESH)
+                    addWarning("TLS Certificate was issued recently (\(daysOld) days ago) on \(TLSHeuristics.formattedDate(notBefore))", .info, penalty: PenaltySystem.Penalty.informational, bitFlags: WarningFlags.TLS_IS_FRESH)
                 }
             }
             
@@ -139,15 +140,16 @@ struct TLSCertificateAnalyzer {
                     value.domain == domain && URLQueue.shared.hasWarning(withFlag: [.TLS_IS_EV_OR_OV])
                 }
                 
+                    //TODO: This if should not happen anymore, and should be useless
                 if alreadyRewarded {
-                    addWarning("Another certificate for this domain is already marked \(label) — skipping reward.", .info, penalty: 0, bitFlags: [.TLS_IS_EV_OR_OV])
+                    addWarning("Certificate for this domain is already marked \(label).", .info, penalty: 0, bitFlags: [.TLS_IS_EV_OR_OV])
                 } else {
-                    addWarning("✅ Certificate is \(label)", .info, penalty: 10, bitFlags: [.TLS_IS_EV_OR_OV])
+                    addWarning("Certificate is \(label)", .info, penalty: 10, bitFlags: [.TLS_IS_EV_OR_OV])
                 }
             case .dv:
-                addWarning("✅ Certificate is Domain Validated (DV)", .info, penalty: 0)
+                addWarning("Certificate is Domain Validated (DV)", .info, penalty: 0)
             case .unknown:
-                addWarning("✅ Certificate is not EV, OV or DV", .suspicious, penalty: -10)
+                addWarning("Certificate is not EV, OV or DV", .suspicious, penalty: -10)
             }
         }
         
@@ -167,7 +169,7 @@ struct TLSCertificateAnalyzer {
         }
         
         // 7. SAN Overload Heuristic
-//        Could parsed SANs for typosquatting in LegitURL 42.1
+//        Could parsed SANs for typosquatting in LegitURL V658642.1
         let hasWildcard = sans.contains { $0.hasPrefix("*.")}
         if !hasWildcard {
             let normalizedHost = host.lowercased()
@@ -188,14 +190,15 @@ struct TLSCertificateAnalyzer {
         }
 
         // 8. Retroactive SAN Heuristic Reversal
-//        print("ICI: ", tlsSANReusedMemory)
-        if let previous = tlsSANReusedMemory.first(where: { $0.value.domain == domain }),
-           previous.value.fingerprint != certificate.fingerprintSHA256,
-//           “Capture once. Store locally. Never trust global memory for retroactive judgment.”
-           previous.value.wasFlooded,
-           certificate.inferredValidationLevel == .ev || certificate.inferredValidationLevel == .ov {
+//        print("SANS FLOOD WAIVER MEMORY: ", tlsSANReusedMemory)
+        if (certificate.inferredValidationLevel == .ev || certificate.inferredValidationLevel == .ov),
+           let previousEntry = tlsSANReusedMemory.first(where: {
+               $0.value.domain == domain &&
+               $0.value.fingerprint != certificate.fingerprintSHA256 &&
+               $0.value.wasFlooded
+           }) {
             addWarning("Previously flagged TLS certificate on this domain appeared suspicious, but was followed by a clean certificate (EV or OV). Penalty waived.", .info, penalty: 20)
-            tlsSANReusedMemory.removeValue(forKey: previous.key)
+            tlsSANReusedMemory.removeValue(forKey: previousEntry.key)
         }
     }
 }

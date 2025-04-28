@@ -10,7 +10,7 @@
 
 import Foundation
 struct contentDirective {
-    static let requireTrustedTypes: Data = "require-trusted-types-for".data(using: .utf8) ?? Data() // New (? prototype?? ) to prevent xss. Didnt see much
+    static let requireTrustedTypes: Data = "require-trusted-types-for".data(using: .utf8) ?? Data() // New (? prototype?? ) to prevent xss. Didnt see much on m.youtube.com for exemple
     static let defaultSrc: Data = "default-src".data(using: .utf8) ?? Data() // Default policy for fetching any content (fallback if others aren't defined)
     static let scriptSrc: Data = "script-src".data(using: .utf8) ?? Data() // Governs the sources of JavaScript
     static let styleSrc: Data = "style-src".data(using: .utf8) ?? Data() // Governs the sources of CSS styles

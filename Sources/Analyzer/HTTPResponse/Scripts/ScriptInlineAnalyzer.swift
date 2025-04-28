@@ -252,7 +252,7 @@ struct ScriptInlineAnalyzer {
                     let isAssignment = DataSignatures.fastScriptByteHint(at: equalSignPos, in: soupData, hint: [byteLetters.equalSign])
                     //Debug
                     //                    if let preview = String(data: soupData[max(0, pos - 40)..<min(soupData.count, pos + 60)], encoding: .utf8) {
-                    //                        print("🍪 Detected document.cookie context:\n\(preview)\n")
+                    //                        print(" Detected document.cookie context:\n\(preview)\n")
                     //                    }
                     
                     if name == "cookie" && isAssignment && !setcookie {

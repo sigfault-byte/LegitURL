@@ -168,7 +168,7 @@ struct HTTPRespAnalyzer {
         //  Analyze headers for content security policy
         var cspResult: ClassifiedCSPResult? = nil
         if responseCode == 200 {
-            let (warningsCSP, result) = CSPAndPPAnalyzer.analyze(headers,
+            let (warningsCSP, result) = CSPAnalyzer.analyze(headers,
                                                                  urlOrigin: urlOrigin,
                                                                  scriptValueToCheck: scriptValueToCheck,
                                                                  script: &findings)

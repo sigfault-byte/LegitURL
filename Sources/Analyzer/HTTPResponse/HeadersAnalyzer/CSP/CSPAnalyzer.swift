@@ -6,14 +6,14 @@
 //
 import Foundation
 
-struct CSPAndPPAnalyzer {
+struct CSPAnalyzer {
     static func analyze(_ headers: [String: String],
                         urlOrigin: String,
                         scriptValueToCheck: ScriptSourceToMatchCSP?, // To check nonce and external
                         script: inout ScriptExtractionResult?) // flag fails from the checks
     
     -> (warnings: [SecurityWarning], result: ClassifiedCSPResult) {
-//Only these headers key might require full byte-level parsing due to potential size or structural complexity.
+//Only CSP kinda need byte parsing. Permission policy might not need it.
 //All others can be handled with strin analysis.
         
 //        if let csp = headers["content-security-policy"] {
@@ -51,21 +51,21 @@ struct CSPAndPPAnalyzer {
             )
         }
         
-//        TODO: important to check regarding permission of all the various bs
+//        TODO: important to check regarding permission of all the various bs in its own file this otherwise too clutered here . Using string parsing is enough
 //        let babylonPermissionsPolicy = headers["permissions-policy"]?.data(using: .utf8) ?? Data()
         
 //        let babylonCSPSize = babylonCSP.count
         if babylonCSP.last != 0x3B {
             babylonCSP.append(0x3B)
-            // Flag incomplete CSP as a soft misconfiguration
-            warnings.append(SecurityWarning(
-                message: "CSP does not end with semicolon — likely malformed or incomplete.",
-                severity: .suspicious,
-                penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
-                url: urlOrigin,
-                source: .header,
-                bitFlags: [.HEADERS_CSP_MALFORMED]
-            ))
+            // Flag incomplete CSP as a soft misconfiguration -> no one gives a flyin f and alnost never puts it
+//            warnings.append(SecurityWarning(
+//                message: "CSP does not end with semicolon — likely malformed or incomplete.",
+//                severity: .suspicious,
+//                penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
+//                url: urlOrigin,
+//                source: .header,
+//                bitFlags: [.HEADERS_CSP_MALFORMED]
+//            ))
         }
         // Extract ranges for each directive block (split by ;)
         var lastStart = 0
@@ -144,6 +144,53 @@ struct CSPAndPPAnalyzer {
             }
         }
         
+        // Check if critical directives are missing, this might need a higher penalty than missing CSP.
+        let hasDefaultSrc = structuredCSP.keys.contains("default-src")
+        let hasScriptSrc = structuredCSP.keys.contains("script-src")
+        let hasObjectSrc = structuredCSP.keys.contains("object-src")
+        let hasRequiredTrustedTypeFor = structuredCSP.keys.contains("require-trusted-types-for")
+
+        if (!hasDefaultSrc && (!hasScriptSrc || !hasObjectSrc)) && !hasRequiredTrustedTypeFor {
+            warnings.append(SecurityWarning(
+                message: "CSP is missing both 'default-src' and a critical combination of 'script-src' and 'object-src'.",
+                severity: .dangerous,
+                penalty: PenaltySystem.Penalty.fakeCSP,
+                url: urlOrigin,
+                source: .header,
+                bitFlags: [.HEADERS_FAKE_CSP]
+            ))
+//            VERY Specific else, i hate it
+        } else if hasRequiredTrustedTypeFor {
+            if let trustedTypesDirective = structuredCSP["require-trusted-types-for"] {
+                let hasScriptRequirement = trustedTypesDirective.keys.contains(where: { data in
+                    guard let stringValue = String(data: data, encoding: .utf8) else { return false }
+                    return stringValue == "'script'"
+                })
+                
+                if hasScriptRequirement {
+                    // Now you know: require-trusted-types-for 'script' is correctly configured
+                    warnings.append(SecurityWarning(
+                        message: "Modern CSP: Trusted Types enforced for scripts.",
+                        severity: .info,
+                        penalty: 5, // small bonus very rare, very secured against xss ?
+                        url: urlOrigin,
+                        source: .header,
+                        bitFlags: [.HEADERS_CSP_TRUSTED_TYPES]
+                    ))
+                } else {
+                    // 'require-trusted-types-for' directive exists but doesn't target 'script'.)
+                    warnings.append(SecurityWarning(
+                        message: "CSP 'require-trusted-types-for' directive found but missing 'script' value. Potential misconfiguration.",
+                        severity: .suspicious,
+                        penalty: PenaltySystem.Penalty.fakeCSP,
+                        url: urlOrigin,
+                        source: .header,
+                        bitFlags: [.HEADERS_FAKE_CSP]
+                    ))
+                }
+            }
+        }
+        
         let directiveBitFlags: [String: Int32] = parseCSP(structuredCSP)
         var scriptSrc: String = ""
         for _ in structuredCSP.keys {
@@ -188,7 +235,7 @@ struct CSPAndPPAnalyzer {
 
 //                DEBUG
 //        for (directive, values) in structuredCSP {
-//            print("🌐 Directive: \(directive)")
+//            print("Directive: \(directive)")
 //            for (value, type) in values {
 //                let valStr = String(data: value, encoding: .utf8) ?? "(unknown)"
 //                print("  ├─ \(valStr) → \(type)")
@@ -245,7 +292,7 @@ struct CSPAndPPAnalyzer {
         
         
         
-//        Crazy tracking bullshit website like x.com
+//        Crazy tracking website like x.com
 //        if scriptSrcCount > 20 && connectSrcCount > 50 {
 //            warnings.append(SecurityWarning(
 //                message: "CSP allows more than \(scriptSrcCount * connectSrcCount) dynamic script+connect combinations — likely tracking or malware vector.",

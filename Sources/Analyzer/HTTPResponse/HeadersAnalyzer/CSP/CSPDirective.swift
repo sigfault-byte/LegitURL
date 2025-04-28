@@ -17,11 +17,17 @@ struct CSPDirective {
     static func analyzeScriptOrDefaultSrc(directiveName: String, bitFlagCSP: CSPBitFlag, sourceCount: [CSPBitFlag: Int] = [:], url: String) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
 
+        
+        
         if bitFlagCSP.contains(.unsafeInline) {
             warnings.append(SecurityWarning(
-                message: "'unsafe-inline' is present in directive: \(directiveName) — inline script execution allowed.",
-                severity: .dangerous,
-                penalty: -25,
+                message: bitFlagCSP.contains(.strictDynamic) ?
+                            "'unsafe-inline' is present with strict-dynamic in directive: \(directiveName) — inline script execution allowed but contained." :
+                                "'unsafe-inline' is present in directive: \(directiveName) — inline script execution allowed.",
+                severity: bitFlagCSP.contains(.strictDynamic) ? .suspicious : .dangerous,
+                penalty: bitFlagCSP.contains(.strictDynamic) ?
+                            PenaltySystem.Penalty.unsafeInlineStirctDyn :
+                                PenaltySystem.Penalty.unsafeInlineScriptSrc,
                 url: url,
                 source: .header
             ))
@@ -29,9 +35,13 @@ struct CSPDirective {
 
         if bitFlagCSP.contains(.unsafeEval) {
             warnings.append(SecurityWarning(
-                message: "'unsafe-eval' is present in directive: \(directiveName) — eval() can execute dynamic strings.",
-                severity: .dangerous,
-                penalty: -25,
+                message: bitFlagCSP.contains(.strictDynamic) ?
+                            "'unsafe-eval' is present with strict-dynamic in directive: \(directiveName) — eval script execution allowed but contained." :
+                                "'unsafe-eval' is present in directive: \(directiveName) — eval() can execute dynamic strings.",
+                severity: bitFlagCSP.contains(.strictDynamic) ? .suspicious : .dangerous,
+                penalty: bitFlagCSP.contains(.strictDynamic) ?
+                            PenaltySystem.Penalty.unsafeEvalScriptSrcDyn :
+                                PenaltySystem.Penalty.unsafeEvalScriptSrc,
                 url: url,
                 source: .header
             ))
@@ -41,7 +51,7 @@ struct CSPDirective {
             warnings.append(SecurityWarning(
                 message: "Wildcard (*) detected in directive: \(directiveName) — allows scripts from any origin.",
                 severity: .dangerous,
-                penalty: -40,
+                penalty: PenaltySystem.Penalty.wildcardScriptSrc,
                 url: url,
                 source: .header
             ))
@@ -58,7 +68,7 @@ struct CSPDirective {
             warnings.append(SecurityWarning(
                 message: "'none' used alongside other sources in \(directiveName) — CSP conflict.",
                 severity: .suspicious,
-                penalty: -10,
+                penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
                 url: url,
                 source: .header
             ))

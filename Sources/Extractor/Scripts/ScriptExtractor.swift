@@ -45,15 +45,21 @@ struct ScriptExtractor {
             return nil
         }
 
-        guard bodyPos != 0, bodyEndPos != nil else {
+        if bodyPos == 0 || bodyEndPos == nil {
+            var missing: String = ""
+            if bodyPos == 0{
+                missing = "<body>"
+            } else if bodyEndPos == nil {
+                missing = "</body>"
+            }
             warnings.append(SecurityWarning(
-                message: "Missing or malformed <body> tag.",
-                severity: .critical,
-                penalty: PenaltySystem.Penalty.critical,
+                message: "Missing or malformed \(missing) tag .",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.missingMalformedBodyTag,
                 url: origin,
                 source: .body
             ))
-            return nil
+//            return nil
         }
 
         guard headPos < bodyPos else {
@@ -67,7 +73,7 @@ struct ScriptExtractor {
             return nil
         }
         let t2 = Date()
-        print("⏱️ Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
+        print("Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
 //            var confirmedScripts = checkForScriptTags(body, scriptCandidates: &scriptCandidates, asciiToCompare: interestingPrefix.script, lookAhead: 8)
 //        Can safely force unwrap there is a guard !
 //        collect all start var from each scriptCandidate and store them in the [Int]
@@ -80,7 +86,7 @@ struct ScriptExtractor {
         guard !initialScripts.isEmpty else { return nil }
         
         let t3 = Date()
-        print("⏱️ Step 2 - Script detection took \(Int(t3.timeIntervalSince(t2) * 1000))ms")
+        print("Step 2 - Script detection took \(Int(t3.timeIntervalSince(t2) * 1000))ms")
         // find the tag closure of the script and check if there is a self closing slash
         
         if initialScripts.count != closingScriptPositions.count {
@@ -124,29 +130,29 @@ struct ScriptExtractor {
         ScriptHelperFunction.pairScriptsWithClosings(scripts: &confirmedScripts, closingTags: closingScriptPositions, body: body)
 
         let t4 = Date()
-        print("⏱️ Step 3 - Tag closure detection took \(Int(t4.timeIntervalSince(t3) * 1000))ms")
+        print("Step 3 - Tag closure detection took \(Int(t4.timeIntervalSince(t3) * 1000))ms")
         // primary school math to find context
         ScriptHelperFunction.classifyContext(for: &confirmedScripts, headPos: headPos, bodyPos: bodyPos)
         let t5 = Date()
-        print("⏱️ Step 4 - Context classification took \(Int(t5.timeIntervalSince(t4) * 1000))ms")
+        print("Step 4 - Context classification took \(Int(t5.timeIntervalSince(t4) * 1000))ms")
         // look for src
         ScriptHelperFunction.scanScriptSrc(in: body, scripts: &confirmedScripts)
         //filter out js application data!
         ScriptHelperFunction.filterOutDataScripts(&confirmedScripts)
         let t6 = Date()
-        print("⏱️ Step 5 - Src position scan took \(Int(t6.timeIntervalSince(t5) * 1000))ms")
+        print(" Step 5 - Src position scan took \(Int(t6.timeIntervalSince(t5) * 1000))ms")
         // sort the scripts to their origin
         ScriptHelperFunction.assignScriptSrcOrigin(in: body, scripts: &confirmedScripts)
         let t7 = Date()
-        print("⏱️ Step 6 - Script origin classification took \(Int(t7.timeIntervalSince(t6) * 1000))ms")
+        print("Step 6 - Script origin classification took \(Int(t7.timeIntervalSince(t6) * 1000))ms")
         //find nonce script and value
         ScriptHelperFunction.findNonceScript(in: body, scripts: &confirmedScripts)
         let t8 = Date()
-        print("⏱️ Step 7 - Script find nonce took \(Int(t8.timeIntervalSince(t7) * 1000))ms")
+        print("Step 7 - Script find nonce took \(Int(t8.timeIntervalSince(t7) * 1000))ms")
         
         let duration = Date().timeIntervalSince(startTime)
-        print("✅ Total scan completed in \(Int(duration * 1000))ms")
-        print("📦 Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
+        print("Total scan completed in \(Int(duration * 1000))ms")
+        print("Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
         //            DEBUG
 //        for script in confirmedScripts {
 //            guard let endTag = script.endTagPos else { continue }

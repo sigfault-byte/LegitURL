@@ -110,6 +110,7 @@ extension CookieFlagBits {
 
         
         // Size (0–2)
+        if contains(.reusedAcrossRedirect)  { return [("Same Cookie reused across redirects")] }
         if contains(.smallValue)            { reasons.append("Small value (≤16 bytes)") }
         if contains(.mediumValue)           { reasons.append("Medium value (16–64 bytes)") }
         if contains(.largeValue) && contains(.persistent) {
@@ -143,7 +144,7 @@ extension CookieFlagBits {
 
         // Context (12–13)
         if contains(.setOnRedirect)         { reasons.append("Cookie was set during redirect") }
-        if contains(.reusedAcrossRedirect)  { reasons.append("Cookie reused across redirect chain") }
+        
         
         // Content Signature (14)
         if contains(.highEntropyValue) {

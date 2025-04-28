@@ -45,3 +45,14 @@ struct GenerateCSP {
         return generator.generateRecommendedCSP()
     }
 }
+
+//Minimal headers should be:
+//Strict-Transport-Security: max-age=31536000; includeSubDomains
+//Content-Security-Policy: default-src 'self'; object-src 'none'; frame-ancestors 'none'
+//Content-Type: text/html; charset=UTF-8
+//X-Content-Type-Options: nosniff
+//Referrer-Policy: strict-origin-when-cross-origin
+
+//Anything other should be assessed as unsecured / miss configured
+//Especially the htst + CSP + XCTO
+//Alternatively COOP and COEP should be mandatory. 

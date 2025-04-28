@@ -61,8 +61,12 @@ struct WarningFlags: OptionSet {
     
     
     //HEADERS FLAGS
-    static let HEADERS_CSP_MALFORMED = WarningFlags(rawValue: 1 << 50)
-    static let HEADERS_CSP_MISSING = WarningFlags(rawValue: 1 << 51)
+    static let HEADERS_CSP_MISSING = WarningFlags(rawValue: 1 << 50)
+    static let HEADERS_CSP_MALFORMED = WarningFlags(rawValue: 1 << 51)
+    static let HEADERS_INCORRECT_LOGIC = WarningFlags(rawValue: 1 << 52)
+    static let HEADERS_FAKE_CSP = WarningFlags(rawValue: 1 << 53)
+    static let HEADERS_LEAK_SERVER_VERSION = WarningFlags(rawValue: 1 << 54)
+    static let HEADERS_CSP_TRUSTED_TYPES = WarningFlags(rawValue: 1 << 55)
     
     
 }

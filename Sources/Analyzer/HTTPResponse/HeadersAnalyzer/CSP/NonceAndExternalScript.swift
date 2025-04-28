@@ -51,32 +51,36 @@ struct NonceAndExternalScript {
         let srcValueFromScript = scriptValueToCheck.externalSources
         
         // The compact map is eaiser to understand than using .some syntax ->
-        // get number of nonce and inline script
-        let inlineScriptCount = script?.scripts.compactMap { $0.origin == .inline ? $0 : nil }.count
-        let nonceScriptCount = script?.scripts.compactMap { $0.noncePos != nil ? $0 : nil}.count
-        
+        // get number of nonce and inline or dataURI script
+        let inlineOrDataURICount = script?.scripts.compactMap {
+            ($0.origin == .inline || $0.origin == .dataURI) ? $0 : nil
+        }.count
+        let nonceScriptCount = script?.scripts.compactMap { $0.noncePos != nil ? $0 : nil }.count
+
         var nonceValueFromDirective: [String] = []
-        var srcValueFromDirective : Set<String> = []
-        
-        
+        var srcValueFromDirective: Set<String> = []
+
         // Flag the missing nonce script, no penalty
-        if let inlineCount = inlineScriptCount,
+        if let inlineOrDataCount = inlineOrDataURICount,
            let nonceCount = nonceScriptCount,
            nonceCount > 0,
-           inlineCount != nonceCount
+           inlineOrDataCount != nonceCount
         {
-            if script != nil {
-                for index in script!.scripts.indices {
-                    if script!.scripts[index].nonceValue == nil && script!.scripts[index].origin == .inline {
-                        script!.scripts[index].findings4UI = (script!.scripts[index].findings4UI ?? []) + [("Missing nonce value", .info)]
+            if var script = script {
+                for index in script.scripts.indices {
+                    let scriptItem = script.scripts[index]
+                    if scriptItem.nonceValue == nil && (scriptItem.origin == .inline || scriptItem.origin == .dataURI) {
+                        script.scripts[index].findings4UI = (script.scripts[index].findings4UI ?? []) + [("Missing nonce value", .info)]
                     }
                 }
             }
-            warnings.append(SecurityWarning(message: "Some inline script don't have a nonce value despite CSP nonce directive. They'll likely be ignored by the browser.",
-                                            severity: .info,
-                                            penalty: 0,
-                                            url: urlOrigin,
-                                            source: .header))
+            warnings.append(SecurityWarning(
+                message: "Some inline or data URI scripts don't have a nonce value despite CSP nonce directive. They'll likely be ignored by the browser.",
+                severity: .info,
+                penalty: 0,
+                url: urlOrigin,
+                source: .header
+            ))
         }
         
         for (data, valueType) in scriptDirective {
@@ -84,8 +88,10 @@ struct NonceAndExternalScript {
                 if stringValue.contains("nonce") {
                     nonceValueFromDirective.append(stringValue)
                 }
-                else if valueType == .url && !stringValue.contains("'self'") {
-                    srcValueFromDirective.insert(stringValue)
+                else if valueType == .url {
+                    if stringValue != "http:" && stringValue != "https:" && !stringValue.contains("'self'") {
+                        srcValueFromDirective.insert(stringValue)
+                    }
                 }
             } else {
                 warnings.append(SecurityWarning(
@@ -97,10 +103,13 @@ struct NonceAndExternalScript {
                 ))
             }
         }
-        print("Directive: ", nonceValueFromDirective)
+//        DEBUG
+//        print("Directive: ", nonceValueFromDirective)
         var cleanedNonceFromDirective = Set(nonceValueFromDirective.map { $0.replacingOccurrences(of: "nonce-", with: "") })
         cleanedNonceFromDirective =  Set(cleanedNonceFromDirective.map { String($0.dropFirst().dropLast()) })
-        print("Cleaned directive: ", cleanedNonceFromDirective)
+//        DEBUG
+//        print("Cleaned directive: ", cleanedNonceFromDirective)
+//        print("Nonce value from scripts:", nonceValueFromScript)
         
         if cleanedNonceFromDirective.count == nonceValueFromScript.count {
             // Imba one liner to clean the comparison, thanks chat GPT
@@ -127,12 +136,29 @@ struct NonceAndExternalScript {
             ))
         }
         
+//        waived of dataURI with nonce value
+        if let script = script {
+            let dataURIScripts = script.scripts.filter { $0.origin == .dataURI }
+            
+            let allDataURIsHaveNonce = dataURIScripts.allSatisfy { $0.nonceValue != nil }
+            
+            if allDataURIsHaveNonce && !dataURIScripts.isEmpty {
+                warnings.append(SecurityWarning(
+                    message: "All data URI scripts correctly have nonce verified values.",
+                    severity: .info,
+                    penalty: 30,
+                    url: urlOrigin,
+                    source: .header
+                ))
+            }
+        }
+        
         // Track how many scripts actually matched the CSP sources
         var usedScriptCount = 0
-
-        for a in srcValueFromScript {
-            print("url: ", a)
-        }
+//DEBUG
+//        for a in srcValueFromScript {
+//            print("url: ", a)
+//        }
         
         for scriptSource in srcValueFromScript {
             if !isExternalScriptAllowed(scriptURL: scriptSource, allowedSources: srcValueFromDirective) {
@@ -167,6 +193,8 @@ struct NonceAndExternalScript {
     }
     
     
+    
+    
     static func isExternalScriptAllowed(scriptURL: String, allowedSources: Set<String>) -> Bool {
         // Normalize the script URL
         guard let scriptComponents = URL(string: scriptURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))) else {
@@ -182,8 +210,8 @@ struct NonceAndExternalScript {
             if !allowedSource.hasPrefix("http") {
                 allowedSource = "https://" + allowedSource
             }
-
-            print("allowedSource: \(allowedSource) vs scriptHost: \(scriptHost)")
+//DEBUG
+//            print("allowedSource: \(allowedSource) vs scriptHost: \(scriptHost)")
 
             // 1. Wildcard "*"
             if allowedSource == "*" {

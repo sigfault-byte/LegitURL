@@ -86,7 +86,7 @@ struct PenaltySystem {
         static let jsWebAssembly                       = -20
         static let extScriptSrc                        = -20
         static let highScriptDensity20                 = -20
-        static let scriptDataURI                       = -20
+        static let scriptDataURI                       = -40
         static let protocolRelativeScriptSrc           = -5
         static let scriptIs70Percent                   = -10
         static let jsCookieAccess                      = -10
@@ -95,6 +95,7 @@ struct PenaltySystem {
         static let sameDomainCookie                    = -10
         static let jsStorageAccess                     = -10
         static let jsSetItemAccess                     = -10
+        static let missingMalformedBodyTag             = -10
         static let mediumScritpDensity                 = -5
         static let scriptIs5070Percent                 = -5
         static let smallhtmllessthan1408               = -5
@@ -113,27 +114,36 @@ struct PenaltySystem {
         ///TLS///
         static let tksWeakKey                          = -20
         static let reusedTLS1FDQN                      = -20
-        static let unknownVL                           = -10
-        static let hotDogwaterCN                       = -10
+        static let hotDogwaterCN                       = -10 //unused need more digging into CNs
         static let tlsWillExpireSoon                   = -10
         static let tlsIsNew7days                       = -10
         static let tlsShortLifespan                    = -10
-        static let tlsIsNew30days                      = -5
+        
         
         //RESPONSE HEADER ISSUE
         static let blockedByFirewall                   = -100
         static let serverError                         = -100
         static let hidden200Redirect                   = -20
+        static let missConfiguredOrScam                = -20
         static let suspiciousStatusCode                = -15
         
         //HEADERS
         static let missingHSTS                         = -50
-        static let missingCSP                          = -30
-        static let missConfiguredOrScam                = -20
+        static let fakeCSP                             = -30
+        static let inccorectLogic                      = -5
         static let lowHSTSValue                        = -5
+        static let weakReferrerPolicy                  = -5
+        
+        //CSP
+        static let missingCSP                          = -30 //HARD LIMIT FOR CSP penalty! Missing CSP cannot be less than a missconfig CSP
+        static let wildcardScriptSrc                   = -30
+        static let unsafeInlineScriptSrc               = -10
+        static let unsafeEvalScriptSrc                 = -10
+        static let unsafeInlineStirctDyn               = -5
+        static let unsafeEvalScriptSrcDyn              = -5
+        static let serverLeakNameAndVersion            = -5
         static let malformedIncompleteCSP              = -5
-        
-        
+            
         
         // Redirect
         static let silentRedirect                     = -20

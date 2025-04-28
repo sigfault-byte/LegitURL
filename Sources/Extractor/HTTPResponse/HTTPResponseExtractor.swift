@@ -11,6 +11,7 @@ import ObjectiveC
 // This class is responsible for making a GET request to a URL constructed from URLInfo.
 // It cancels any HTTP redirection, so you receive the original response (e.g., a 301) instead of following the redirect.
 // It also handles SSL challenges by simply accepting the provided certificate.
+// TODO: Need another delegate, low levelish, to intercept the body len it s decompressed by urlsession to compare to the header's value
 class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
     
     // Shared instance used as the delegate for URLSession tasks.

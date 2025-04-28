@@ -61,15 +61,16 @@ struct CSPRecommendationView: View {
                         .padding(.vertical)
                 }
 
-                Text("Script-src CSP recommendation generated successfully.")
-                    .font(.footnote)
-                    .foregroundColor(.green)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("ℹ️ Important: Each page load must generate a unique nonce. Script hashes are static but must exactly match the script content to ensure integrity.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Divider()
+                    Text("⚠️ Disclaimer: This script-src directive example is minimal. Your site may require custom allowances based on how your scripts behave. Always review and adapt CSPs for your real-world needs.")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                    }
                     .padding(.top, 8)
-                
-                Text("ℹ️ Note: CSP nonces must be dynamically generated for each HTTP response. Do not use a static or hardcoded nonce value. Use secure random generation.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.top, 4)
             }
             .padding()
         }

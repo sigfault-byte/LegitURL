@@ -28,6 +28,7 @@ struct ScriptSecurityAnalyzer {
         
         // Flag abnormal script origin
         let dataURICount = checkingScriptOrigin(originURL: origin, scripts: &scripts, warnings: &warnings)
+        
         //TODO: Double check the script possibilities
         if dataURICount > 0 {
             warnings.append(SecurityWarning(
@@ -139,7 +140,7 @@ struct ScriptSecurityAnalyzer {
         let ratio = Double(scriptSize) / Double(htmlSize)
         let percent = Int(ratio * 100)
 //        DEBUG
-        print("📊 Inline JS Ratio: \(percent)% (\(scriptSize) bytes of \(htmlSize) HTML)")
+//        print(" Inline JS Ratio: \(percent)% (\(scriptSize) bytes of \(htmlSize) HTML)")
 
         if htmlSize < 896 && percent >= 50 {
             warnings.append(SecurityWarning(
