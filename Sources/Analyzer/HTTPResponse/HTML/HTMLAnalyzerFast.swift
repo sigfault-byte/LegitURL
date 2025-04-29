@@ -23,7 +23,9 @@ struct HTMLAnalyzerFast {
                                             severity: .critical,
                                             penalty: PenaltySystem.Penalty.critical,
                                             url: origin,
-                                            source: .body))
+                                            source: .body,
+                                            bitFlags: [.BODY_HTML_MALFORMED]
+                                           ))
             return nil
         }
         

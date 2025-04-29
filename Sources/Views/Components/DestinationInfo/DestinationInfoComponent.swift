@@ -10,7 +10,7 @@ struct DestinationInfoComponent: View {
         VStack(alignment: .center, spacing: 12) {
             if viewModel.displayMessage {
                 VStack(alignment: .center, spacing: 6) {
-                    Text("⚠️ Potential issue ⚠️\nwith the destination domain ")
+                    Text(viewModel.summaryTitle)
                         .font(.callout)
                         .fontWeight(.semibold)
                         .foregroundColor(viewModel.scoreColor)
@@ -18,10 +18,12 @@ struct DestinationInfoComponent: View {
                     
                     Group {
                         if showFullExplanation {
-                            Text("We'll generate a personalized message that summarizes the score. For now, this is a placeholder. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.")
+                            Text(viewModel.summaryMessage)
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
                                 .onTapGesture {
                                     withAnimation { showFullExplanation.toggle() }
                                 }

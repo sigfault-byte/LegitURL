@@ -125,8 +125,8 @@ let a = "apple-business-secure"
 let b = "apple"
 let c = "apple.com"
 let d = "pleap.com"
-let e = "bak"
-let f = "bac"
+let e = "github"
+let f = "guthib"
 
 print("--------\(a)---------NORMAL------\(b)----------------------------------------")
 print("Levenshtein Distance between '\(a)' and '\(b)': \(levenshtein(a, b))")

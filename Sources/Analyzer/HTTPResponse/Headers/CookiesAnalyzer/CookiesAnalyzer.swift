@@ -37,6 +37,8 @@ struct CookiesAnalyzer {
         
         let totalValueSize = parsedCookies.reduce(0) {$0 + $1.value.utf8.count}
         let avgCookieSize = Double(totalValueSize) / Double(numberOfCookies)
+        let jsCookieExposed = parsedCookies.contains { !$0.httpOnly }
+        let cookieFlags: WarningFlags = jsCookieExposed ? [.COOKIE_JS_ACCESS] : []
 
         if httpResponseCode != 200 {
             let severity: SecurityWarning.SeverityLevel
@@ -62,7 +64,8 @@ struct CookiesAnalyzer {
                 severity: severity,
                 penalty:  0, /*Penalzised on individual cookie*/
                 url: coreURL,
-                source: .cookie
+                source: .cookie,
+                bitFlags: cookieFlags
             ))
         }
         
@@ -76,12 +79,24 @@ struct CookiesAnalyzer {
 //            let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
             let reasons = result.flags.descriptiveReasons().joined(separator: ", ")
             let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
+            var warningFlags: WarningFlags = []
+
+            switch result.severity {
+            case .suspicious, .tracking:
+                warningFlags.insert(.COOKIE_TRACKING)
+            case .dangerous:
+                warningFlags.insert(.COOKIE_DANGEROUS)
+            default:
+                break
+            }
+
             urlInfo.warnings.append(SecurityWarning(
                 message: "Cookie `\(cookie.name)` flagged as \(result.severity). Reasons: \(reasons).",
                 severity: result.severity,
                 penalty: penalty,
                 url: url,
-                source: .cookie
+                source: .cookie,
+                bitFlags: warningFlags
             ))
             
             URLQueue.shared.cookiesSeenByRedirectChain[urlInfo.id, default: Set<String>()].insert(cookie.name)

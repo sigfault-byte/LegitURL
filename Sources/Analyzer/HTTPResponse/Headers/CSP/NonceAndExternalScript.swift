@@ -135,8 +135,7 @@ struct NonceAndExternalScript {
                 source: .header
             ))
         }
-        
-//        waived of dataURI with nonce value
+//        waived of dataURI with nonce value -> still not good a SRI would be better.
         if let script = script {
             let dataURIScripts = script.scripts.filter { $0.origin == .dataURI }
             
@@ -185,7 +184,8 @@ struct NonceAndExternalScript {
                 severity: .suspicious,
                 penalty: softPenalty,
                 url: urlOrigin,
-                source: .header
+                source: .header,
+                bitFlags: [.HEADERS_CSP_TOO_MANY_URL_SOURCES]
             ))
         }
         

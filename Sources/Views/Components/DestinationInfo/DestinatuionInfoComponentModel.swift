@@ -25,9 +25,18 @@ class DestinationInfoComponentModel: ObservableObject {
     @Published var isAnalysisComplete: Bool = false
     
     var punycodeMissmatch: Bool = false
+    var summaryTitle: String {
+        if score >= 70 {
+            return "The destination appears to be legit"
+        } else if score > 40 {
+            return "There are some potential issues, stay cautious"
+        } else {
+            return "The destination should not be trusted"
+        }
+    }
     
     var displayMessage: Bool {
-        return self.isAnalysisComplete && self.summaryMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return self.isAnalysisComplete && !self.summaryMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     init(

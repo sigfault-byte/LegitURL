@@ -87,7 +87,7 @@ struct PenaltySystem {
         static let extScriptSrc                        = -20
         static let highScriptDensity20                 = -20
         static let scriptDataURI                       = -40
-        static let protocolRelativeScriptSrc           = -5
+        static let missingMalformedBodyTag             = -15
         static let scriptIs70Percent                   = -10
         static let jsCookieAccess                      = -10
         static let smallHTMLless896                    = -10
@@ -95,7 +95,7 @@ struct PenaltySystem {
         static let sameDomainCookie                    = -10
         static let jsStorageAccess                     = -10
         static let jsSetItemAccess                     = -10
-        static let missingMalformedBodyTag             = -10
+        static let protocolRelativeScriptSrc           = -5
         static let mediumScritpDensity                 = -5
         static let scriptIs5070Percent                 = -5
         static let smallhtmllessthan1408               = -5
@@ -135,10 +135,21 @@ struct PenaltySystem {
         static let weakReferrerPolicy                  = -5
         
         //CSP
-        static let missingCSP                          = -30 //HARD LIMIT FOR CSP penalty! Missing CSP cannot be less than a missconfig CSP
+        static let missingCSP                          = -50 //HARD LIMIT FOR CSP penalty! Missing CSP cannot be less than a missconfig CSP. Though a "fake" CSP might be worse
         static let wildcardScriptSrc                   = -30
-        static let unsafeInlineScriptSrc               = -10
-        static let unsafeEvalScriptSrc                 = -10
+        static let wildcardScriptSrcStrictDyn          = -20
+        
+        //unsafe not "contained"
+        static let unsafeEvalScriptSrc                 = -30
+        static let unsafeInlineScriptSrc               = -20
+        
+        //unsafe "nonce'd or hashed + dynamic"
+        static let unsafeEvalScriptContained           = -20 // Alwasys bad
+        static let unsafeInlineStrictDynAndNonce       = -12
+        
+        //  unsafe-inline "containe'd"
+        static let unsafeInlineHash                    = -5 // most "secure" still bad because inline
+        
         static let unsafeInlineStirctDyn               = -5
         static let unsafeEvalScriptSrcDyn              = -5
         static let serverLeakNameAndVersion            = -5

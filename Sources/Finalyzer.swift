@@ -7,7 +7,8 @@ struct Finalyzer {
         let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
         penaltyDetails.forEach { print($0) }
 //       END
-        var newScore = 100 + totalPenalty
+        let currentScore = URLQueue.shared.legitScore.score
+        var newScore = currentScore + totalPenalty
         if newScore < 0 {
             newScore = 0
         } else if newScore > 100 {
@@ -18,6 +19,20 @@ struct Finalyzer {
     }
 
     static func finalizeAnalysis() {
+        // Check for critical warnings first
+        let criticalWarnings = URLQueue.shared.offlineQueue
+            .flatMap { $0.warnings }
+            .filter { $0.severity == .critical || $0.severity == .fetchError }
+
+        if let firstCritical = criticalWarnings.first {
+            URLQueue.shared.summary = firstCritical.message
+        } else {
+            let combo = ComboAlert.computeBitFlagAndInfer(from: URLQueue.shared.offlineQueue)
+            if let message = combo.message, message != "" {
+                URLQueue.shared.summary = message
+            }
+        }
+        
         let finalScore = computeFinalScore(for: URLQueue.shared.offlineQueue)
         URLQueue.shared.legitScore.score = finalScore
         
@@ -26,6 +41,11 @@ struct Finalyzer {
         URLQueue.shared.legitScore.analysisCompleted = true
     }
     
+    
+    
+    
+    
+    //MARK: PReparung the warning grouping for the view
     static func groupWarningsByDomainAndSource(from warnings: [SecurityWarning]) -> [WarningDomainGroup] {
         var domainGroups: [String: [SecurityWarning]] = [:]
         var domainOrder: [String] = []

@@ -3,6 +3,9 @@
 //
 //  Created by Chief Hakka on 14/04/2025.
 //
+// TODO: when script has relative URL, check for presence of integrity attribute.
+// TODO: Penalize missing integrity even for relative src scripts.
+// TODO: Reward presence of integrity with a security bonus (SRI usage) ?????.
 import Foundation
 struct ScriptSecurityAnalyzer {
     static func analyze(scripts: inout ScriptExtractionResult, body: Data, origin: String, htmlRange: Range<Int>, into warnings: inout [SecurityWarning]) -> ScriptSourceToMatchCSP {
@@ -149,7 +152,6 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.scriptIs70Percent + 15,
                 url: originURL,
                 source: .body,
-                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO_SMALL_HTML
             ))
             return
         }
@@ -165,7 +167,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.informational + smallHTMLBonus,
                 url: originURL,
                 source: .body,
-                bitFlags: smallHTMLBonus == 0 ? nil : WarningFlags.BODY_HIGH_JS_RATIO_SMALL_HTML
+                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO
             ))
         case 50..<70:
             warnings.append(SecurityWarning(
@@ -174,7 +176,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.scriptIs5070Percent + smallHTMLBonus,
                 url: originURL,
                 source: .body,
-                bitFlags: smallHTMLBonus == 0 ? nil : WarningFlags.BODY_HIGH_JS_RATIO_SMALL_HTML
+                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO
             ))
         case 70...:
             warnings.append(SecurityWarning(
@@ -183,7 +185,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.scriptIs70Percent + smallHTMLBonus,
                 url: originURL,
                 source: .body,
-                bitFlags: smallHTMLBonus == 0 ? nil : WarningFlags.BODY_HIGH_JS_RATIO_SMALL_HTML
+                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO
             ))
         default:
             break

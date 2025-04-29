@@ -19,9 +19,9 @@ class ScoreSummaryComponentModel: ObservableObject{
     private var flickerTimer: Timer?
 
     var scoreColor: Color {
-        if legitScore.score >= 80 {
+        if legitScore.score >= 70 {
             return .green
-        } else if legitScore.score > 50 {
+        } else if legitScore.score > 40 {
             return .orange
         } else {
             return .red

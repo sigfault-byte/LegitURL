@@ -73,7 +73,8 @@ struct HeadersUtils {
                     severity: .suspicious,
                     penalty: PenaltySystem.Penalty.missingHSTS,
                     url: urlOrigin,
-                    source: .header
+                    source: .header,
+                    bitFlags: [.HEADERS_MISSING_HSTS]
                 ))
             }
             if hsts.lowercased().contains("max-age=") {
@@ -83,7 +84,7 @@ struct HeadersUtils {
                     warnings.append(SecurityWarning(
                         message: "HSTS includeSubDomains directive is present.",
                         severity: .info,
-                        penalty: 5, //reward for a unfortunalty rare value ?
+                        penalty: PenaltySystem.Penalty.informational, // mb reward for a unfortunalty rare value ?
                         url: urlOrigin,
                         source: .header
                     ))
@@ -114,7 +115,8 @@ struct HeadersUtils {
                 severity: .dangerous,
                 penalty: PenaltySystem.Penalty.missingHSTS,
                 url: urlOrigin,
-                source: .header
+                source: .header,
+                bitFlags: [.HEADERS_MISSING_HSTS]
             ))
         }
         

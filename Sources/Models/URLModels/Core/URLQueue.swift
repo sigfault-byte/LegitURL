@@ -12,6 +12,7 @@ class URLQueue: ObservableObject {
     @Published var onlineQueue: [OnlineURLInfo] = []
     @Published var legitScore = ScoreUpdateModel()
     @Published var groupedWarnings: [WarningDomainGroup] = []
+    @Published var summary: String = ""
     
     //    seen cookies set to not double penalyze same cookie keys because we have a fresh get each time
     var cookiesSeenByRedirectChain: [UUID: Set<String>] = [:]

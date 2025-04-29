@@ -58,11 +58,12 @@ struct dangerousCSPValues {
 struct safeCSPValue {
     static let selfCSP: Data = "'self'".data(using: .utf8) ?? Data() // Allows resources from the same origin
     static let none: Data = "'none'".data(using: .utf8) ?? Data() // Blocks everything — strongest policy
-    static let strictDynamic: Data = "'strict-dynamic'".data(using: .utf8) ?? Data() // Allows dynamic scripts from nonce'd parents
+    static let strictDynamic: Data = "'strict-dynamic'".data(using: .utf8) ?? Data() // Allows dynamic scripts from  parents with a unique value nonce or hash
     static let reportSample: Data = "'report-sample'".data(using: .utf8) ?? Data() // Sends sample of blocked content in CSP reports
-    static let nonce: Data = "'nonce-'".data(using: .utf8) ?? Data()
+    static let nonce: Data = "'nonce-".data(using: .utf8) ?? Data() // nonce usage
+    static let hash: Data = "'hash-".data(using: .utf8) ?? Data() // hash usage
     
-    static let scriptSrc: Data = "'script'".data(using: .utf8) ?? Data()
+    static let scriptSrc: Data = "'script'".data(using: .utf8) ?? Data() // Specific to "require-trusted-types-for"
 }
 
 struct HeadHeaderByteSignatures {

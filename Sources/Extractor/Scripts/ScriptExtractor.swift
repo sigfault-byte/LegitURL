@@ -57,7 +57,8 @@ struct ScriptExtractor {
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.missingMalformedBodyTag,
                 url: origin,
-                source: .body
+                source: .body,
+                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO
             ))
 //            return nil
         }
