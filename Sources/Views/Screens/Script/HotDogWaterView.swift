@@ -8,6 +8,7 @@ import SwiftUI
 struct HotDogWaterView: View {
     let previews: [ScriptPreview]
     @State private var copiedIndex: Int? = nil
+    @State private var expandedScript: ScriptPreview? = nil
     
     var body: some View {
         ScrollView {
@@ -54,27 +55,28 @@ struct HotDogWaterView: View {
                                 }
                             }
                             .buttonStyle(.plain)
+                            Button(action: {
+                                expandedScript = preview
+                            }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            .buttonStyle(.plain)
                         }
                         
                         if let findings = preview.findings, !findings.isEmpty {
                             let summarized = summarizeFindings(findings)
-//                            Doestn work when there are many eement. NEed to build a custom component.... 
+//                            Doestn work when there are many eement. Need to build a custom component....
 //                            HStack {
                                 ForEach(summarized.indices, id: \.self) { index in
                                     let item = summarized[index]
-                                    Text("⚠️ \(item.message) x\(item.count)")
+                                    Text(item.count > 1 ? "\(item.message) x\(item.count)" : item.message)
                                         .font(.subheadline)
                                         .foregroundColor(item.color)
                                 }
 //                            }
-                        }
-                        Divider()
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            Text(preview.contentPreview)
-                                .font(.system(.body, design: .monospaced))
-                                .padding(6)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(6)
                         }
                     }
                     .padding()
@@ -83,6 +85,13 @@ struct HotDogWaterView: View {
                 }
             }
             .padding()
+            .sheet(item: $expandedScript) { script in
+                ScrollView {
+                    Text(script.contentPreview)
+                        .font(.system(.body, design: .monospaced))
+                        .padding()
+                }
+            }
         }
     }
 }

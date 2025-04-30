@@ -123,7 +123,7 @@ struct PathAnalyzer {
                 var partNumber: Int = 0
                 for part in parts {
                     // TODO: This simply breaks users added "brand or keywords" containing an hyphen...
-                    let delimiters: [Character] = ["+","-", "|", ":", ";", "~", "_"]
+                    let delimiters: [Character] = ["+", "&","-", "|", ":", ";", "~", "_"]
                     var subParts: [String] = [part]
                     
                     for delimiter in delimiters {

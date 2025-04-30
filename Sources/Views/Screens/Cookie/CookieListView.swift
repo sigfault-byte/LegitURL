@@ -25,7 +25,9 @@ struct CookieListView: View {
                     LabeledContent("Expires In", value: cookie.humanReadableExpiry)
                     LabeledContent("SameSite Policy", value: cookie.displayedSameSitePolicy)
                     LabeledContent("Secure", value: cookie.displayedSecureStatus)
+                        .foregroundStyle(cookie.secureColor)
                     LabeledContent("HttpOnly", value: cookie.displayHttpOnly)
+                        .foregroundStyle(cookie.httpOnlyColor)
                     LabeledContent("Path", value: cookie.path)
                     LabeledContent("Domain", value: cookie.displayedDomain)
 
@@ -57,9 +59,9 @@ struct CookieListView: View {
         switch severity {
         case .info: return .blue
         case .suspicious: return .orange
-        case .tracking: return .gray
+        case .tracking: return .purple
         case .dangerous: return .red
-        case .scam: return .purple
+        case .scam: return .red
         case .critical: return .red.opacity(0.8)
         case .fetchError: return .black
         }

@@ -181,19 +181,18 @@ struct HTTPRespAnalyzer {
         }
         
         
-        // Only save if result was actually analyzed
+        // save if result was actually analyzed
         if let result = cspResult, !result.structuredCSP.isEmpty {
-            // Do something with result
             onlineInfo.cspOfHeader = result
         }
         
         let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin, responseCode: responseCode)
         urlInfo.warnings.append(contentsOf: headerWarnings)
         
-        
-        if let findings = findings, let rawBody = onlineInfo.rawBody {
-            onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings, rawBody: rawBody)
-        }
+        //Later if its interesting
+//        if let findings = findings, let rawBody = onlineInfo.rawBody {
+//            onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings, rawBody: rawBody)
+//        }
         
         // Syncronize the onlineInfo back into the singleotn
         if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {

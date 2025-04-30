@@ -23,7 +23,7 @@
 // Wildcards like *.example.com are NOT allowed
 // But Set-Cookie: Path=/ → cookie is sent to all paths on the same domain (site-wide scope)
 // Not shared across domains or subdomains unless Domain=.example.com is explicitly set
-//📁 PATH STRUCTURE UNDER example.com
+//PATH STRUCTURE UNDER example.com
 ///
 //├── index.html
 //├── account/
@@ -127,9 +127,16 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     let isCrossSite = cookie.sameSite.lowercased() == "none"
     let isSecure = cookie.secure
 
+    // Severity determination logic:
+    // - Any cookie accessible to JS and longer than 16B is considered tracking
+    // - High-entropy, persistent, and wide-scope cookies escalate to tracking or dangerous
+    // - Small/expired cookies are low-risk and informational
+    // - Redirect-set cookies are suspicious by design
     if httpResponseCode != 200 {
         bitFlags.insert(.setOnRedirect)
         severity = .suspicious
+    } else if !cookie.httpOnly && valueSize > 16 {
+        severity = .tracking
     } else if bitFlags.contains([.highEntropyValue, .persistent, .sameSiteNone]) {
         severity = .dangerous
     } else if bitFlags.contains(.smallValue) {

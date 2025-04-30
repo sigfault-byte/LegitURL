@@ -211,7 +211,7 @@ struct ScriptInlineAnalyzer {
                     if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
                         let index = match.scriptIndex
                         let current = scripts.scripts[index].findings4UI ?? []
-                        scripts.scripts[index].findings4UI = current + [("\(name) call", severity)]
+                        scripts.scripts[index].findings4UI = current + [("\(name.capitalized) call detected", severity)]
                     }
                 }
             }
@@ -294,7 +294,7 @@ struct ScriptInlineAnalyzer {
                     if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
                         let index = match.scriptIndex
                         let current = scripts.scripts[index].findings4UI ?? []
-                        scripts.scripts[index].findings4UI = current + [("'\(displayName) detedcted", .suspicious)]
+                        scripts.scripts[index].findings4UI = current + [("'\(displayName)' access", .suspicious)]
                     }
                 }
             }

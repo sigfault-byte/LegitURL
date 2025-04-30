@@ -4,7 +4,6 @@
 //
 //  Created by Chief Hakka on 14/04/2025.
 //
-// TODO: DOMlite HTML tree (Script visibility + risk map) -> save it and output to the component info
 import Foundation
 
 struct ScriptHelperFunction {
@@ -336,9 +335,7 @@ struct ScriptHelperFunction {
         } else if lowercased.starts(with: Array("data:".utf8)) {
             return (.dataURI, String(data: value, encoding: .utf8))
             
-        } else if lowercased.starts(with: [UInt8(ascii: "/")]) ||
-                    lowercased.starts(with: Array("./".utf8)) ||
-                    looksLikeRelativePath(quoteRange: lowercased) {
+        } else if looksLikeRelativePath(quoteRange: lowercased) {
             return (.relative, String(data: value, encoding: .utf8))
             
         } else {
@@ -346,43 +343,49 @@ struct ScriptHelperFunction {
         }
     }
     
-    private static func looksLikeRelativePath(quoteRange: Data) -> Bool {
-        guard !quoteRange.isEmpty else {
-            return false
-        }
-        
-        var index = 0
-        var candidate = false
-        
-        while index < quoteRange.count {
-            let byte = quoteRange[index]
-            
-            if byte.isAlnum || byte == UInt8(ascii: "_") || byte == UInt8(ascii: "-") {
-                index += 1
-            } else {
-                if byte == UInt8(ascii: "/") {
-                    candidate = true
-                    index += 1  // Needed to avoid infinite loop!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                } else {
-                    break  // Stop on any other non-alnum char
-                }
-            }
-        }
-        
-        if candidate {
-            // Strip query or fragment if present
-            let pathOnly: Data
-            if let queryIndex = quoteRange.firstIndex(of: UInt8(ascii: "?")) ?? quoteRange.firstIndex(of: UInt8(ascii: "#")) {
-                pathOnly = quoteRange.prefix(upTo: queryIndex)
-            } else {
-                pathOnly = quoteRange
-            }
-            
-            if pathOnly.suffix(3) == Array(".js".utf8) || pathOnly.suffix(4) == Array(".mjs".utf8) {
-                return true
-            }
-        }
-        
+private static func looksLikeRelativePath(quoteRange: Data) -> Bool {
+    guard !quoteRange.isEmpty else {
         return false
     }
+
+    var foundNonSpecialChar = false
+    var index = 0
+
+    while index < quoteRange.count {
+        let byte = quoteRange[index]
+        if byte.isAlnum || byte == UInt8(ascii: "_") || byte == UInt8(ascii: "-") || byte == UInt8(ascii: ".") {
+            foundNonSpecialChar = true
+            index += 1
+        } else if byte == UInt8(ascii: "/") {
+            index += 1
+        } else {
+            break
+        }
+    }
+
+    if foundNonSpecialChar {
+        // Strip query or fragment if present
+        let pathOnly: Data
+        if let queryIndex = quoteRange.firstIndex(of: UInt8(ascii: "?")) ?? quoteRange.firstIndex(of: UInt8(ascii: "#")) {
+            pathOnly = quoteRange.prefix(upTo: queryIndex)
+        } else {
+            pathOnly = quoteRange
+        }
+
+        // Case 1: Conventional JS file extensions
+        if pathOnly.suffix(3) == Array(".js".utf8) || pathOnly.suffix(4) == Array(".mjs".utf8) {
+            return true
+        }
+
+        // Case 2: No extension, but ends with path or endpoint and contains query
+        //TODO: Mark this, this is bad, no fingerprinting name, the content can be dynamic depending on user, and we are in a "non' logged state. It evades CSP if CSP is not strict? Need to dig, this is bad
+        let hasQuery = quoteRange.contains(UInt8(ascii: "?"))
+        let noExtension = !pathOnly.contains(UInt8(ascii: ".")) && hasQuery
+        if noExtension {
+            return true
+        }
+    }
+
+    return false
+}
 }

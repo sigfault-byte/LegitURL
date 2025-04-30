@@ -5,6 +5,7 @@
 //  Created by Chief Hakka on 08/04/2025.
 //
 import Foundation
+import SwiftUI
 
 struct CookieViewModel: Identifiable {
     let id: UUID
@@ -59,6 +60,14 @@ struct CookieViewModel: Identifiable {
         } else {
             return "Missing"
         }
+    }
+    
+    var secureColor: Color {
+        secure ? .primary : .red
+    }
+
+    var httpOnlyColor: Color {
+        httpOnly ? .primary : .red
     }
     
     var readableFlags: [String] {

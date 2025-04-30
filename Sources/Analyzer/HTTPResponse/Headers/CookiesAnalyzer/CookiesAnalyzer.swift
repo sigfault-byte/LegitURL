@@ -72,6 +72,7 @@ struct CookiesAnalyzer {
         // Per-cookie analysis
         for cookie in parsedCookies {
             let globalSeenCookies = URLQueue.shared.cookiesSeenByRedirectChain.values.reduce(into: Set<String>()) { $0.formUnion($1) }
+            
             let result = analyzeCookie(cookie,
                                        httpResponseCode: httpResponseCode,
                                        seenCookie: globalSeenCookies,

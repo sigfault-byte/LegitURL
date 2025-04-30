@@ -3,6 +3,7 @@
 //
 //  Created by Chief Hakka on ??/04/2025.
 //
+//TODO: Parse broken html to see wtf is going, this is not a priority, and just for fun byte parsing
 
 import Foundation
 
@@ -28,7 +29,6 @@ struct HTMLAnalyzerFast {
                                            ))
             return nil
         }
-        
         guard htmlClosed else {
             warnings.append(SecurityWarning(message: "HTML appears malformed (missing </html> closing tag). This is common in scam kits or broken pages from hotdogwater devs.",
                                             severity: .critical,

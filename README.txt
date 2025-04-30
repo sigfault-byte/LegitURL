@@ -262,22 +262,25 @@ LegitURL analyzes URLs in two phases: offline (local processing) and online (ser
 
 LEGITURL — README
 
-1. What is LegitURL?
-2. Who is this for?
-3. How does it work?
-    - Offline Analysis
-    - Online Analysis
-4. Scoring System
-    - Bitmask Warning System
-    - Final Score Calculation
-5. Core Detection Features
-    - Domain & Subdomain Analysis
-    - Scam Word & Brand Detection
-    - Encoding & Entropy Heuristics (Lamai Decoder)
-    - Body Script & Content Analysis
-    - Cookie Behavior Analysis
-    - Header & TLS Certificate Checks
-	## Core Idea
+	1.	What is LegitURL?
+	2.	Who is LegitURL for? (more natural phrasing)
+	3.	How Does It Work?
+	•	Offline Analysis
+	•	Online Analysis
+	4.	Scoring System
+	•	Bitmask Warning System
+	•	Final Score Calculation
+	5.	Core Detection Features
+	•	Domain & Subdomain Analysis
+	•	Scam Word & Brand Detection
+	•	Encoding & Entropy Heuristics (Lamai Decoder)
+	•	Body Script & Content Analysis
+	•	Cookie Behavior Analysis
+	•	Header & TLS Certificate Checks
+	6.	Example Use Case
+	7.	The Philosophy Behind LegitURL
+	8.	Why LegitURL Exists
+	9.	Contact & License
 
 A TLS certificate issued by Let’s Encrypt with a high number (e.g., 30+ or even 10+) of specific Fully Qualified Domain Names (FQDNs) listed in the Subject Alternative Name (SAN) field — and no wildcard entries — especially on a short-lived certificate (common with Let’s Encrypt), is a **strong signal of potential malicious infrastructure** designed for obfuscation.
 
@@ -306,7 +309,3 @@ A TLS certificate issued by Let’s Encrypt with a high number (e.g., 30+ or eve
 
 This TLS SAN pattern deviates from modern best practices and reveals intent:
 > Not to securely serve users — but to **cloak a network of scam infrastructure.**
-6. Example Use Case
-7. Philosophy Behind the App
-8. Why This App Exists
-9. Contact & License
