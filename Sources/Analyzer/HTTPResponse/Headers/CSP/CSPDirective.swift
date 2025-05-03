@@ -20,8 +20,8 @@ struct CSPDirective {
 
     static func analyzeScriptOrDefaultSrc(directiveName: String, bitFlagCSP: CSPBitFlag, sourceCount: [CSPBitFlag: Int] = [:], url: String) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
-
-        print ("analyzeScriptOrDefaultSrc \(directiveName) \(bitFlagCSP)")
+//debug
+//        print ("analyzeScriptOrDefaultSrc \(directiveName) \(bitFlagCSP)")
         
         if bitFlagCSP.contains(.unsafeInline) {
             let message: String

@@ -75,7 +75,7 @@ struct TLSCertificateAnalyzer {
         
         // 3. Expiry Window
         let now = Date()
-        
+        var penalyzed = false
         if let notAfter = certificate.notAfter {
             if notAfter < now {
                 addWarning("TLS Certificate expired on \(TLSHeuristics.formattedDate(notAfter))", .critical, penalty: PenaltySystem.Penalty.critical)
@@ -88,6 +88,7 @@ struct TLSCertificateAnalyzer {
         if let notBefore = certificate.notBefore {
             if let daysOld = Calendar.current.dateComponents([.day], from: notBefore, to: now).day {
                 if daysOld <= 7 {
+                    penalyzed = true
                     addWarning("TLS Certificate was issued very recently (\(daysOld) days ago) on \(TLSHeuristics.formattedDate(notBefore))", .suspicious, penalty: PenaltySystem.Penalty.tlsIsNew7days, bitFlags: WarningFlags.TLS_IS_FRESH)
                 } else if daysOld <= 30 {
                     addWarning("TLS Certificate was issued recently (\(daysOld) days ago) on \(TLSHeuristics.formattedDate(notBefore))", .info, penalty: PenaltySystem.Penalty.informational, bitFlags: WarningFlags.TLS_IS_FRESH)
@@ -142,9 +143,9 @@ struct TLSCertificateAnalyzer {
                 
                     //TODO: This if should not happen anymore, and should be useless
                 if alreadyRewarded {
-                    addWarning("Certificate for this domain is already marked \(label).", .info, penalty: 0, bitFlags: [.TLS_IS_EV_OR_OV])
+                    addWarning("Certificate for this domain is already marked \(label).", .info, penalty: penalyzed ? 10 : 0, bitFlags: [.TLS_IS_EV_OR_OV])
                 } else {
-                    addWarning("Certificate is \(label)", .info, penalty: 10, bitFlags: [.TLS_IS_EV_OR_OV])
+                    addWarning("Certificate is \(label)", .info, penalty: penalyzed ? 20 : 10, bitFlags: [.TLS_IS_EV_OR_OV])
                 }
             case .dv:
                 addWarning("Certificate is Domain Validated (DV)", .info, penalty: 0)

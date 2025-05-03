@@ -242,7 +242,7 @@ struct HeadersUtils {
                 warnings.append(SecurityWarning(
                     message: "Weak or risky Referrer-Policy detected: \(referrerPolicy).",
                     severity: .suspicious,
-                    penalty: PenaltySystem.Penalty.weakReferrerPolicy,
+                    penalty: /*PenaltySystem.Penalty.weakReferrerPolicy*/ 0,
                     url: urlOrigin,
                     source: .header,
                 ))
@@ -251,7 +251,7 @@ struct HeadersUtils {
             warnings.append(SecurityWarning(
                 message: "Missing Referrer-Policy header.",
                 severity: .suspicious,
-                penalty: PenaltySystem.Penalty.weakReferrerPolicy,
+                penalty: /*PenaltySystem.Penalty.weakReferrerPolicy*/ 0,
                 url: urlOrigin,
                 source: .header,
             ))

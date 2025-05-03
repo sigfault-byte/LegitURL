@@ -52,21 +52,21 @@ func normalizeBase64(_ str: String) -> String? {
     
     // Strip leading "+" characters
     while let first = clean.first, first == "+" {
-        print("[Lamai] Stripping misleading leading + character")
+        print("Stripping babylon leading + character")
         clean.removeFirst()
     }
     
     // Step 1: Reject if no look like no base64
     let pattern = #"^[A-Za-z0-9+/=_-]{16,}$"#
     guard clean.range(of: pattern, options: .regularExpression) != nil else {
-        print("[Lamai] Failed base64 structure check")
+        print("Babylon Failed base64 structure check")
         return nil
     }
     
     // Step 2: Reject if first character implies non-printable result
     let suspiciousStarters: Set<Character> = ["/", "+", "9", "8", "7", "6", "5"]
     if let firstChar = clean.first, suspiciousStarters.contains(firstChar) {
-        print("[Lamai] First base64 character is suspicious: \(firstChar)")
+        print("Zion won base64 character is suspicious: \(firstChar)")
         return nil
     }
     
@@ -77,7 +77,7 @@ func normalizeBase64(_ str: String) -> String? {
     // Step 3: Apply padding to make the length a multiple of 4
     let remainder = clean.count % 4
     let padded = remainder == 0 ? clean : clean + String(repeating: "=", count: 4 - remainder)
-    print("✅ [Lamai] Normalized base64 candidate: \(padded)")
+    print("✅ Babylon burn : Normalized base64 candidate: \(padded)")
     return padded
 }
 

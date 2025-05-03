@@ -4,7 +4,8 @@ struct DestinationInfoComponent: View {
     @ObservedObject var viewModel: DestinationInfoComponentModel
     
     @State private var showFullExplanation = false
-    
+    @State private var showFullDomain = false
+    @State private var showFullDestination = false
     
     var body: some View {
         VStack(alignment: .center, spacing: 12) {
@@ -25,7 +26,7 @@ struct DestinationInfoComponent: View {
                                 .lineLimit(nil)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .onTapGesture {
-                                    withAnimation { showFullExplanation.toggle() }
+                                    showFullExplanation.toggle()
                                 }
                         } else {
                             Text("Click to see a sumamry of the score.")
@@ -33,7 +34,7 @@ struct DestinationInfoComponent: View {
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
                                 .onTapGesture {
-                                    withAnimation { showFullExplanation.toggle() }
+                                    showFullExplanation.toggle()
                                 }
                         }
                     }
@@ -43,7 +44,6 @@ struct DestinationInfoComponent: View {
                 .padding()
                 .background(.ultraThinMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
             
             VStack(alignment: .leading, spacing: 12) {
@@ -52,17 +52,20 @@ struct DestinationInfoComponent: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Group {
-                        if viewModel.isAnalysisComplete {
+                        if showFullDomain || viewModel.inputDomain.count <= 50 {
                             Text(viewModel.inputDomain)
                         } else {
-                            Text("https://\(viewModel.loadingDots)")
+                            Text(String(viewModel.inputDomain.prefix(50)) + "…")
                         }
                     }
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .monospacedDigit()
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onTapGesture {
+                            showFullDomain.toggle()
+                    }
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding()
                 .background(.ultraThinMaterial)
@@ -76,23 +79,51 @@ struct DestinationInfoComponent: View {
                         if !viewModel.punycodeMissmatch {
                             let prefix = viewModel.finalHost.components(separatedBy: "\(viewModel.domainLabel).\(viewModel.tldLabel)").first ?? ""
                             let suffix = viewModel.finalHost.components(separatedBy: "\(viewModel.domainLabel).\(viewModel.tldLabel)").dropFirst().joined()
-                            
-                            (
+                            let composedText =
                                 Text(prefix)
+                                    .foregroundColor(.secondary) +
+                                Text(viewModel.domainLabel)
+                                    .foregroundColor(viewModel.scoreColor) +
+                                Text(".")
+                                    .foregroundColor(viewModel.scoreColor) +
+                                Text(viewModel.tldLabel)
+                                    .foregroundColor(viewModel.scoreColor) +
+                                Text(suffix)
                                     .foregroundColor(.secondary)
-                                + Text(viewModel.domainLabel)
-                                    .foregroundColor(viewModel.scoreColor)
-                                + Text(".")
-                                    .foregroundColor(viewModel.scoreColor)
-                                + Text(viewModel.tldLabel)
-                                    .foregroundColor(viewModel.scoreColor)
-                                + Text(suffix)
+                            
+                            if showFullDestination || viewModel.finalHost.count <= 50 {
+                                composedText
+                            } else {
+                                let keepCount = max(0, 50 - (viewModel.domainLabel.count + viewModel.tldLabel.count + 1))
+                                let half = keepCount / 2
+
+                                let prefixTrimmed = String(prefix.suffix(half))
+                                let suffixTrimmed = String(suffix.prefix(keepCount - half))
+
+                                Text(prefixTrimmed)
+                                    .foregroundColor(.secondary) +
+                                Text(viewModel.domainLabel)
+                                    .foregroundColor(viewModel.scoreColor) +
+                                Text(".")
+                                    .foregroundColor(viewModel.scoreColor) +
+                                Text(viewModel.tldLabel)
+                                    .foregroundColor(viewModel.scoreColor) +
+                                Text(suffixTrimmed + "…")
                                     .foregroundColor(.secondary)
-                            )
+                            }
                         } else {
-                            Text(viewModel.finalHost)
-                                .foregroundColor(viewModel.scoreColor)
+                            if showFullDestination || viewModel.finalHost.count <= 50 {
+                                Text(viewModel.finalHost)
+                                    .foregroundColor(viewModel.scoreColor)
+                            } else {
+                                let truncated = String(viewModel.finalHost.prefix(50)) + "…"
+                                Text(truncated)
+                                    .foregroundColor(.secondary)
+                            }
                         }
+                    }
+                    .onTapGesture {
+                            showFullDestination.toggle()
                     }
                     .font(.body)
                     .fontWeight(.semibold)
@@ -114,6 +145,5 @@ struct DestinationInfoComponent: View {
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(.vertical, 6)
-        .animation(.easeOut(duration: 0.3), value: viewModel.displayMessage)
     }
 }

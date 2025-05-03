@@ -82,17 +82,18 @@ struct CookieFlagBits: OptionSet, Hashable {
     static let sameSiteNone          = CookieFlagBits(rawValue: 1 << 9)   // 512
 
     // Security Attributes (10–11)
-    static let secure                = CookieFlagBits(rawValue: 1 << 10)  // 1024
-    static let httpOnly              = CookieFlagBits(rawValue: 1 << 11)  // 2048
+    static let secure                = CookieFlagBits(rawValue: 1 << 10)  // 1 024
+    static let httpOnly              = CookieFlagBits(rawValue: 1 << 11)  // 2 048
 
     // Context (12–13)
-    static let setOnRedirect         = CookieFlagBits(rawValue: 1 << 12)  // 4096
-    static let reusedAcrossRedirect  = CookieFlagBits(rawValue: 1 << 13)  // 8192
+    static let setOnRedirect         = CookieFlagBits(rawValue: 1 << 12)  // 4 096
+    static let reusedAcrossRedirect  = CookieFlagBits(rawValue: 1 << 13)  // 8 192
 
     // Content Signature (14)
-    static let highEntropyValue      = CookieFlagBits(rawValue: 1 << 14)  // 16384
-    static let pathOverlyBroad       = CookieFlagBits(rawValue: 1 << 15)  // 32768
-    static let domainOverlyBroad     = CookieFlagBits(rawValue: 1 << 16)  // 65536
+    static let highEntropyValue      = CookieFlagBits(rawValue: 1 << 14)  // 16 384
+    static let pathOverlyBroad       = CookieFlagBits(rawValue: 1 << 15)  // 32 768
+    static let domainOverlyBroad     = CookieFlagBits(rawValue: 1 << 16)  // 65 536
+    static let wayTooLarge           = CookieFlagBits(rawValue: 1 << 17)  // 131 072
 }
 
 
@@ -118,7 +119,7 @@ extension CookieFlagBits {
         } else if contains(.largeValue) {
             reasons.append("Large value (>64 bytes) — too big to be random")
         }
-
+        if contains(.wayTooLarge) {reasons.append("The value is more than 100bytes")}
         // Lifespan (3–6)
         if contains(.expired)               { reasons.append("Expired cookie") }
         if contains(.shortLivedPersistent) && contains(.persistent) {
@@ -132,10 +133,10 @@ extension CookieFlagBits {
         // Access Control (7–9)
         if contains(.sameSiteNone)          { reasons.append("SameSite=None") }
         if contains(.sameSiteNone) && contains(.session) {
-            reasons.append("Suspicious: Session cookie with SameSite=None (likely tracking intent)")
+            reasons.append("Suspicious: Session cookie with SameSite=None")
         }
         if contains(.sameSiteNone) && !contains(.secure) {
-            reasons.append("Invalid: SameSite=None used without Secure (modern browsers reject this)")
+            reasons.append("Invalid: SameSite=None used without Secure (modern browsers should reject this)")
         }
 
         // Security Attributes (10–11)

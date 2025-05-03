@@ -10,11 +10,13 @@
 		244BFDFF2D8830D20060DA50 /* ASN1Decoder in Frameworks */ = {isa = PBXBuildFile; productRef = 244BFDFE2D8830D20060DA50 /* ASN1Decoder */; };
 		244BFE022D8830DB0060DA50 /* Punycode in Frameworks */ = {isa = PBXBuildFile; productRef = 244BFE012D8830DB0060DA50 /* Punycode */; };
 		24E29A032DB7A8B30036E457 /* README.txt in Resources */ = {isa = PBXBuildFile; fileRef = 24E299012DB7A8B30036E457 /* README.txt */; };
+		24F49ED82DC329AF0028FC51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24F49ED72DC329AF0028FC51 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		249557102D86D6EC0094E1D8 /* LegitURL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LegitURL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		24E299012DB7A8B30036E457 /* README.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
+		24F49ED72DC329AF0028FC51 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -64,6 +66,7 @@
 		249557072D86D6EC0094E1D8 = {
 			isa = PBXGroup;
 			children = (
+				24F49ED72DC329AF0028FC51 /* Assets.xcassets */,
 				249557112D86D6EC0094E1D8 /* Products */,
 				24E29A0B2DB7DC9C0036E457 /* Archive */,
 				24E299012DB7A8B30036E457 /* README.txt */,
@@ -151,6 +154,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				24E29A032DB7A8B30036E457 /* README.txt in Resources */,
+				24F49ED82DC329AF0028FC51 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

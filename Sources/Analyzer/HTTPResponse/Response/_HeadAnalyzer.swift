@@ -21,9 +21,9 @@ struct HeadAnalyzer {
             let previewRange = localCandidate..<(localCandidate + 20)
             let previewData = headContent[previewRange]
             if let previewString = String(data: previewData, encoding: .utf8) {
-                print("🔍 Preview of candidate at \(candidate): \(previewString)")
+                print("Preview of candidate at \(candidate): \(previewString)")
             } else {
-                print("❓ Unable to decode preview at \(candidate)")
+                print("Unable to decode preview at \(candidate)")
             }
         }
         

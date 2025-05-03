@@ -292,6 +292,7 @@ struct PenaltySystem {
         if flags.contains(.smallValue) && fullSecured {
             return 0
         }
+        if flags.contains(.smallValue) && !fullSecured { return -3}
         
         // Group 2: Suspicious secure tracker potential
         if flags.contains(.mediumValue) && flags.contains(.session) {
@@ -354,10 +355,13 @@ struct PenaltySystem {
         if flags.contains(.shortLivedPersistent) { penalty += -1 }
         if flags.contains(.highEntropyValue)     { penalty += -3 }
         if flags.contains(.largeValue)           { penalty += -5 }
+        if flags.contains(.wayTooLarge)          { penalty += -3 }
         
         // Configuration quirks
         if flags.contains(.sameSiteNone)         { penalty += -5 }
-//        if flags.contains(.expired)              { penalty += -1 }
+        if flags.contains(.expired) &&
+            !flags.contains(.httpOnly) &&
+            flags.contains(.highEntropyValue)    { penalty += -5 }
         if flags.contains(.setOnRedirect)        { penalty += -2}
         
         return max(penalty, -100)

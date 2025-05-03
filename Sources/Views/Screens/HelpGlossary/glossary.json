@@ -1,0 +1,68 @@
+[
+  {
+    "id": "howItWorks",
+    "term": "How does LegitURL work?",
+    "description": "LegitURL analyzes a link in two steps. First, it checks the structure of the link to detect suspicious patterns. Then it performs a visit to the destination, without revealing user identity, to examine the website’s certificate, headers, cookies, and scripts. All analysis is done locally.",
+    "category": "basic"
+  },
+  {
+    "id": "url",
+    "term": "URL",
+    "description": "A URL (Uniform Resource Locator) is the full web address used to find a page or resource online. It includes the protocol (like https), the domain name, and sometimes paths, queries, or fragments to point to specific content.",
+    "category": "basic"
+  },
+  {
+    "id": "host",
+    "term": "Host",
+    "description": "The host is the main address of a website. It includes the domain name and the top-level domain, such as '.com' or '.net'. It may also include subdomains like 'www' or 'mail'. This is the identifier used to locate the server on the internet.",
+    "category": "basic"
+  },
+  {
+    "id": "body",
+    "term": "HTML body",
+    "description": "The body is the main content area of a webpage. It typically contains elements like text, images, and interactive features. A complete webpage file usually includes a head section for setup information and a body section for what is displayed.",
+    "category": "basic"
+  },
+  {
+    "id": "tls",
+    "term": "TLS Certificate",
+    "description": "The TLS certificate is what makes the 's' in 'https' possible. It acts like a digital ID for a website. It enables encrypted communication and helps confirm the legitimacy of the website. If the certificate is invalid or missing, the communication can be intercepted.",
+    "category": "basic"
+  },
+  {
+    "id": "dv",
+    "term": "DV Certificate",
+    "description": "A DV (Domain Validation) certificate is the simplest type of TLS certificate. It confirms control of the domain, but does not verify who operates it. These are often used because they are fast and free to obtain.",
+    "category": "basic"
+  },
+  {
+    "id": "header",
+    "term": "Header",
+    "description": "Headers are metadata sent by the server to guide how the browser should handle the page. These can define script permissions, security rules, and content policies across tabs or network protocols.",
+    "category": "basic"
+  },
+  {
+    "id": "cookie",
+    "term": "Cookie",
+    "description": "Cookies are small pieces of data stored by websites to remember settings or actions. Some cookies serve essential purposes, while others are used for tracking activity across multiple sites.",
+    "category": "basic"
+  },
+  {
+      "id": "responseCode",
+      "term": "Response Code",
+      "description": "Response codes are numbers sent by the server to explain what happened when a request was made. For example, 200 means the page loaded fine, 404 means it wasn’t found, and 500 means something went wrong on the server. These codes help browsers and tools understand how to handle the response.",
+      "category": "basic"
+  },
+  {
+    "id": "redirect",
+    "term": "Redirect",
+    "description": "A redirect is a mechanism that sends a browser to a different URL than originally requested. This can be used for convenience or for obfuscating the actual destination.",
+    "category": "basic"
+  },
+  {
+    "id": "csp",
+    "term": "CSP",
+    "description": "CSP (Content Security Policy) is a security feature that defines which content sources are allowed on a webpage. A properly configured CSP helps reduce the risk of code injection attacks.",
+    "category": "basic"
+  }
+]

@@ -125,7 +125,7 @@ struct ScriptHelperFunction {
     static func scanScriptSrc(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 16, respectTagEnd: Bool = true) {
         for i in 0..<scripts.count {
             let start = scripts[i].start
-            
+
             // Scan for "=" from start up to tagEnd if available, else up to start+lookAhead
             let earlyRange: Range<Int>
             if respectTagEnd, let tagEnd = scripts[i].end {
@@ -136,14 +136,15 @@ struct ScriptHelperFunction {
             }
             let eqSigns = DataSignatures.extractAllTagMarkers(in: body, within: earlyRange, tag: UInt8(ascii: "="))
             var foundSrc = false
+            var eqMatchedDataScript = false
+
             for eq in eqSigns {
                 if eq >= 3 {
-                    // look backward
+                    // look backward for "src"
                     let s = body[eq - 3] | 0x20
                     let r = body[eq - 2] | 0x20
                     let c = body[eq - 1] | 0x20
                     if s == UInt8(ascii: "s"), r == UInt8(ascii: "r"), c == UInt8(ascii: "c") {
-                        // found src
                         let scanRange: Range<Int>
                         if respectTagEnd, let tagEnd = scripts[i].end {
                             scanRange = start..<min(tagEnd + 1, body.count)
@@ -153,19 +154,24 @@ struct ScriptHelperFunction {
                         let (found, position) = body.containsBytesCaseInsensitive(of: interestingPrefix.src, startIndex: scanRange.lowerBound)
                         if found, let pos = position, pos > start, pos < scanRange.upperBound {
                             scripts[i].srcPos = pos
+                            foundSrc = true
+                            break
                         }
-                        foundSrc = true
+                    }
+                }
+            }
+            //TODO:  There is something i do not understand or lacking knowledge regarding data type
+            if !foundSrc {
+                for eq in eqSigns {
+                    if ScriptHelperFunction.containsApplicationDataType(in: body, eq: eq) {
+                        scripts[i].findings = .dataScript
+                        eqMatchedDataScript = true
                         break
                     }
                 }
-                if ScriptHelperFunction.containsApplicationDataType(in: body, eq: eq) {
-                    scripts[i].findings = .dataScript
-                    foundSrc = true // because even if it's application/json, it's a data blob, not inline
-                    break
+                if !eqMatchedDataScript {
+                    scripts[i].findings = .inlineJS
                 }
-            }
-            if !foundSrc {
-                scripts[i].findings = .inlineJS
             }
         }
     }
@@ -189,13 +195,20 @@ struct ScriptHelperFunction {
         }
         
         if typeCheck.reversed() == [UInt8(ascii: "t"), UInt8(ascii: "y"), UInt8(ascii: "p"), UInt8(ascii: "e")] {
-            // After '=', look forward for "application/json" or "application/ld+json"
+            // After '=', look forward for known safe application/* data types
             let typeStart = eq + 1
             let lookahead = min(typeStart + 64, body.count)
             let typeSlice = body[typeStart..<lookahead]
-            
-            if typeSlice.range(of: Data("application/".utf8)) != nil {
-                return true
+
+            let safeDataTypes = [
+                "application/json",
+                "application/ld+json"
+            ]
+
+            for safeType in safeDataTypes {
+                if typeSlice.range(of: Data(safeType.utf8)) != nil {
+                    return true
+                }
             }
         }
         return false
@@ -329,6 +342,10 @@ struct ScriptHelperFunction {
         } else if lowercased.starts(with: Array("https://".utf8)) {
             return (.httpsExternal, String(data: value, encoding: .utf8))
             
+            
+        // TODO: Protocol-relative script detected.
+        // These should be verified for integrity (SRI). Without it, they are risky due to ambiguous protocol handling.
+        // Async SRI hash validation should be scheduled if SRI is present.
         } else if lowercased.starts(with: [UInt8(ascii: "/"), UInt8(ascii: "/")]) {
             return (.protocolRelative, String(data: value, encoding: .utf8))
             
@@ -353,7 +370,8 @@ private static func looksLikeRelativePath(quoteRange: Data) -> Bool {
 
     while index < quoteRange.count {
         let byte = quoteRange[index]
-        if byte.isAlnum || byte == UInt8(ascii: "_") || byte == UInt8(ascii: "-") || byte == UInt8(ascii: ".") {
+        // Alpha num + all the funky char that may prefix a path.
+        if byte.isAlnum || byte == UInt8(ascii: "_") || byte == UInt8(ascii: "-") || byte == UInt8(ascii: ".") || byte == UInt8(ascii: "@") || byte == UInt8(ascii: "~") || byte == UInt8(ascii: "+") {
             foundNonSpecialChar = true
             index += 1
         } else if byte == UInt8(ascii: "/") {

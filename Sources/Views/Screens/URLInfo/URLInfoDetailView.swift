@@ -12,7 +12,7 @@ struct URLInfoDetailView: View {
 
     private var onlineSection: some View {
         Group {
-            if let online = onlineInfo {
+            if let online = onlineInfo, let responseCode = online.serverResponseCode, responseCode != 0 {
                 URLOnlineDetailComponent(onlineInfo: online)
             } else {
                 Text("No online data available")
@@ -33,6 +33,7 @@ struct URLInfoDetailView: View {
             Section(header: Text("Online Details")) {
                 onlineSection
             }
+            // LATER
 //            if let recommendation = onlineInfo?.cspRecommendation {
 //                Section(header: Text("Security Recommendations")) {
 //                    NavigationLink(destination: CSPRecommendationView(recommendation: recommendation)) {

@@ -63,7 +63,7 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     var bitFlags: CookieFlagBits = []
 
     let valueSize = cookie.value.utf8.count
-    let (isHighEntropyValue, entropyScore) = CommonTools.isHighEntropy(cookie.value, 4.4)
+    let (isHighEntropyValue, entropyScore) = CommonTools.isHighEntropy(cookie.value, 4.7)
     if isHighEntropyValue {
         bitFlags.insert(.highEntropyValue)
         
@@ -77,6 +77,8 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     default:
         bitFlags.insert(.largeValue)
     }
+    
+    if valueSize > 100 && isHighEntropyValue { bitFlags.insert(.wayTooLarge) }
     
     // TODO (v2.0): Investigate use of expired cookies in redirect chains
     // - If cookie is expired AND value is long/high-entropy → may be fingerprinting cleanup
@@ -135,15 +137,19 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     if httpResponseCode != 200 {
         bitFlags.insert(.setOnRedirect)
         severity = .suspicious
-    } else if !cookie.httpOnly && valueSize > 16 {
+    }else if valueSize > 100 && (cookie.httpOnly == false || cookie.secure == false ){
+        severity = .dangerous
+    }else if !cookie.httpOnly && valueSize > 16 && isHighEntropyValue {
         severity = .tracking
     } else if bitFlags.contains([.highEntropyValue, .persistent, .sameSiteNone]) {
         severity = .dangerous
     } else if bitFlags.contains(.smallValue) {
         severity = .info
-    } else if bitFlags.contains(.expired) {
+    } else if bitFlags.contains(.expired) && cookie.httpOnly == true {
         severity = .info
-    } else if bitFlags.contains([.highEntropyValue, .persistent]) || bitFlags.contains([.highEntropyValue, .sameSiteNone]) || bitFlags.contains([.persistent, .sameSiteNone]) {
+    }else if bitFlags.contains(.expired) && isHighEntropyValue && cookie.httpOnly == false {
+        severity = .suspicious
+    }else if bitFlags.contains([.highEntropyValue, .persistent]) || bitFlags.contains([.highEntropyValue, .sameSiteNone]) || bitFlags.contains([.persistent, .sameSiteNone]) {
         severity = .tracking
     } else if bitFlags.contains(.highEntropyValue) || isCrossSite || (isSecure == false && !isCrossSite) {
         severity = .suspicious
