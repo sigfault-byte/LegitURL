@@ -35,7 +35,7 @@ func populateCookieMetadata(_ cookie: HTTPCookie) -> CookieMetadata {
         domain: normalizedDomain ?? "",
         path: cookie.path,
         expire: cookie.expiresDate,
-        sameSite: cookie.sameSitePolicy?.rawValue ?? "Lax",
+        sameSite: cookie.sameSitePolicy?.rawValue ?? "None",
         secure: cookie.isSecure,
         httpOnly: cookie.isHTTPOnly,
         comment: cookie.comment,
