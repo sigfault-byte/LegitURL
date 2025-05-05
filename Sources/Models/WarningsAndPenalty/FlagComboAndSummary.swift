@@ -109,7 +109,7 @@ struct ComboAlert {
                 return
             }
 
-            if f & WarningFlags.HEADERS_CSP_UNSAFE_INLINE_CONTAINED.rawValue != 0 {
+            if f & WarningFlags.HEADERS_CSP_UNSAFE_INLINE.rawValue != 0 && WarningFlags.HEADERS_CSP_HAS_NONCE_OR_HASH.rawValue != 0 {
                 combo.message = "This website tries to control risky scripts but still has unsafe behaviors."
                 return
             }
@@ -118,7 +118,7 @@ struct ComboAlert {
             return
         }
 
-        // --- Fallback ---
+        // TODO: --- Fallback ---
         combo.message = ""
     }
 }

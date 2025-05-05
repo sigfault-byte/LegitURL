@@ -1,4 +1,3 @@
-//
 //  CSPUtils.swift
 //  LegitURL
 //
@@ -27,7 +26,7 @@ struct CSPUtils {
         var end = slice.endIndex
         
         // Step 1: Trim leading spaces
-        while start < end, data[start] == HeadHeaderByteSignatures.space {
+        while start < end, data[start] == HeaderByteSignatures.space {
             start = data.index(after: start)
         }
         
@@ -35,7 +34,7 @@ struct CSPUtils {
         while end > start {
             let previous = data.index(before: end)
             let byte = data[previous]
-            if byte == HeadHeaderByteSignatures.space || byte == HeadHeaderByteSignatures.semicolon {
+            if byte == HeaderByteSignatures.space || byte == HeaderByteSignatures.semicolon {
                 end = previous
             } else {
                 break
@@ -51,7 +50,7 @@ struct CSPUtils {
         var lastStart = data.startIndex
         
         for index in data.indices {
-            if data[index] == HeadHeaderByteSignatures.space {
+            if data[index] == HeaderByteSignatures.space {
                 if lastStart < index { // Prevent empty slices
                     let slice = cleaningCSPSlice(slice: lastStart..<index, in: data)
                     arrayOfSlices.append(slice)
@@ -70,11 +69,11 @@ struct CSPUtils {
     }
     
     static func parseDirectiveSlice(_ slice: Data) -> [Data: [Data]]? {
-        //  TODO: Without a second cleaning some crashes occurs, need to investigate
+        //  TODO: Without a second cleaning some crashes occurs???  need to investigate :>>>>
         let cleanedSlice = cleaningCSPSlice(slice: slice.startIndex..<slice.endIndex, in: slice)
         let parts = exploseCSPSlicesOnSpace(in: cleanedSlice)
         
-        // Safety: must have at least 1 part (the directive)
+        // Safety: must have at least 1 part (the directive !)
         guard !parts.isEmpty else {
             return nil
         }
@@ -86,28 +85,34 @@ struct CSPUtils {
     }
     
     static func classifyCSPValue(_ value: Data) -> CSPValueType {
-        if value.first == HeadHeaderByteSignatures.singleQuote,
-           value.last == HeadHeaderByteSignatures.singleQuote {
-            if value.starts(with: safeCSPValue.nonce){
+        // Quoted values
+        if value.first == UInt8(ascii: "'"), value.last == UInt8(ascii: "'") {
+            if value.starts(with: safeCSPValue.nonce) {
                 return .nonce
+            } else if value.starts(with: safeCSPValue.sha256Hash) ||
+                        value.starts(with: safeCSPValue.sha384Hash) ||
+                        value.starts(with: safeCSPValue.sha512Hash) {
+                return .hash
+            } else {
+                return .keyword
             }
-            return .keyword
-        } else if value.starts(with: dangerousCSPValues.data) || value.starts(with: dangerousCSPValues.blob) {
-            return .scheme
-        } else if value == "*".data(using: .utf8) {
-            return .wildcard
-        } else {
-            return .url
         }
+
+        if value == "*".data(using: .utf8) {
+            return .wildcard
+        }
+
+        // All others assume external or scheme source?
+        return .source
     }
 }
 
 enum CSPValueType {
     case keyword
-    case scheme
-    case url
-    case wildcard
     case nonce
+    case hash
+    case wildcard
+    case source
     case unknown
 }
 
@@ -115,10 +120,10 @@ extension CSPValueType {
     var description: String {
         switch self {
         case .keyword: return "keyword"
-        case .url: return "url"
-        case .scheme: return "scheme"
-        case .wildcard: return "wildcard"
         case .nonce: return "nonce"
+        case .hash: return "hash"
+        case .wildcard: return "wildcard"
+        case .source: return "source"
         case .unknown: return "unknown"
         }
     }

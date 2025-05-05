@@ -6,12 +6,12 @@
 import requests
 import idna  # Handles Punycode conversion
 
-# 🌍 Download URL for the latest PSL list
+# Download URL for the latest PSL list
 PSL_URL = "https://publicsuffix.org/list/public_suffix_list.dat"
 DB_PATH = "public_suffix_list.sqlite"
 
 def download_psl():
-    """Download the latest Public Suffix List and clean it."""
+    """Download the latest Public Suffix List and clean."""
     response = requests.get(PSL_URL, timeout=10)
     response.raise_for_status()
 
@@ -40,7 +40,7 @@ def to_punycode(domain):
 def create_database(suffixes):
     """Create SQLite DB and insert PSL data with Punycode."""
     conn = sqlite3.connect(DB_PATH)
-    conn.text_factory = lambda x: str(x, "utf-8", "ignore")  # Ensure UTF-8
+    conn.text_factory = lambda x: str(x, "utf-8", "ignore")  # Ensure UTF-8 !!!
     cursor = conn.cursor()
 
     # Add a Punycode column
@@ -59,6 +59,7 @@ def create_database(suffixes):
     conn.commit()
     conn.close()
     print(f"Database '{DB_PATH}' updated with {len(suffixes)} TLDs and their Punycode equivalents.")
+    # TODO: -> add directly to the model / database folder. It should normaly overwrite the current one, other might as well rm it before
 
 def main():
     suffixes = download_psl()

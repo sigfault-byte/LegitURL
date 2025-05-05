@@ -1,16 +1,16 @@
 import Foundation
 
-//🔍 Certificate Chain:
-//→ All certificates in the chain are issued and signed by the same organization.
-//→ This is common in large corporations (e.g. Google, Apple).
-////→ While technically valid, it reduces third-party trust diversity. => not needed for now
-//•    Chain depth / issuer-to-CN overlap (you’ve debated this — keep it optional/advanced)
-//•    Custom certificate policies (you log them, and they’ll be useful down the line)
-//•    Certificate transparency / OCSP (not offline-friendly but future ideas)
+// Certificate Chain:
+//All certificates in the chain are issued and signed by the same organization.
+//This is common in large corporations (e.g. Google, Apple).
+//While technically valid, it reduces third-party trust diversity. => not needed for now
+//Chain depth / issuer-to-CN overlap
+//Custom certificate policies (logged, they’ll be useful down the line)
+//Certificate transparency / OCSP (not offline friendly but ... ?)
 
-//Because TLS Certificate is both highly important and not important, its easy for folks to get a "good" certificate, with with strong keys.
-//The only signal i see here, is the fresh certificate, the CN that is distributing certificate without seconds thoughts and
-//the wildcard san where user can create content sharing the certificate
+//Because TLS Certificate is both highly important and not important, its easy to get a "good" certificate, with with strong keys.
+//Signals: the fresh certificate, the CN that is distributing certificate without seconds thoughts and
+//the wildcard san where user can create content sharing the certificate and the SAN flood
 import Punycode
 
 

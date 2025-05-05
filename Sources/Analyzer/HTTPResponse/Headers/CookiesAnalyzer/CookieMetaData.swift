@@ -35,7 +35,7 @@ func populateCookieMetadata(_ cookie: HTTPCookie) -> CookieMetadata {
         domain: normalizedDomain ?? "",
         path: cookie.path,
         expire: cookie.expiresDate,
-        sameSite: cookie.sameSitePolicy?.rawValue ?? "None",
+        sameSite: cookie.sameSitePolicy?.rawValue ?? "none",
         secure: cookie.isSecure,
         httpOnly: cookie.isHTTPOnly,
         comment: cookie.comment,
@@ -99,7 +99,7 @@ struct CookieFlagBits: OptionSet, Hashable {
 
 struct CookieAnalysisResult: Identifiable, Hashable {
     let id = UUID()
-    let cookie: CookieMetadata
+    var cookie: CookieMetadata
     let severity: CookieSeverity
     let flags: CookieFlagBits
     let entropy: Float?

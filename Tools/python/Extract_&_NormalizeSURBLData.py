@@ -1,10 +1,12 @@
 import requests
 import csv
 
-# 🔗 SURBL TLD Abuse Rankings URL
+
+# TODO: This needs a lot more thinkering regarging both the source and the normalization
+# SURBL TLD Abuse Rankings URL
 SURBL_URL = "https://www.surbl.org/static/tld-abuse-complete-rankings.txt"
 
-# 📂 Output CSV
+# Output CSV
 OUTPUT_FILE = "surbl_abuse.csv"
 
 
@@ -49,7 +51,7 @@ def normalize_scores(tld_abuse):
 
 def save_to_csv(tld_scores):
     """Save the normalized TLD abuse data to a CSV file."""
-    print(f"💾 Saving data to {OUTPUT_FILE}...")
+    print(f"Saving data to {OUTPUT_FILE}...")
     with open(OUTPUT_FILE, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["tld", "abuse_score"])  # Header ?

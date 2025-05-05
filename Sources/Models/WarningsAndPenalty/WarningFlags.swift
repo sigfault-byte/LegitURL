@@ -74,8 +74,9 @@ struct WarningFlags: OptionSet {
     static let HEADERS_CSP_TOO_MANY_URL_SOURCES = WarningFlags(rawValue: 1 << 57)
     static let HEADERS_CSP_UNSAFE_EVAL = WarningFlags(rawValue: 1 << 58)
     static let HEADERS_CSP_UNSAFE_INLINE = WarningFlags(rawValue: 1 << 59)
-    static let HEADERS_CSP_UNSAFE_INLINE_CONTAINED = WarningFlags(rawValue: 1 << 60) // Not secure
-    
+//    static let HEADERS_CSP_UNSAFE_INLINE_CONTAINED = WarningFlags(rawValue: 1 << 60) // This is wrong babylon man RTFM
+    static let HEADERS_CSP_HAS_NONCE_OR_HASH = WarningFlags(rawValue: 1 << 60)
+    static let HEADERS_CSP_WILDCARD = WarningFlags(rawValue: 1 << 61)
 }
     
 

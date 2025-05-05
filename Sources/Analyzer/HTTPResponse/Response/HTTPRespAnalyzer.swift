@@ -33,7 +33,7 @@ struct HTTPRespAnalyzer {
         
         let headers = onlineInfo.normalizedHeaders ?? [:]
         
-        let cookies = HTTPRespUtils.extract(HeaderExtractionType.setCookie, from: headers)
+        let cookies = onlineInfo.extractedCookies ?? []
         
         let responseCode = onlineInfo.serverResponseCode ?? 0
         
@@ -51,7 +51,7 @@ struct HTTPRespAnalyzer {
             let redirectURL = URLComponentExtractor.extract(url: resolvedRelative)
             RedirectAnalyzer.analyzeRedirect(toInfo: redirectURL, fromInfo: &urlInfo, responseCode: responseCode)
             urlInfo.warnings.append(SecurityWarning(
-                message: "⚠️ The server used a relative path redirect to '\(resolvedRelative)'. While technically valid, it's uncommon and sometimes used by phishing kits.",
+                message: "The server used a relative path redirect to '\(resolvedRelative)'. While technically valid, it's uncommon and sometimes used by phishing kits.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.redirectRelative,
                 url: urlOrigin,
@@ -131,7 +131,7 @@ struct HTTPRespAnalyzer {
                                                                     origin: urlOrigin,
                                                                     htmlRange: result.htmlRange,
                                                                     into: &urlInfo.warnings)
-                findings = result // ✅ Sync mutated result back into findings ///LAST EDIT
+                findings = result // Sync mutated result back into findings LOCALE COPY ! ///LAST EDIT
 //                let preview = ScriptToPreview.prepareScriptPreviews(for: result.scripts, body: rawbody)
 //                onlineInfo.script4daUI = preview
             }
@@ -182,27 +182,29 @@ struct HTTPRespAnalyzer {
         
         
         // save if result was actually analyzed
+        var structureCSP: [String: [Data: CSPValueType]] = [:]
         if let result = cspResult, !result.structuredCSP.isEmpty {
             onlineInfo.cspOfHeader = result
+            structureCSP = result.structuredCSP
         }
         
         let headerWarnings = HeadersAnalyzer.analyze(responseHeaders: headers, urlOrigin: urlOrigin, responseCode: responseCode)
         urlInfo.warnings.append(contentsOf: headerWarnings)
         
-        //Later if its interesting
+        
+        
+        //This could work for the script-src?
 //        if let findings = findings, let rawBody = onlineInfo.rawBody {
 //            onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings, rawBody: rawBody)
 //        }
         
-        // Syncronize the onlineInfo back into the singleotn
-        if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {
-            URLQueue.shared.onlineQueue[index] = onlineInfo
-        }
-
+        //Rebuild headers for the view:
+        HeaderRebuild.build(from: headers, cookies: cookies, StructuredCSP: structureCSP, onlineInfo: &onlineInfo)
+        
+        
         //  Detect silent redirect (200 OK but URL changed)
         let normalizedOriginalURL = originalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let normalizedFinalURL = finalURL.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        
         
         // This shouldnt happen anymore, but in case it happens it's VERY BAD???
         if onlineInfo.serverResponseCode == 200, normalizedFinalURL != normalizedOriginalURL {
@@ -214,6 +216,13 @@ struct HTTPRespAnalyzer {
                 source: .header
             ))
         }
+        
+        // Syncronize the onlineInfo back into the singleotn
+        if let index = URLQueue.shared.onlineQueue.firstIndex(where: { $0.id == onlineInfo.id }) {
+            URLQueue.shared.onlineQueue[index] = onlineInfo
+        }
+
+        
         let end = Date()
         let durationMS = end.timeIntervalSince(start) * 1000
         print("Time taken: \(durationMS) ms, for a \(onlineInfo.rawBody?.count ?? 0) byte response body")

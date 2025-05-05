@@ -23,6 +23,8 @@ struct CSPBitFlag: OptionSet, Hashable {
     static let allowsData       = CSPBitFlag(rawValue: 1 << 11)   // 2048
     static let allowsSelf       = CSPBitFlag(rawValue: 1 << 12)   // 4096
     static let hasHash          = CSPBitFlag(rawValue: 1 << 13)   // 8192
+    static let specificURL      = CSPBitFlag(rawValue: 1 << 14)   //  https://cdn.com
+    static let wildcardURL      = CSPBitFlag(rawValue: 1 << 15)   //  *.cdn.com
 }
 
 
@@ -32,36 +34,33 @@ func parseCSP(_ structuredCSP: [String: [Data: CSPValueType]]) -> [String: Int32
     for (directive, values) in structuredCSP {
         var flags: CSPBitFlag = []
 
-        for (value, type) in values where type == .keyword || type == .nonce {
-            print("Checking CSP directive \(directive) value: [\(String(data: value, encoding: .utf8) ?? "invalid")]")
-            if value == dangerousCSPValues.unsafeInline {
-                flags.insert(.unsafeInline)
-            } else if value == dangerousCSPValues.unsafeEval {
-                flags.insert(.unsafeEval)
-            } else if value == dangerousCSPValues.wasmUnsafeEval {
-                flags.insert(.wasmUnsafeEval)
-            } else if value == safeCSPValue.strictDynamic {
-                flags.insert(.strictDynamic)
-            } else if value == safeCSPValue.reportSample {
-                flags.insert(.reportSample)
-            } else if value == safeCSPValue.none {
-                flags.insert(.none)
-            } else if value == safeCSPValue.selfCSP {
-                flags.insert(.allowsSelf)
-            } else if value.starts(with: safeCSPValue.nonce) {
-                flags.insert(.hasNonce)
-            } else if value.starts(with: safeCSPValue.hash){
-                flags.insert(.hasHash)
-            } else if value == dangerousCSPValues.wildcard {
-                flags.insert(.wildcard)
-            } else if value.starts(with: dangerousCSPValues.data) {
-                flags.insert(.allowsData)
-            } else if value.starts(with: dangerousCSPValues.blob) {
-                flags.insert(.allowsBlob)
-            } else if value.starts(with: Data("http:".utf8)) {
-                flags.insert(.allowsHTTP)
-            } else if value.starts(with: Data("https:".utf8)) {
-                flags.insert(.allowsHTTPS)
+        for (value, type) in values {
+            if type == .keyword ||
+                type == .nonce ||
+                type == .wildcard ||
+                type == .hash{
+                if value == dangerousCSPValues.unsafeInline {
+                    flags.insert(.unsafeInline)
+                } else if value == dangerousCSPValues.unsafeEval {
+                    flags.insert(.unsafeEval)
+                } else if value == dangerousCSPValues.wasmUnsafeEval {
+                    flags.insert(.wasmUnsafeEval)
+                } else if value == safeCSPValue.strictDynamic {
+                    flags.insert(.strictDynamic)
+                } else if value == safeCSPValue.reportSample {
+                    flags.insert(.reportSample)
+                } else if value == safeCSPValue.none {
+                    flags.insert(.none)
+                } else if value == safeCSPValue.selfCSP {
+                    flags.insert(.allowsSelf)
+                } else if value.starts(with: safeCSPValue.nonce) {
+                    flags.insert(.hasNonce)
+                } else if value.starts(with: Data("'sha".utf8)) {
+                    flags.insert(.hasHash)
+                }
+            } else if type == .source {
+                flags.formUnion(evaluateSourceBitFlags(for: value))
+                //TODO: add a fallback for unknown
             }
         }
 
@@ -69,6 +68,35 @@ func parseCSP(_ structuredCSP: [String: [Data: CSPValueType]]) -> [String: Int32
     }
 
     return directiveBitFlags
+}
+
+private func evaluateSourceBitFlags(for value: Data) -> CSPBitFlag {
+    var flags: CSPBitFlag = []
+
+    if value == dangerousCSPValues.wildcard {
+        flags.insert(.wildcard)
+    } else if value.starts(with: dangerousCSPValues.data) {
+        flags.insert(.allowsData)
+    } else if value.starts(with: dangerousCSPValues.blob) {
+        flags.insert(.allowsBlob)
+    } else if value.starts(with: dangerousCSPValues.http) {
+        flags.insert(.allowsHTTP)
+    } else if value.starts(with: dangerousCSPValues.https) {
+        flags.insert(.allowsHTTPS)
+    } else if value.first == dangerousCSPValues.wildcard.first {
+        let trimmed = value.dropFirst(2)
+        if let str = String(data: trimmed, encoding: .utf8),
+           let url = URL(string: "https://" + str),
+           url.host != nil {
+            flags.insert(.wildcardURL)
+        }
+    } else if let str = String(data: value, encoding: .utf8),
+              let url = URL(string: "https://" + str),
+              url.host != nil {
+        flags.insert(.specificURL)
+    }
+
+    return flags
 }
 
 extension CSPBitFlag {
@@ -94,6 +122,8 @@ extension CSPBitFlag {
             reasons.append("allows data: URIs (\(count) matched)")
         }
         if contains(.allowsSelf)        { reasons.append("allows content from same origin ('self')") }
+        if contains(.specificURL)       { reasons.append("allows specific external URLs (e.g. https://cdn.example.com)") }
+        if contains(.wildcardURL)       { reasons.append("allows wildcard subdomains (e.g. *.example.com)") }
 
         return reasons
     }

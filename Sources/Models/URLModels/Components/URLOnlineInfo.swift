@@ -27,7 +27,7 @@ struct OnlineURLInfo: Identifiable {
     
     var finalRedirectURL: String?
     
-    var cookies: [String: String] = [:]
+    var extractedCookies: [HTTPCookie]?
     var cookiesForUI: [CookieAnalysisResult?] = []
     var scriptSourcesForCSP: ScriptSourceToMatchCSP? = nil
     var cspOfHeader: ClassifiedCSPResult? = nil
@@ -58,7 +58,6 @@ struct OnlineURLInfo: Identifiable {
          parsedCertificate: ParsedCertificate? = nil,
          finalRedirectURL: String? = nil,
          
-         cookies: [String:String] = [:],
          cookiesForUI: [CookieAnalysisResult?] = []
     )
     {
@@ -79,7 +78,6 @@ struct OnlineURLInfo: Identifiable {
         
         self.finalRedirectURL = finalRedirectURL
         
-        self.cookies = cookies
         self.cookiesForUI = cookiesForUI
     }
 }

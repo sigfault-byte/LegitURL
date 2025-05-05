@@ -96,7 +96,8 @@ struct ScriptInlineAnalyzer {
         //        print("gather the data took: ", duration, "filtering took: ", timing)
     }
     
-    private static func generateInlineSoup(from scripts: [ScriptScanTarget], in body: Data) -> (soup: String, ranges: [(range: Range<Int>, scriptIndex: Int)]) {
+    private static func generateInlineSoup(from scripts: [ScriptScanTarget],
+                                           in body: Data) -> (soup: String, ranges: [(range: Range<Int>, scriptIndex: Int)]) {
         var byteRangesByScript: [(range: Range<Int>, scriptIndex: Int)] = []
         var currentStart = 0
         var soup = ""
@@ -188,7 +189,7 @@ struct ScriptInlineAnalyzer {
                         setterDetected = true
                     }
                     if name == "getElementById" {
-                        let submit = DataSignatures.matchesAsciiTag(at: pos, in: soupData, asciiToCompare: BadJSFunctions.submit, lookAheadWindow: 32)
+                        let submit = DataSignatures.matchesAsciiTag(at: pos, in: soupData, asciiToCompare: BadJSFunctions.submit, lookAheadWindow: 48)
                         if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
                             let index = match.scriptIndex
                             let current = scripts.scripts[index].findings4UI ?? []
@@ -212,6 +213,10 @@ struct ScriptInlineAnalyzer {
                         let index = match.scriptIndex
                         let current = scripts.scripts[index].findings4UI ?? []
                         scripts.scripts[index].findings4UI = current + [("\(name.capitalized) call detected", severity)]
+                        // TODO: Couldnt test in the wild. Logic of this is if script ratio is above 80% and document.write is presnet -> bail
+                        if name == "document.write" {
+                            scripts.scripts[index].findings4UI?.append(("DOM manipulation via document.write()", .dangerous))
+                        }
                     }
                 }
             }

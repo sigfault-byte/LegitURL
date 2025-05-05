@@ -105,7 +105,6 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
                     normalizedHeaders[keyString.lowercased()] = valueString
                 }
             }
-            let parsedHeaders = parseHeaders(httpResponse.allHeaderFields)
             
             let sslCertificateDetails = sharedInstance.sslCertificateDetails
             let parsedCert = sslCertificateDetails["ParsedCertificate"] as? ParsedCertificate
@@ -114,21 +113,31 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
             
 
             // Now, create your OnlineURLInfo using the processed data:
-            let onlineInfo = OnlineURLInfo(
+            var onlineInfo = OnlineURLInfo(
                 from: urlInfo,
                 responseCode: statusCode,
                 statusText: statusText,
                 normalizedHeaders: normalizedHeaders,
-                parsedHeaders: parsedHeaders,
+                parsedHeaders: nil,
                 rawBody: data,
                 certificateAuthority: sslCertificateDetails["Issuer"] as? String,
                 sslValidity: !(sslCertificateDetails["Warning"] != nil),
                 parsedCertificate: parsedCert,
-                finalRedirectURL: parsedHeaders.otherHeaders["location"]
+                finalRedirectURL: httpResponse.value(forHTTPHeaderField: "location")
             )
             
-           
-            
+            // Very terrible cookie parser on a flatten Header response.... Works but a print output is really weird
+            var extractedCookies: [HTTPCookie] = []
+            if let url = httpResponse.url {
+                let headerFields: [String: String] = httpResponse.allHeaderFields.reduce(into: [:]) { result, pair in
+                    if let key = pair.key as? String {
+                        result[key] = "\(pair.value)"
+                    }
+                }
+                extractedCookies = HTTPCookie.cookies(withResponseHeaderFields: headerFields, for: url)
+                onlineInfo.extractedCookies = extractedCookies
+            }
+//            print (extractedCookies)
             
             // TODO: Detect and respect encoding using BOM or <meta charset="..."> in the first 500 bytes
             // Example: <!DOCTYPE html><html lang="fr"><head><meta charset="iso-8859-1"> -> french website living in 1980
@@ -143,7 +152,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
 //                if let fullBodyText = fullBodyText {
 //                    onlineInfo.humanReadableBody = fullBodyText
 //                } else {
-//                    onlineInfo.humanReadableBody = "⚠️ Unable to decode body"
+//                    onlineInfo.humanReadableBody = "Unable to decode body"
 //                }
 //            }
 //            onlineInfo.humanBodySize = processedBody.count
@@ -203,33 +212,6 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
 //    }
         
     
-    // TODO: This needs to move elsewhere, it has nothing to do here
-    private static func parseHeaders(_ responseHeaders: [AnyHashable: Any]) -> ParsedHeaders {
-        var normalizedHeaders: [String: String] = [:]
-        
-        // ✅ Convert headers to lowercase for case-insensitivity
-        for (key, value) in responseHeaders {
-            if let keyString = key as? String {
-                normalizedHeaders[keyString.lowercased()] = "\(value)"
-            }
-        }
-        
-        // ✅ Categorize headers // Need to use the helper function!
-        var parsedHeaders = ParsedHeaders()
-        
-        for (key, value) in normalizedHeaders {
-            if ["strict-transport-security", "content-security-policy","content-security-policy-report-only", "x-frame-options", "x-content-type-options", "referrer-policy"].contains(key) {
-                parsedHeaders.securityHeaders[key] = value
-            } else if ["set-cookie", "etag", "permissions-policy"].contains(key) {
-                parsedHeaders.trackingHeaders[key] = value
-            } else if ["server", "x-powered-by", "x-aspnet-version", "x-aspnetmvc-version"].contains(key) {
-                parsedHeaders.serverHeaders[key] = value
-            } else {
-                parsedHeaders.otherHeaders[key] = value
-            }
-        }
-        
-        return parsedHeaders
-    }
+ 
     
 }

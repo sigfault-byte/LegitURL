@@ -127,7 +127,7 @@ private func formatParsedHeaders(_ headers: ParsedHeaders) -> String {
     var output = ""
     
     if !headers.securityHeaders.isEmpty {
-        output += "🔒 **Security Headers**\n"
+        output += "**Security Headers**\n"
         for (key, value) in headers.securityHeaders {
             output += "- \(key): \(value)\n"
         }
@@ -135,7 +135,7 @@ private func formatParsedHeaders(_ headers: ParsedHeaders) -> String {
     }
     
     if !headers.trackingHeaders.isEmpty {
-        output += "👁️ **Tracking Indicators**\n"
+        output += "**Tracking**\n"
         for (key, value) in headers.trackingHeaders {
             output += "- \(key): \(value)\n"
         }
@@ -143,7 +143,7 @@ private func formatParsedHeaders(_ headers: ParsedHeaders) -> String {
     }
     
     if !headers.serverHeaders.isEmpty {
-        output += "🖥 **Server Information**\n"
+        output += "**Server Information**\n"
         for (key, value) in headers.serverHeaders {
             output += "- \(key): \(value)\n"
         }
@@ -151,7 +151,7 @@ private func formatParsedHeaders(_ headers: ParsedHeaders) -> String {
     }
     
     if !headers.otherHeaders.isEmpty {
-        output += "📦 **Other Headers**\n"
+        output += "**Other Headers**\n"
         for (key, value) in headers.otherHeaders {
             output += "- \(key): \(value)\n"
         }

@@ -19,7 +19,7 @@ struct NodeWalker {
             //Warn in the view that lamai find some "things"
             if !didWarnForDepth && node.depth > 1 {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "👁️ Decoded value detected by Lamai in \(comp) \(label). This was found through recursive decoding. Check the URLComponent tree for decoding layers.",
+                    message: "Decoded value detected by Lamai in \(comp) \(label). This was found through recursive decoding. Check the URLComponent tree for decoding layers.",
                     severity: .info,
                     penalty: 0,
                     url: urlOrigin,
@@ -56,7 +56,7 @@ struct NodeWalker {
                         
                     case .scamWord(let word):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "⚠️ Scam keyword in \(comp) \(label): \(word)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "Scam keyword in \(comp) \(label): \(word)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .scam,
                             penalty: PenaltySystem.Penalty.scamWordsInQuery,
                             url: urlOrigin,
@@ -66,7 +66,7 @@ struct NodeWalker {
 
                     case .phishingWord(let word):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "⚠️ Phishing keyword in \(comp) \(label): \(word)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "Phishing keyword in \(comp) \(label): \(word)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .scam,
                             penalty: PenaltySystem.Penalty.phishingWordsInQuery,
                             url: urlOrigin,
@@ -77,7 +77,7 @@ struct NodeWalker {
 //                        Might duplicate key penalty, this is intended
                     case .entropy(let score, let value):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "🧪 High entropy in \(comp) \(label): '\(value)' (≈ \(String(format: "%.2f", score))\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "High entropy in \(comp) \(label): '\(value)' (≈ \(String(format: "%.2f", score))\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.highEntropyQuery,
                             url: urlOrigin,
@@ -88,7 +88,7 @@ struct NodeWalker {
 //TODO:                        double check if this is still running
                     case .longEntropyLike(let value):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "🧪 Suspicious long query value in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "Suspicious long query value in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.highEntropyQuery,
                             url: urlOrigin,
@@ -97,7 +97,7 @@ struct NodeWalker {
                         
                     case .isIPv4(let value):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "📡 IPv4 address in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "IPv4 address in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.IpAddressInQuery,
                             url: urlOrigin,
@@ -106,7 +106,7 @@ struct NodeWalker {
                         
                     case .isIPv6(let value):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "📡 IPv6 address in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "IPv6 address in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.IpAddressInQuery,
                             url: urlOrigin,
@@ -115,7 +115,7 @@ struct NodeWalker {
                         
                     case .email(let value):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "📧 Email address in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "Email address in \(comp) \(label): '\(value)'\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.emailInQuery,
                             url: urlOrigin,
@@ -127,7 +127,7 @@ struct NodeWalker {
                         //                                WalkTheNode.analyze(node: node, urlInfo: &urlInfo, comp: comp, label: "JSON[\(key)]")
                     case .json(let keys):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "📦 JSON structure in \(comp) \(label) with keys: \(keys.joined(separator: ", "))\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "JSON structure in \(comp) \(label) with keys: \(keys.joined(separator: ", "))\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .info,
                             penalty: PenaltySystem.Penalty.jsonInQuery,
                             url: urlOrigin,
@@ -136,7 +136,7 @@ struct NodeWalker {
                         
                     case .brandExact(let brand):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "🏷️ Brand exact match in \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "Brand exact match in \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.exactBrandInQuery,
                             url: urlOrigin,
@@ -146,7 +146,7 @@ struct NodeWalker {
 
                     case .brandContained(let brand):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "🧩 Brand contained in string from \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "Brand contained in string from \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.queryContainsBrand,
                             url: urlOrigin,
@@ -156,7 +156,7 @@ struct NodeWalker {
 
                     case .brandSimilar(let brand):
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "🔍 Brand similar match in \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "Brand similar match in \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.brandLookAlikeInQuery,
                             url: urlOrigin,
@@ -196,15 +196,15 @@ private func checkMultipleURLs(_ foundURLs: [String?], urlInfo: inout URLInfo, c
     if nonNilURLs.count > 1 {
         let urlList = nonNilURLs.joined(separator: "\n") // Format URLs on new lines
         urlInfo.warnings.append(SecurityWarning(
-            message: "❌ Multiple URLs detected in \(comp) parameters. This is highly suspicious:\n\(urlList)",
+            message: "Multiple URLs detected in \(comp) parameters. This is highly suspicious:\n\(urlList)",
             severity: .critical,
             penalty: -100,
             url: urlOrigin,
             source: source
         ))
-        return true  // 🚨 Indicate that analysis should halt
+        return true  // Indicate that analysis should halt
     }
-    return false  // ✅ Continue normally
+    return false  // Continue normally
 }
 
 func decodingOrigin(for node: DecodedNode) -> String? {

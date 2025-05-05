@@ -19,7 +19,7 @@
 import Foundation
 
 struct CookiesAnalyzer {
-    static func analyzeAll(from headersCookies: [String]?,
+    static func analyzeAll(from headersCookies: [HTTPCookie]?,
                            httpResponseCode: Int,
                            url: String,
                            urlInfo: inout URLInfo,
@@ -30,21 +30,18 @@ struct CookiesAnalyzer {
         
         let hostRef =  urlInfo.components.host ?? ""
         
-        // Parse each Set-Cookie header into CookieMetadata
-        let parsedCookies: [CookieMetadata] = parseCookies(from: headersCookies, for: url)
-        let numberOfCookies: Int = parsedCookies.count
+        let numberOfCookies: Int = headersCookies.count
         let coreURL = urlInfo.components.coreURL ?? ""
         
-        let totalValueSize = parsedCookies.reduce(0) {$0 + $1.value.utf8.count}
-        let avgCookieSize = Double(totalValueSize) / Double(numberOfCookies)
-        let jsCookieExposed = parsedCookies.contains { !$0.httpOnly }
+        let totalValueSize = headersCookies.reduce(0) { $0 + $1.value.utf8.count }
+        let jsCookieExposed = headersCookies.contains { !$0.isHTTPOnly }
         let cookieFlags: WarningFlags = jsCookieExposed ? [.COOKIE_JS_ACCESS] : []
 
         if httpResponseCode != 200 {
             let severity: SecurityWarning.SeverityLevel
             let extraNote: String
 
-            switch avgCookieSize {
+            switch Double(totalValueSize) / Double(numberOfCookies) {
             case 0...20:
                 severity = .info
                 extraNote = " (small average cookie size)"
@@ -60,7 +57,7 @@ struct CookiesAnalyzer {
             }
 
             urlInfo.warnings.append(SecurityWarning(
-                message: "Cookies set during a non-200 response (code \(httpResponseCode)), averaging \(String(format: "%.1f", avgCookieSize)) bytes across \(numberOfCookies) cookies.\(extraNote)",
+                message: "Cookies set during a non-200 response (code \(httpResponseCode)), averaging \(String(format: "%.1f", Double(totalValueSize) / Double(numberOfCookies))) bytes across \(numberOfCookies) cookies.\(extraNote)",
                 severity: severity,
                 penalty:  0, /*Penalzised on individual cookie*/
                 url: coreURL,
@@ -70,14 +67,14 @@ struct CookiesAnalyzer {
         }
         
         // Per-cookie analysis
-        for cookie in parsedCookies {
+        for cookie in headersCookies {
             let globalSeenCookies = URLQueue.shared.cookiesSeenByRedirectChain.values.reduce(into: Set<String>()) { $0.formUnion($1) }
-            
-            let result = analyzeCookie(cookie,
+            let metadata = populateCookieMetadata(cookie)
+            let result = analyzeCookie(metadata,
                                        httpResponseCode: httpResponseCode,
                                        seenCookie: globalSeenCookies,
                                        host: hostRef)
-//            let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
+
             let reasons = result.flags.descriptiveReasons().joined(separator: ", ")
             let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
             var warningFlags: WarningFlags = []
@@ -92,16 +89,18 @@ struct CookiesAnalyzer {
             }
 
             urlInfo.warnings.append(SecurityWarning(
-                message: "Cookie `\(cookie.name)` flagged as \(result.severity). Reasons: \(reasons).",
+                message: "Cookie `\(metadata.name)` flagged as \(result.severity). Reasons: \(reasons).",
                 severity: result.severity,
                 penalty: penalty,
                 url: url,
                 source: .cookie,
                 bitFlags: warningFlags
             ))
-            
-            URLQueue.shared.cookiesSeenByRedirectChain[urlInfo.id, default: Set<String>()].insert(cookie.name)
-            onlineInfo.cookiesForUI.append(result)
+
+            URLQueue.shared.cookiesSeenByRedirectChain[urlInfo.id, default: Set<String>()].insert(metadata.name)
+            var resultWithRaw = result
+            resultWithRaw.cookie = metadata
+            onlineInfo.cookiesForUI.append(resultWithRaw)
         }
     }
 }

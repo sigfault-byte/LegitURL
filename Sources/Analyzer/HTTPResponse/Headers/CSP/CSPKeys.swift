@@ -51,7 +51,9 @@ struct dangerousCSPValues {
     static let wasmUnsafeEval: Data = "'wasm-unsafe-eval'".data(using: .utf8) ?? Data() // Allows WebAssembly compile-time eval — modern risk
     static let data: Data = "data:".data(using: .utf8) ?? Data() // Allows data: URLs — risky, often abused
     static let blob: Data = "blob:".data(using: .utf8) ?? Data() // Allows blob: URLs — often used for dynamic JS payloads
-    static let wildcard: Data = "'*'".data(using: .utf8) ?? Data() // Wildcard — allows everything from everywhere
+    static let wildcard: Data = "*".data(using: .utf8) ?? Data() // Wildcard — allows everything from everywhere // NO QUOTE ON WILDCARD!!!!
+    static let https: Data = "https:".data(using: .utf8) ?? Data()
+    static let http: Data = "http:".data(using: .utf8) ?? Data()
 }
 
 // MARK: - Common Safe CSP Values
@@ -61,12 +63,15 @@ struct safeCSPValue {
     static let strictDynamic: Data = "'strict-dynamic'".data(using: .utf8) ?? Data() // Allows dynamic scripts from  parents with a unique value nonce or hash
     static let reportSample: Data = "'report-sample'".data(using: .utf8) ?? Data() // Sends sample of blocked content in CSP reports
     static let nonce: Data = "'nonce-".data(using: .utf8) ?? Data() // nonce usage
-    static let hash: Data = "'hash-".data(using: .utf8) ?? Data() // hash usage
+    static let hash: Data = "'hash-".data(using: .utf8) ?? Data() //TODO: hash usage -> ? this does not exists ?
+    static let sha256Hash: Data = "'sha256-".data(using: .utf8) ?? Data() // sha
+    static let sha384Hash: Data = "'sha384-".data(using: .utf8) ?? Data()
+    static let sha512Hash: Data = "'sha512-".data(using: .utf8) ?? Data()
     
     static let scriptSrc: Data = "'script'".data(using: .utf8) ?? Data() // Specific to "require-trusted-types-for"
 }
 
-struct HeadHeaderByteSignatures {
+struct HeaderByteSignatures {
     
     static let colon: UInt8 = 0x3A // ':'
     static let newline: UInt8 = 0x0A // '\n'
@@ -76,4 +81,6 @@ struct HeadHeaderByteSignatures {
     static let space: UInt8 = 0x20 // ' '
     static let doubleQuote: UInt8 = 0x22 // '"'
     static let singleQuote: UInt8 = 0x27
+    static let http: Data = "http:".data(using: .utf8) ?? Data()
+    static let https: Data = "https:".data(using: .utf8) ?? Data()
 }

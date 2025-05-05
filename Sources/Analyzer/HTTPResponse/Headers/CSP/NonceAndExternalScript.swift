@@ -88,7 +88,7 @@ struct NonceAndExternalScript {
                 if stringValue.contains("nonce") {
                     nonceValueFromDirective.append(stringValue)
                 }
-                else if valueType == .url {
+                else if valueType == .source {
                     if stringValue != "http:" && stringValue != "https:" && !stringValue.contains("'self'") {
                         srcValueFromDirective.insert(stringValue)
                     }
@@ -112,7 +112,7 @@ struct NonceAndExternalScript {
 //        print("Nonce value from scripts:", nonceValueFromScript)
         
         if cleanedNonceFromDirective.count == nonceValueFromScript.count {
-            // Imba one liner to clean the comparison, thanks chat GPT
+            // Imba one liner to clean the comparison, thanks chatGPT <3
             let missingNonces = nonceValueFromScript.subtracting(cleanedNonceFromDirective)
 
             if !missingNonces.isEmpty {

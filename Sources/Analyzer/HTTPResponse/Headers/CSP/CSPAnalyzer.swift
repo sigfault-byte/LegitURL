@@ -21,17 +21,27 @@ struct CSPAnalyzer {
 //
 //        }
         var warnings: [SecurityWarning] = []
-        var directiveSlices: [Range<Int>] = []
-        var directiveValues: [[Data: [Data]]] = []
         var structuredCSP: [String: [Data: CSPValueType]] = [:]
         let scriptValueToCheckUnwrapped = scriptValueToCheck ?? nil
 //        var SrcScriptConfig: [String: Int32] = [:]
         
         
+        
+        // Check if  CSP exists. OtherWise fall back to CSP-RO, but still flagged as a missign CSP.
         var babylonCSP = headers["content-security-policy"]?.data(using: .utf8) ?? Data()
+//        csp-report-only does NOT enforce anything
         if babylonCSP.isEmpty {
             babylonCSP = headers["content-security-policy-report-only"]?.data(using: .utf8) ?? Data()
+            warnings.append(SecurityWarning(
+                message: "Only a Content-Security-Policy-Report-Only header was found. This policy does not enforce any security restrictions, it only reports violations.\nWe will still analyze its value, but it has no protective effect.",
+                severity: .dangerous,
+                penalty: PenaltySystem.Penalty.missingCSP,
+                url: urlOrigin,
+                source: .header,
+                bitFlags: [.HEADERS_CSP_MISSING]
+            ))
         }
+        // return early
         guard !babylonCSP.isEmpty else {
             warnings.append(SecurityWarning(
                 message: "Headers do not contain a Content-Security-Policy",
@@ -51,164 +61,45 @@ struct CSPAnalyzer {
             )
         }
         
-//        TODO: important to check regarding permission of all the various bs in its own file this otherwise too clutered here . Using string parsing is enough
+//        TODO: important to check regarding permission of all the various bs in its own file  otherwise too clutered here . Using string parsing is enough? or fast 'self / *' byte lookup might be better to catch only meaningfull value?
 //        let babylonPermissionsPolicy = headers["permissions-policy"]?.data(using: .utf8) ?? Data()
         
 //        let babylonCSPSize = babylonCSP.count
-        if babylonCSP.last != 0x3B {
-            babylonCSP.append(0x3B)
-            // Flag incomplete CSP as a soft misconfiguration -> no one gives a flyin f and alnost never puts it
-//            warnings.append(SecurityWarning(
-//                message: "CSP does not end with semicolon — likely malformed or incomplete.",
-//                severity: .suspicious,
-//                penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
-//                url: urlOrigin,
-//                source: .header,
-//                bitFlags: [.HEADERS_CSP_MALFORMED]
-//            ))
-        }
-        // Extract ranges for each directive block (split by ;)
-        var lastStart = 0
-        for i in 0..<babylonCSP.count {
-            if babylonCSP[i] == HeadHeaderByteSignatures.semicolon {
-                directiveSlices.append(lastStart..<i)
-                lastStart = i + 1
-            }
-        }
+        //Clean and extract the CSP into a dictionnary : [String: [Data: CSPValueType]] = [:]
+        let (ExtractedStructuredCSP, extractorWarnings) = CSPExtractor.extract(from: babylonCSP,
+                                                                               url: urlOrigin)
+        warnings.append(contentsOf: extractorWarnings)
         
+        structuredCSP = ExtractedStructuredCSP
         
-        // clean slice, and sort them into a dict
-        for slice in directiveSlices {
-            let cleanedSlice = CSPUtils.cleaningCSPSlice(slice: slice, in: babylonCSP)
-            
-            if let parsedDirective = CSPUtils.parseDirectiveSlice(cleanedSlice) {
-                directiveValues.append(parsedDirective)
-            } else {
-                warnings.append(SecurityWarning(
-                    message: "Failed to parse CSP directive.",
-                    severity: .suspicious,
-                    penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
-                    url: urlOrigin,
-                    source: .header,
-                    bitFlags: [.HEADERS_CSP_MALFORMED]
-                ))
-            }
-        }
-        
-        
-        
-        //Sorting into a dictionnary with keys as values and values as their nature
-        var directiveCount: [String: Int] = [:]
-
-        for slice in directiveValues {
-            for (directiveNameData, valueList) in slice {
-                guard let directiveName = String(data: directiveNameData, encoding: .utf8) else {
-                    warnings.append(SecurityWarning(
-                        message: "Unrecognized CSP directive encoding.",
-                        severity: .suspicious,
-                        penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
-                        url: urlOrigin,
-                        source: .header,
-                        bitFlags: [.HEADERS_CSP_MALFORMED]
-                    ))
-                    continue
-                }
-
-                var finalDirectiveName = directiveName
-
-                if let count = directiveCount[directiveName] {
-                    finalDirectiveName = "\(directiveName)_\(count)"
-                    directiveCount[directiveName] = count + 1
-
-                    if count == 1 {
-                        warnings.append(SecurityWarning(
-                            message: "Duplicate CSP directive '\(directiveName)' detected.",
-                            severity: .suspicious,
-                            penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
-                            url: urlOrigin,
-                            source: .header,
-                            bitFlags: [.HEADERS_CSP_MALFORMED]
-                        ))
-                    }
-                } else {
-                    directiveCount[directiveName] = 1
-                }
-
-                var typedValues: [Data: CSPValueType] = [:]
-                for value in valueList {
-                    let valueType = CSPUtils.classifyCSPValue(value)
-                    typedValues[value] = valueType
-                }
-
-                structuredCSP[finalDirectiveName] = typedValues
-            }
-        }
-        
-        // Check if critical directives are missing, this might need a higher penalty than missing CSP.
-        let hasDefaultSrc = structuredCSP.keys.contains("default-src")
-        let hasScriptSrc = structuredCSP.keys.contains("script-src")
-        let hasObjectSrc = structuredCSP.keys.contains("object-src")
-        let hasRequiredTrustedTypeFor = structuredCSP.keys.contains("require-trusted-types-for")
-
-        if (!hasDefaultSrc && (!hasScriptSrc || !hasObjectSrc)) && !hasRequiredTrustedTypeFor {
-            warnings.append(SecurityWarning(
-                message: "CSP is missing both 'default-src' and a critical combination of 'script-src' and 'object-src'.",
-                severity: .dangerous,
-                penalty: PenaltySystem.Penalty.fakeCSP,
-                url: urlOrigin,
-                source: .header,
-                bitFlags: [.HEADERS_FAKE_CSP]
-            ))
-//            VERY Specific else, i hate it
-        } else if hasRequiredTrustedTypeFor {
-            if let trustedTypesDirective = structuredCSP["require-trusted-types-for"] {
-                let hasScriptRequirement = trustedTypesDirective.keys.contains(where: { data in
-                    guard let stringValue = String(data: data, encoding: .utf8) else { return false }
-                    return stringValue == "'script'"
-                })
-                
-                if hasScriptRequirement {
-                    // Now you know: require-trusted-types-for 'script' is correctly configured
-                    warnings.append(SecurityWarning(
-                        message: "Modern CSP: Trusted Types enforced for scripts.",
-                        severity: .info,
-                        penalty: 5, // small bonus very rare, very secured against xss ?
-                        url: urlOrigin,
-                        source: .header,
-                        bitFlags: [.HEADERS_CSP_TRUSTED_TYPES]
-                    ))
-                } else {
-                    // 'require-trusted-types-for' directive exists but doesn't target 'script'.)
-                    warnings.append(SecurityWarning(
-                        message: "CSP 'require-trusted-types-for' directive found but missing 'script' value. Potential misconfiguration.",
-                        severity: .suspicious,
-                        penalty: PenaltySystem.Penalty.fakeCSP,
-                        url: urlOrigin,
-                        source: .header,
-                        bitFlags: [.HEADERS_FAKE_CSP]
-                    ))
-                }
-            }
-        }
+        //Check If script-src or default-src or require-trusted-types-for exists.
+        let coreDirectiveWarnings = ScriptAndDefaultDirective.evaluate(structuredCSP: structuredCSP, url: urlOrigin)
+        warnings.append(contentsOf: coreDirectiveWarnings)
         
         let directiveBitFlags: [String: Int32] = parseCSP(structuredCSP)
+        
+        
+        let misconfigWarningsScriptAndDefautlSrc = CSPConfigAnalysis.analyze(directiveFlags: directiveBitFlags, url: urlOrigin)
+        
+        warnings.append(contentsOf: misconfigWarningsScriptAndDefautlSrc)
+        
         var scriptSrc: String = ""
         for _ in structuredCSP.keys {
             if structuredCSP.keys.contains("script-src") {
                 scriptSrc = "script-src"
+                //TODO: Once the other directive are correctly flag and the UI follows, default source should be reflected on all missing
+                //source to output precisely whath is happening
             } else if structuredCSP.keys.contains("default-src") {
                 scriptSrc = "default-src"
             }
         }
-        let warningsToAppend = CSPDirective.analyzeScriptOrDefaultSrc(directiveName: scriptSrc,
+        let warningsToAppend = ScriptAndDefaultDirective.analyze(directiveName: scriptSrc,
                                                                      bitFlagCSP: CSPBitFlag(rawValue: directiveBitFlags[scriptSrc] ?? 0),
                                                                      url: urlOrigin)
-        warnings.append(contentsOf: warningsToAppend)
-        
         
         
         // compare the script source and nonce only if the CSP directive script-src has urls except self or nonce value
-        if let scriptDirective = structuredCSP[scriptSrc] {
+        if let scriptDirective = structuredCSP["script-src"] ?? structuredCSP["default-src"] {
             var hasNonce = false
             var hasExternalURL = false
 
@@ -216,7 +107,7 @@ struct CSPAnalyzer {
                 if valueType == .nonce {
                     hasNonce = true
                 }
-                if valueType == .url {
+                if valueType == .source {
                     hasExternalURL = true
                 }
             }
@@ -252,7 +143,7 @@ struct CSPAnalyzer {
             var hasHTTPButLocalhost: Bool = false
 
             for (value, type) in values {
-                if type == .url {
+                if type == .source {
                     urlCount += 1
                     hasOnlySelf = false
 
@@ -267,7 +158,7 @@ struct CSPAnalyzer {
                         hasWildcard = true
                     }
                 }
-                if type == .scheme {
+                if type == .source {
                     hasOnlySelf = false
                 }
                 if type == .keyword {

@@ -14,6 +14,7 @@ enum HeaderExtractionType: String {
     // Add more if needed
 }
 
+// Stupid babylon chatoric hotdogwater cookie 3am code
 struct HTTPRespUtils {
     static func extract(_ what: HeaderExtractionType, from headers: [String: String]) -> [String] {
         return headers.compactMap { key, value in
