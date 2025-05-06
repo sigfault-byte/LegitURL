@@ -68,6 +68,9 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         bitFlags.insert(.highEntropyValue)
         
     }
+    if valueSize < 8 {
+        bitFlags.insert(.verySmall)
+    }
     
     switch valueSize {
     case 0...16:

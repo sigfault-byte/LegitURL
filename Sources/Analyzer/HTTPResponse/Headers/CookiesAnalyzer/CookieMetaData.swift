@@ -94,6 +94,8 @@ struct CookieFlagBits: OptionSet, Hashable {
     static let pathOverlyBroad       = CookieFlagBits(rawValue: 1 << 15)  // 32 768
     static let domainOverlyBroad     = CookieFlagBits(rawValue: 1 << 16)  // 65 536
     static let wayTooLarge           = CookieFlagBits(rawValue: 1 << 17)  // 131 072
+    static let verySmall             = CookieFlagBits(rawValue: 1 << 18)
+        
 }
 
 

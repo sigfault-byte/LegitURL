@@ -265,6 +265,8 @@ struct PenaltySystem {
         if flags.contains(.reusedAcrossRedirect) && !flags.contains(.setOnRedirect) {
             return 0
         }
+        if flags.contains(.verySmall) {return 0}
+        
         
         // Suspicious misuse: session + SameSite=None
         if flags.contains(.session) && flags.contains(.sameSiteNone) {
