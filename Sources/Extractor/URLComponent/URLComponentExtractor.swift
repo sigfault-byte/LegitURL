@@ -59,6 +59,21 @@ struct URLComponentExtractor {
             rawFragment: components.percentEncodedFragment
         )
         
+        // Detect double "?" or "#" which can break URLComponents. This is not RFC (3986??) compliant anyway
+        let numQuestionMarks = url.filter { $0 == "?" }.count
+        let numHashes = url.filter { $0 == "#" }.count
+        
+        if (compInfo.query == nil && numQuestionMarks > 1) || (compInfo.fragment == nil && numHashes > 1) {
+            warnings.append(SecurityWarning(
+                message: "Malformed URL with multiple '?' or '#' delimiters. May indicate obfuscated redirect or broken structure.",
+                severity: .critical,
+                penalty: PenaltySystem.Penalty.critical,
+                url: url,
+                source: .host
+            ))
+            return URLInfo(components: compInfo, warnings: warnings)
+        }
+        
         // Validate host extraction and punycode encoding
         guard let host = compInfo.host else {
             warnings.append(SecurityWarning(
