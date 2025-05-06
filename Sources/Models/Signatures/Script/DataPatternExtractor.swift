@@ -37,10 +37,13 @@ struct DataSignatures {
     }
 
     
-    public static func matchesAsciiTag(at position: Int, in body: Data, asciiToCompare: [UInt8], lookAheadWindow: Int = 24) -> Bool {
+    public static func matchesAsciiTag(at position: Int,
+                                       in body: Data,
+                                       asciiToCompare: [UInt8],
+                                       lookAheadWindow: Int = 24) -> Bool {
         let maxLookahead = min(position + lookAheadWindow, body.count)
         let slice = body[position..<maxLookahead]
-
+        
         var index = slice.startIndex + 1
         while index < slice.endIndex && (slice[index] == 0x20 || slice[index] == 0x09 || slice[index] == 0x0A || slice[index] == 0x0D) {
             index += 1
@@ -59,7 +62,10 @@ struct DataSignatures {
         return true
     }
     
-    public static func fastScriptByteHint(at position: Int, in body: Data, hint: [UInt8], range: Int = 4) -> Bool {
+    public static func fastScriptByteHint(at position: Int,
+                                          in body: Data,
+                                          hint: [UInt8],
+                                          range: Int = 4) -> Bool {
         let end = min(position + range + 1, body.count)
         var index = position + 1
         while index < end {

@@ -96,7 +96,7 @@ struct ScriptHelperFunction {
             }
         }
     }
-    
+    // TODO: Double check if this is not a duplicate
     static func scanSlice(_ body: Data, in range: Range<Int>, for pattern: [UInt8]) -> Bool {
         return body[range].containsBytes(of: pattern)
         

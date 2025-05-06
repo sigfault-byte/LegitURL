@@ -72,11 +72,12 @@ struct HTTPRespAnalyzer {
         // Analyze body response Body first, returns "script" found in the html, if it's perfect
         // TODO : multi check the final url, there can be only one! -> we do not extract final url from the body for now... But we should!
         var findings: ScriptExtractionResult?
+        var csp: Data?
         if let rawbody = onlineInfo.rawBody,
            let contentType = headers["content-type"]?.lowercased(),
            let responseCode = onlineInfo.serverResponseCode {
             
-            findings = HTMLAnalyzerFast.analyze(body: rawbody,
+            (findings, csp) = HTMLAnalyzerFast.analyze(body: rawbody,
                                                 contentType: contentType,
                                                 responseCode: responseCode,
                                                 origin: urlOrigin,
@@ -84,8 +85,18 @@ struct HTTPRespAnalyzer {
                                                 into: &urlInfo.warnings
             )
         }
+        //TODO: Add the found CSP to the CSP analyszer
+        if csp?.count ?? 0 > 0 {
+            urlInfo.warnings.append(SecurityWarning(
+                message: "CSP directives found in meta http-equiv, Older, Weaker CSP Delivery. Http header should be used instead",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.metaCSP,
+                url: urlOrigin,
+                source: .body
+            ))
+        }
         
-        //TODO: Move the logic back to the extractor, it has nothing to do here.... How to mutate the warning within extractor?
+        //TODO: Move the logic back to the extractor, it has nothing to do here.... How to mutate the warning within async extractor...?
         let maxBodyForUI: Int = 1_200_000
         let bodysize: Int = onlineInfo.rawBody?.count ?? 0
         onlineInfo.humanBodySize = bodysize
@@ -122,7 +133,6 @@ struct HTTPRespAnalyzer {
         }
         
         
-        // TODO: Match against the CSP values
         var scriptValueToCheck: ScriptSourceToMatchCSP? = nil
         if var result = findings, !result.scripts.isEmpty {
             if let rawbody = onlineInfo.rawBody {

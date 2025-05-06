@@ -74,6 +74,7 @@ struct URLComponentExtractor {
             return URLInfo(components: compInfo, warnings: warnings)
         }
         
+        
         // Validate host extraction and punycode encoding
         guard let host = compInfo.host else {
             warnings.append(SecurityWarning(

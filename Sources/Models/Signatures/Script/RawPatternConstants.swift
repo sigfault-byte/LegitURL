@@ -37,7 +37,8 @@ struct interestingPrefix {
     static let body: [UInt8] = Array("body".utf8)
     static let src: [UInt8] = Array("src=".utf8)
     static let title: [UInt8] = Array("title".utf8)
-    static let httpEquiv: [UInt8] = Array("meta http-equiv=".utf8)
+    static let meta: [UInt8] = Array("meta".utf8)
+    static let httpEquivCSP: [UInt8] = Array("http-equiv=\"content-security-policy\"".utf8)
 }
 
 struct byteLetters {

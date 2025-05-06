@@ -23,23 +23,25 @@ struct CSPAnalyzer {
         var warnings: [SecurityWarning] = []
         var structuredCSP: [String: [Data: CSPValueType]] = [:]
         let scriptValueToCheckUnwrapped = scriptValueToCheck ?? nil
+        var source = "CSP"
 //        var SrcScriptConfig: [String: Int32] = [:]
-        
-        
         
         // Check if  CSP exists. OtherWise fall back to CSP-RO, but still flagged as a missign CSP.
         var babylonCSP = headers["content-security-policy"]?.data(using: .utf8) ?? Data()
 //        csp-report-only does NOT enforce anything
         if babylonCSP.isEmpty {
             babylonCSP = headers["content-security-policy-report-only"]?.data(using: .utf8) ?? Data()
-            warnings.append(SecurityWarning(
-                message: "Only a Content-Security-Policy-Report-Only header was found. This policy does not enforce any security restrictions, it only reports violations.\nWe will still analyze its value, but it has no protective effect.",
-                severity: .dangerous,
-                penalty: PenaltySystem.Penalty.missingCSP,
-                url: urlOrigin,
-                source: .header,
-                bitFlags: [.HEADERS_CSP_MISSING]
-            ))
+            if !babylonCSP.isEmpty {
+                warnings.append(SecurityWarning(
+                    message: "Only a Content-Security-Policy-Report-Only header was found. This policy does not enforce any security restrictions, it only reports violations.\nWe will still analyze its value, but it has no protective effect.",
+                    severity: .dangerous,
+                    penalty: PenaltySystem.Penalty.missingCSP,
+                    url: urlOrigin,
+                    source: .header,
+                    bitFlags: [.HEADERS_CSP_MISSING]
+                ))
+                source = "CSP-RO"
+            }
         }
         // return early
         guard !babylonCSP.isEmpty else {
@@ -56,7 +58,8 @@ struct CSPAnalyzer {
                 ClassifiedCSPResult(
                     structuredCSP: structuredCSP,
                     directiveBitFlags: [:],
-                    directiveSourceTraits: [:]
+                    directiveSourceTraits: [:],
+                    source: ""
                 )
             )
         }
@@ -78,7 +81,7 @@ struct CSPAnalyzer {
         
         let directiveBitFlags: [String: Int32] = parseCSP(structuredCSP)
         
-        
+        //Check illogic missconfig, only appen script-src or default-src warnings
         let misconfigWarningsScriptAndDefautlSrc = CSPConfigAnalysis.analyze(directiveFlags: directiveBitFlags, url: urlOrigin)
         
         warnings.append(contentsOf: misconfigWarningsScriptAndDefautlSrc)
@@ -97,7 +100,9 @@ struct CSPAnalyzer {
                                                                      bitFlagCSP: CSPBitFlag(rawValue: directiveBitFlags[scriptSrc] ?? 0),
                                                                      url: urlOrigin)
         
+        warnings.append(contentsOf: warningsToAppend)
         
+        //TODO: Finish this !!!!!!!
         // compare the script source and nonce only if the CSP directive script-src has urls except self or nonce value
         if let scriptDirective = structuredCSP["script-src"] ?? structuredCSP["default-src"] {
             var hasNonce = false
@@ -202,7 +207,8 @@ struct CSPAnalyzer {
             ClassifiedCSPResult(
                 structuredCSP: structuredCSP,
                 directiveBitFlags: directiveBitFlags,
-                directiveSourceTraits: directiveSourceTraits
+                directiveSourceTraits: directiveSourceTraits,
+                source: source
             )
         )
     }

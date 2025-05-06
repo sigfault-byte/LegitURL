@@ -32,7 +32,7 @@ struct URLOnlineDetailComponent: View {
             }
             if let cspOfHeader = onlineInfo.cspOfHeader {
                 NavigationLink(destination: CSPInspectorView(csp: cspOfHeader)){
-                    Text("Content-Security-Policy")
+                    Text(cspOfHeader.source == "CSP" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only")
                 }
             }
             

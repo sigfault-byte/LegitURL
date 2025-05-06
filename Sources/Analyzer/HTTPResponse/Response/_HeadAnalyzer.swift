@@ -46,7 +46,7 @@ struct HeadAnalyzer {
             guard pos + 1 < headcontent.count else { continue }
             if DataSignatures.matchesAsciiTag(at: pos, in: headcontent, asciiToCompare: interestingPrefix.title) {
                 prefilterCandidate.append(i)
-            } else if DataSignatures.matchesAsciiTag(at: pos, in: headcontent, asciiToCompare: interestingPrefix.httpEquiv) {
+            } else if DataSignatures.matchesAsciiTag(at: pos, in: headcontent, asciiToCompare: interestingPrefix.meta) {
                 prefilterCandidate.append(i)
             }
         }

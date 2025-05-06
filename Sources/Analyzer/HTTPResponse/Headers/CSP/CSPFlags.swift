@@ -79,9 +79,9 @@ private func evaluateSourceBitFlags(for value: Data) -> CSPBitFlag {
         flags.insert(.allowsData)
     } else if value.starts(with: dangerousCSPValues.blob) {
         flags.insert(.allowsBlob)
-    } else if value.starts(with: dangerousCSPValues.http) {
+    } else if value == dangerousCSPValues.http {
         flags.insert(.allowsHTTP)
-    } else if value.starts(with: dangerousCSPValues.https) {
+    } else if value == dangerousCSPValues.https {
         flags.insert(.allowsHTTPS)
     } else if value.first == dangerousCSPValues.wildcard.first {
         let trimmed = value.dropFirst(2)

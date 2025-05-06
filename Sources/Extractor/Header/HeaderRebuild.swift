@@ -40,7 +40,12 @@ struct HeaderRebuild {
         }.joined(separator: "\n")
 
         var mergedHeaders = headers
-        mergedHeaders["content-security-policy"] = cleanlyFormattedCSPString
+        //only merge the correct CSP !!
+        if headers.keys.contains(where: { $0.lowercased() == "content-security-policy" }) {
+            mergedHeaders["content-security-policy"] = cleanlyFormattedCSPString
+        } else if headers.keys.contains(where: { $0.lowercased() == "content-security-policy-report-only" }) {
+            mergedHeaders["content-security-policy-report-only"] = cleanlyFormattedCSPString
+        }
         mergedHeaders["set-cookie"] = formattedCookies
 
         let parsed = parseHeaders(mergedHeaders)

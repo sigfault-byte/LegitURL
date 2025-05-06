@@ -10,6 +10,7 @@ struct ClassifiedCSPResult {
     var structuredCSP: [String: [Data: CSPValueType]]
     var directiveBitFlags: [String: Int32]
     var directiveSourceTraits: [String: DirectiveSourceInfo]
+    var source: String
 }
 
 struct DirectiveSourceInfo {

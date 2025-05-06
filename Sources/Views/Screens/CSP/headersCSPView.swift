@@ -41,7 +41,28 @@ struct CSPInspectorView: View {
                                 Text("• \(reason)")
                                     .font(.system(size: 13))
                             }
-                        }.padding(.top, 4)
+                        }.padding(.vertical, 4)
+                    }
+
+                    let analysis = CSPDirectiveAnalysis(directive: directive, flags: CSPBitFlag(rawValue: bitFlag))
+
+                    if !analysis.warnings.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Configuration Issues:")
+                                .font(.subheadline).bold()
+                            ForEach(analysis.warnings, id: \.self) { msg in
+                                Text("• \(msg)")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.red)
+                            }
+
+//                            if analysis.impactsScore {
+//                                Text("→ This directive affects security scoring")
+//                                    .font(.footnote)
+//                                    .foregroundColor(.red)
+//                                    .padding(.top, 2)
+//                            }
+                        }.padding(.vertical, 4)
                     }
 
                     let keys = values.keys.sorted { lhs, rhs in
@@ -55,7 +76,7 @@ struct CSPInspectorView: View {
                         Text("Values:")
                             .font(.subheadline).bold()
                         ForEach(displayKeys, id: \.self) { value in
-                            let stringVal = String(data: value, encoding: .utf8) ?? "[Invalid]"
+                            let stringVal = String(data: value, encoding: .utf8) ?? "Decoding Error"
                             let type = values[value] ?? .unknown
                             Text("• \(stringVal) [\(type.description)]")
                                 .font(.system(size: 13))
@@ -72,14 +93,13 @@ struct CSPInspectorView: View {
                                 Text(isExpanded ? "Show Less" : "Show All (\(keys.count))")
                                     .font(.footnote)
                                     .foregroundColor(.blue)
-                                    .padding(.top, 4)
+                                    .padding(.vertical, 4)
                             }
                         }
                     }
                 }
             }
         }
-        .navigationTitle("CSP Directives")
+        .navigationTitle(csp.source == "CSP" ? "CSP Directives" : "CSP Report-Only Directives")
     }
 }
-

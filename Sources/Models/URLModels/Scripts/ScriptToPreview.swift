@@ -32,8 +32,8 @@ struct ScriptToPreview {
             let rawSlice = body[start..<end]
             let truncated: Data
             let wasTruncated: Bool
-            if rawSlice.count > 2048 {
-                truncated = rawSlice.prefix(2048)
+            if rawSlice.count > 3072 {
+                truncated = rawSlice.prefix(3072)
                 wasTruncated = true
             } else {
                 //+ 10 to display </script> because endTag is exclusive '<'
@@ -57,7 +57,7 @@ struct ScriptToPreview {
 
             if script.origin == .inline && byteSlices[i].wasTruncated {
                 findings.append((
-                    message: "Truncated (>2048 bytes)",
+                    message: "Truncated (>3072 bytes)",
                     severity: .info
                 ))
             }

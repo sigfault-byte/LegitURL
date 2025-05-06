@@ -93,7 +93,6 @@ struct LamaiCoordinator {
         for delimiter in delimiters {
             let count = string.filter { $0 == Character(delimiter) }.count
             if count < 2 { continue }
-            print("YES YLLAH 2")
             let parts = string.components(separatedBy: String(delimiter)).filter { $0.count >= 4 }
             var children: [DecodedNode] = []
             for part in parts {
@@ -101,11 +100,6 @@ struct LamaiCoordinator {
                 node.method = "split:\(delimiter)"
                 node.decoded = part
                 node.runAllAnalyses()
-                print("YES YLLAH3")
-                if node.wasRelevant {
-                    print("YES")
-                    
-                }
                 if !node.shouldStop {
                     LamaiDecoder.decodeNode(node, maxDepth: maxDepth)
                 }

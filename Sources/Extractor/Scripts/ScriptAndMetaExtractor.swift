@@ -6,12 +6,12 @@
 //
 import Foundation
 
-struct ScriptExtractor {
+struct ScriptAndMetaExtractor {
     static func extract(body : Data,
                         origin: String,
                         domainAndTLD: String,
                         htmlRange: Range<Int>,
-                        warnings: inout [SecurityWarning]) -> ScriptExtractionResult?
+                        warnings: inout [SecurityWarning]) -> (ScriptExtractionResult?, metaCSP: Data?)
     {
         let startTime = Date()
         let tagPositions = DataSignatures.extractAllTagMarkers(in: body, within: htmlRange)
@@ -42,7 +42,7 @@ struct ScriptExtractor {
                 url: origin,
                 source: .body
             ))
-            return nil
+            return (nil, nil)
         }
 
         if bodyPos == 0 || bodyEndPos == nil {
@@ -60,21 +60,25 @@ struct ScriptExtractor {
                 source: .body,
                 bitFlags: WarningFlags.BODY_HIGH_JS_RATIO
             ))
-//            return nil
+            // The next guard will safely exit. Still this should be enough to bail
+//            return (nil, nil)
         }
 
         guard headPos < bodyPos else {
             warnings.append(SecurityWarning(
-                message: "<head> appears after <body>. Invalid document structure.",
+                message: "Invalid document structure <head> or <body> tag are not in the correct order or malformed.",
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
                 url: origin,
                 source: .body
             ))
-            return nil
+            return (nil, nil)
         }
         let t2 = Date()
         print("Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
+        
+        // MARK: Look if some meta are injecting meta equiv CSP
+        let metaCSP = CSPMetaExtractor.extract(from: body, tags:tagPositions, range: headPos..<headEndPos!)
 //            var confirmedScripts = checkForScriptTags(body, scriptCandidates: &scriptCandidates, asciiToCompare: interestingPrefix.script, lookAhead: 8)
 //        Can safely force unwrap there is a guard !
 //        collect all start var from each scriptCandidate and store them in the [Int]
@@ -84,7 +88,7 @@ struct ScriptExtractor {
 //        Todo: Finish the function, the goal is to retrive meta-http that override CSP to match again the CSP. And compare title to the domain
 //        let headFindings = HTMLHeadAnalyzer.analyze(headContent: body[headRange], tagPos: tagPositions, tagPosToDismiss: tagToDismiss, warnings: &warnings, origin: origin)
         // guard if there are no script to analyze
-        guard !initialScripts.isEmpty else { return nil }
+        guard !initialScripts.isEmpty else { return (nil, nil) }
         
         let t3 = Date()
         print("Step 2 - Script detection took \(Int(t3.timeIntervalSince(t2) * 1000))ms")
@@ -98,7 +102,7 @@ struct ScriptExtractor {
                 url: origin,
                 source: .body
             ))
-            return nil
+            return (nil, nil)
         }
         ScriptHelperFunction.lookForScriptTagEnd(in: body, confirmedScripts: &initialScripts, asciiToCompare: byteLetters.endTag, lookAhead: 3072)
 //         Step 2.5 - Match confirmed scripts with closing </script> tags
@@ -125,7 +129,7 @@ struct ScriptExtractor {
                 source: .body,
                 bitFlags: WarningFlags.BODY_SCRIPT_END_NOT_FOUND
             ))
-            return nil
+            return (nil, nil)
         }
         var confirmedScripts = initialScripts
         ScriptHelperFunction.pairScriptsWithClosings(scripts: &confirmedScripts, closingTags: closingScriptPositions, body: body)
@@ -165,7 +169,7 @@ struct ScriptExtractor {
 //            let origin = script.origin?.rawValue ?? "unknown"
 
             
-//            print("📍 Script [\(type)] from \(script.start) to \(endTag) — origin: \(origin) in \(context?.rawValue)")
+//            print("Script [\(type)] from \(script.start) to \(endTag) — origin: \(origin) in \(context?.rawValue)")
 //
 //            if let fullDecoded = String(data: fullSnippet, encoding: .utf8) {
 //                print("🔹 Full tag preview:")
@@ -188,22 +192,22 @@ struct ScriptExtractor {
 //                    let startPreview = String(data: firstBytes, encoding: .utf8) ?? ""
 //                    let endPreview = String(data: lastBytes, encoding: .utf8) ?? ""
 //
-//                    print("💡 Inline content preview:\n...\(startPreview)...\n...\(endPreview)...")
+//                    print("Inline content preview:\n...\(startPreview)...\n...\(endPreview)...")
 //                } else {
-//                    print("⚠️ Inline script has no content.")
+//                    print("Inline script has no content.")
 //                }
 //            } else {
 //                let snippetStart = min(script.start + 20, endTag)
 //                let snippetEnd = max(endTag - 20, snippetStart)
 //                let outerSlice = body[snippetStart..<snippetEnd]
 //                if let preview = String(data: outerSlice, encoding: .utf8) {
-//                    print("🔗 External tag preview:\n...\(preview)...")
+//                    print("External tag preview:\n...\(preview)...")
 //                }
 //            }
 //
 //            print("---")
 //        }
-        return ScriptExtractionResult(scripts: confirmedScripts, htmlRange: htmlRange)
+        return (ScriptExtractionResult(scripts: confirmedScripts, htmlRange: htmlRange), metaCSP)
 
     }
 }

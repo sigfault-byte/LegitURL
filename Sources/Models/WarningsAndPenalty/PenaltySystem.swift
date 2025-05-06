@@ -95,6 +95,7 @@ struct PenaltySystem {
         static let sameDomainCookie                    = -10
         static let jsStorageAccess                     = -10
         static let jsSetItemAccess                     = -10
+        static let metaCSP                             = -5
         static let protocolRelativeScriptSrc           = -5
         static let mediumScritpDensity                 = -5
         static let scriptIs5070Percent                 = -5
