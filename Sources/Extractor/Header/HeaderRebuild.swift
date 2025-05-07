@@ -18,7 +18,12 @@ struct HeaderRebuild {
             var output: [String] = []
             for (directive, values) in StructuredCSP {
                 let decoded = values.keys.compactMap { String(data: $0, encoding: .utf8) }
-                output.append("\(directive): \(decoded.joined(separator: " "))")
+                //Empty value directive : upgrade-insecure-requests ? block all mixed content
+                if decoded.isEmpty {
+                    output.append(directive)
+                } else {
+                    output.append("\(directive): \(decoded.joined(separator: " "))")
+                }
             }
             return output.joined(separator: "\n")
         }()
@@ -46,7 +51,7 @@ struct HeaderRebuild {
         } else if headers.keys.contains(where: { $0.lowercased() == "content-security-policy-report-only" }) {
             mergedHeaders["content-security-policy-report-only"] = cleanlyFormattedCSPString
         }
-        mergedHeaders["set-cookie"] = formattedCookies
+        mergedHeaders["set-cookie"] = "-Set-Cookie: " + formattedCookies
 
         let parsed = parseHeaders(mergedHeaders)
         onlineInfo.parsedHeaders = parsed

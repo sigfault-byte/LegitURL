@@ -90,17 +90,18 @@ struct PenaltySystem {
         static let scriptDataURI                       = -40
         static let missingMalformedBodyTag             = -15
         static let scriptIs70Percent                   = -10
-        static let jsCookieAccess                      = -10
         static let smallHTMLless896                    = -10
         static let highScriptDensity                   = -10
         static let sameDomainCookie                    = -10
         static let jsStorageAccess                     = -10
         static let jsSetItemAccess                     = -10
+        static let protocolRelativeScriptSrc           = -10
+        static let jsCookieAccess                      = -10
         static let metaCSP                             = -5
-        static let protocolRelativeScriptSrc           = -5
         static let mediumScritpDensity                 = -5
         static let scriptIs5070Percent                 = -5
         static let smallhtmllessthan1408               = -5
+        static let protocolRelativeScriptSRI           = -5
         
         //InlineSpecific & JS penalty
         static let hightPenaltyForInlineJS             = -30

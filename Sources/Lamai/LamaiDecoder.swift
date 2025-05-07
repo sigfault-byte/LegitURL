@@ -24,6 +24,7 @@ struct LamaiDecoder {
             }
             
         }
+        root.printTree(indent: "")
         return root
     }
     

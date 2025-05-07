@@ -113,14 +113,8 @@ extension CSPBitFlag {
         if contains(.hasNonce)          { reasons.append("requires a valid nonce for script execution") }
         if contains(.allowsHTTP)        { reasons.append("allows HTTP sources (insecure)") }
         if contains(.allowsHTTPS)       { reasons.append("allows HTTPS sources") }
-        if contains(.allowsBlob) {
-            let count = sourceCount[.allowsBlob] ?? 0
-            reasons.append("allows blob: sources (\(count) matched)")
-        }
-        if contains(.allowsData) {
-            let count = sourceCount[.allowsData] ?? 0
-            reasons.append("allows data: URIs (\(count) matched)")
-        }
+        if contains(.allowsBlob)        { reasons.append("allows blob:")}
+        if contains(.allowsData)        { reasons.append("allows data:")}
         if contains(.allowsSelf)        { reasons.append("allows content from same origin ('self')") }
         if contains(.specificURL)       { reasons.append("allows specific external URLs (e.g. https://cdn.example.com)") }
         if contains(.wildcardURL)       { reasons.append("allows wildcard subdomains (e.g. *.example.com)") }

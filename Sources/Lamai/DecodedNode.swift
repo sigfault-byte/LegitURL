@@ -130,7 +130,7 @@ class DecodedNode: Identifiable {
         }
     }
     
-    func hasDeepDescendant(minDepth: Int = 2) -> Bool {
+    func hasDeepDescendant(minDepth: Int = 1) -> Bool {
         return children.contains { $0.depth >= minDepth || $0.hasDeepDescendant(minDepth: minDepth) }
     }
 }

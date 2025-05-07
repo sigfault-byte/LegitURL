@@ -4,9 +4,10 @@
 //  Created by Chief Hakka on ??/04/2025.
 //
 //TODO: Refactor the whole loop especially the findings / findings for UI logic, separate the functions, stop using let every 3 lines. Soup should be a struct, and carries the range of the script, to easily attached the findings
+//TODO: All inline unprotected script => bad
 import Foundation
 
-//TODO: d.innerHTML = "window.__CF$cv$params={ ->  fake cloudfare challenge injectedin inline js)))))
+//TODO: d.innerHTML = "window.__CF$cv$params={ ->  fake cloudfare challenge injectedin inline js
 struct ScriptInlineAnalyzer {
     
     static func analyze(scripts: inout ScriptExtractionResult, body: Data, origin: String, into warnings: inout [SecurityWarning]) {
@@ -264,11 +265,16 @@ struct ScriptInlineAnalyzer {
                         if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
                             let index = match.scriptIndex
                             let current = scripts.scripts[index].findings4UI ?? []
-                            scripts.scripts[index].findings4UI = current + [("Setting cookies", .suspicious)]
+                            scripts.scripts[index].findings4UI = current + [("Getting / Setting cookies", .suspicious)]
                         }
+                        //TODO:  If the accessor is followed by '=':
+                        //   - If the next non 0x20 byte is a quote (`"` OR `'`) -> setter
+                        //   - If the next bytes look like parsing logic (e.g. `.split`, `.match`, regex, or variables) ->  getter
+                        //   - ~20–40 bytes ahead from '=' if nothing -> getter
+                        //   - May also check for presence of `;` (cookie chunk split) in the forward window ??
                         setcookie = true
                         warnings.append(SecurityWarning(
-                            message: "JavaScript is modifying a cookie using `document.cookie = ...`",
+                            message: "JavaScript is editing or creating a cookie using `document.cookie = ...`. There are only but a few legit reasons to do this. (e.g., fingerprinting, reload, or cookie clearing or to silently track user behavior).",
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.jsSetEditCookie,
                             url: origin,
@@ -281,13 +287,13 @@ struct ScriptInlineAnalyzer {
                         if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
                             let index = match.scriptIndex
                             let current = scripts.scripts[index].findings4UI ?? []
-                            scripts.scripts[index].findings4UI = current + [("Reading cookies", .suspicious)]
+                            scripts.scripts[index].findings4UI = current + [("Reading cookies", .info)]
                         }
                         readcookie = true
                         warnings.append(SecurityWarning(
-                            message: "JavaScript is reading cookies via `document.cookie`. May be used for user tracking.",
-                            severity: .tracking,
-                            penalty: 0,
+                            message: "JavaScript is reading cookies via `document.cookie`. May be used for user tracking, or legitimate reasons.",
+                            severity: .info,
+                            penalty: PenaltySystem.Penalty.informational,
                             url: origin,
                             source: .body,
                             bitFlags: WarningFlags.BODY_JS_READ_COOKIE
@@ -310,7 +316,7 @@ struct ScriptInlineAnalyzer {
             let (penalty, severity): (Int, SecurityWarning.SeverityLevel) = {
                 switch baseName {
                     case "cookie":
-                        return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
+                        return (PenaltySystem.Penalty.jsCookieAccess, .suspicious)
                     case "localStorage":
                         return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)
                     case "setItem":

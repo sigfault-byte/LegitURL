@@ -14,6 +14,7 @@ struct CSPExtractor {
         var directiveValues: [[Data: [Data]]] = []
         var structuredCSP: [String: [Data: CSPValueType]] = [:]
 
+        //add the possible missing semicolon
         if raw.last != 0x3B {
             raw.append(0x3B)
         }

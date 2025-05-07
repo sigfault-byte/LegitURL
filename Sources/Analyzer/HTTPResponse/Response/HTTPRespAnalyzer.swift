@@ -192,6 +192,7 @@ struct HTTPRespAnalyzer {
             urlInfo.warnings.append(contentsOf: warningsCSP)
             cspResult = result
         }
+        
         if let scritpsUIPreP = findings?.scripts, let rawBody = onlineInfo.rawBody {
             let preview = ScriptToPreview.prepareScriptPreviews(for: scritpsUIPreP, body: rawBody)
             onlineInfo.script4daUI = preview

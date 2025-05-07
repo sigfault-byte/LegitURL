@@ -82,7 +82,11 @@ struct CSPUtils {
         let directive = parts[0]
         let values = Array(parts.dropFirst())
         
-        return [directive: values]
+        if values.isEmpty {
+            return [directive: []]  // preserve solo directive but no value
+        } else {
+            return [directive: values]
+        }
     }
     
     static func classifyCSPValue(_ value: Data) -> CSPValueType {

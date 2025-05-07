@@ -30,30 +30,16 @@ struct ScriptSecurityAnalyzer {
 //        }
         
         // Flag abnormal script origin
-        let (dataURICount, protocolRelativeCounter) = checkingScriptOrigin(originURL: origin, scripts: &scripts, warnings: &warnings)
+        let (dataURICount,
+             protocolRelativeCounter,
+             protocolRelativeCounterWithIntegrity) = checkingScriptOrigin(originURL: origin, scripts: &scripts, warnings: &warnings)
         
-        //TODO: Double check the script possibilities
-        if dataURICount > 0 {
-            warnings.append(SecurityWarning(
-                message: "This page includes \(dataURICount) script(s) using data: URIs. These are often used for obfuscation or tracking.",
-                severity: .suspicious,
-                penalty: PenaltySystem.Penalty.scriptDataURI,
-                url: origin,
-                source: .body,
-                bitFlags: WarningFlags.BODY_SCRIPT_DATAURI
-            ))
-        }
-        if protocolRelativeCounter > 0 {
-            warnings.append(SecurityWarning(
-                message: "This page includes \(protocolRelativeCounter) script(s) using protocol-relative URLs (e.g., //domain.com). These are archaic and risky, as they rely on the current protocol and can lead to mixed content issues.",
-                severity: .suspicious,
-                penalty: PenaltySystem.Penalty.protocolRelativeScriptSrc,
-                url: origin,
-                source: .body,
-                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL
-            ))
-        }
-        
+        //TODO: Double check the script possibilities ( ??? )
+        warningMessageForURIAndProtocol(from :(dataURICount,
+                                               protocolRelativeCounter,
+                                               protocolRelativeCounterWithIntegrity),
+                                        warnings: &warnings,
+                                        origin: origin)
         
         //TODO: compute nonce value entropy, maybe add script hash to ?
         let (nonceList, srcList, internalCount) = extractScriptAttributes(from: scripts.scripts)
@@ -68,9 +54,10 @@ struct ScriptSecurityAnalyzer {
     
     //MARK --- Helper
     
-    private static func checkingScriptOrigin(originURL: String, scripts: inout ScriptExtractionResult, warnings: inout [SecurityWarning]) -> (Int, Int) {
+    private static func checkingScriptOrigin(originURL: String, scripts: inout ScriptExtractionResult, warnings: inout [SecurityWarning]) -> (Int, Int, Int) {
         var dataUriCounter = 0
         var protocolRelativeCounter = 0
+        var protocolRelativeCounterWithIntegrity: Int = 0
 
         for (index, script) in scripts.scripts.enumerated() {
             guard let origin = script.origin else { continue }
@@ -89,16 +76,15 @@ struct ScriptSecurityAnalyzer {
                     
                     if let integrity = script.integrityValue, !integrity.isEmpty {
                         scripts.scripts[index].findings4UI = [("Protocol relative (with SRI)", .info)]
+                        protocolRelativeCounterWithIntegrity += 1
                     } else {
                         scripts.scripts[index].findings4UI = [("Protocol relative", .suspicious)]
+                        protocolRelativeCounter += 1
                     }
-                    protocolRelativeCounter += 1
             case .dataURI:
-                    
+                    scripts.scripts[index].findings4UI = [("Data URI script detected", .dangerous)]
                     if let nonce = script.nonceValue, !nonce.isEmpty {
-                        scripts.scripts[index].findings4UI = [("Data URI script (nonce protected)", .info)]
-                    } else {
-                        scripts.scripts[index].findings4UI = [("Data URI script detected", .dangerous)]
+                        scripts.scripts[index].findings4UI = [("'nonce' attribute works on Inline Script, not Data URI", .info)]
                     }
                     dataUriCounter += 1
             case .unknown:
@@ -126,7 +112,7 @@ struct ScriptSecurityAnalyzer {
             }
         }
 
-        return (dataUriCounter, protocolRelativeCounter)
+        return (dataUriCounter, protocolRelativeCounter, protocolRelativeCounterWithIntegrity)
     }
     
     private static func computeInlineScriptBytes(_ scripts: [ScriptScanTarget]) -> Int {
@@ -277,5 +263,51 @@ struct ScriptSecurityAnalyzer {
         }
 
         return (nonceList, srcList, internalCount)
+    }
+    
+    private static func warningMessageForURIAndProtocol(from counters:(Int, Int, Int), warnings: inout [SecurityWarning], origin: String){
+        let dataURICount = counters.0
+        let protocolRelativeCounter = counters.1
+        let protocolRelativeCounterWithIntegrity = counters.2
+        if dataURICount > 0 {
+            warnings.append(SecurityWarning(
+                message: "This page includes \(dataURICount) script(s) using data: URIs. These are often used for obfuscation or tracking.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.scriptDataURI,
+                url: origin,
+                source: .body,
+                bitFlags: WarningFlags.BODY_SCRIPT_DATAURI
+            ))
+        }
+        if protocolRelativeCounter > 0 {
+            warnings.append(SecurityWarning(
+                message: "This page includes \(protocolRelativeCounter) script(s) using protocol-relative URLs. These are archaic and risky, as they rely on the current protocol and can lead to mixed content issues.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.protocolRelativeScriptSrc,
+                url: origin,
+                source: .body,
+                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL
+            ))
+        }
+        if protocolRelativeCounterWithIntegrity > 0 {
+            warnings.append(SecurityWarning(
+                message: "This page includes \(protocolRelativeCounterWithIntegrity) script(s) using protocol-relative URLs with integrity attributes. (LegitURL did not verify their correctness). While protected, these are archaic and risky, as they rely on the current protocol and can lead to mixed content issues.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.protocolRelativeScriptSRI,
+                url: origin,
+                source: .body,
+                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL
+            ))
+        }
+        if protocolRelativeCounter > 0, protocolRelativeCounterWithIntegrity > 0, protocolRelativeCounter != protocolRelativeCounterWithIntegrity {
+            warnings.append(SecurityWarning(
+                message: "\(protocolRelativeCounterWithIntegrity) protocol-relative script URLs have integrity attributes, while \(protocolRelativeCounter) others do not. This makes no sense.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.protocolRelativeScriptSrc,
+                url: origin,
+                source: .body,
+                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL
+            ))
+        }
     }
 }

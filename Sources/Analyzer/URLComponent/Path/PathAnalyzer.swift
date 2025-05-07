@@ -12,7 +12,7 @@ struct PathAnalyzer {
 
         if !rawPath.hasSuffix("/"), urlInfo.components.query != nil {
             urlInfo.warnings.append(SecurityWarning(
-                message: "🧠 Suspicious endpoint-like path followed by query.",
+                message: "Suspicious endpoint-like path followed by query.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.pathIsEndpointLike,
                 url: urlOrigin,
@@ -25,7 +25,7 @@ struct PathAnalyzer {
         let pathRegex = #"^\/(?:[A-Za-z0-9\-._~!$&'()*+,;=:@%]+\/?)*$"#
         if !rawPath.matches(regex: pathRegex) {
             urlInfo.warnings.append(SecurityWarning(
-                message: "⚠️ Malformed path structure detected",
+                message: "Malformed path structure detected",
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
                 url: urlOrigin,
@@ -36,7 +36,7 @@ struct PathAnalyzer {
         
         if rawPath.contains("//") {
             urlInfo.warnings.append(SecurityWarning(
-                message: "⚠️ Suspicious double slashes in path",
+                message: "Suspicious double slashes in path",
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
                 url: urlOrigin,
@@ -49,7 +49,7 @@ struct PathAnalyzer {
         for segment in pathSegmentsToCheck {
             if segment.rangeOfCharacter(from: .alphanumerics) == nil {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "⚠️ Suspicious path segment contains no alphanumeric characters: '\(segment)'",
+                    message: "Suspicious path segment contains no alphanumeric characters: '\(segment)'",
                     severity: .critical,
                     penalty: PenaltySystem.Penalty.critical,
                     url: urlOrigin,
@@ -101,7 +101,7 @@ struct PathAnalyzer {
             var parts: [String]
             if segment.count > 64 {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "⚠️ Suspiciously long path segment: (\(segment.count) chars / \(segment.utf8.count) bytes)",
+                    message: "Suspiciously long path segment: (\(segment.count) chars / \(segment.utf8.count) bytes)",
                     severity: .suspicious,
                     penalty: PenaltySystem.Penalty.suspiciousPathSegment,
                     url: urlOrigin,

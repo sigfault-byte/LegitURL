@@ -17,7 +17,7 @@ struct NodeWalker {
         
         func walk(_ node: DecodedNode) {
             //Warn in the view that lamai find some "things"
-            if !didWarnForDepth && node.depth > 1 {
+            if !didWarnForDepth && node.depth >= 1 {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Decoded value detected by Lamai in \(comp) \(label). This was found through recursive decoding. Check the URLComponent tree for decoding layers.",
                     severity: .info,
@@ -35,7 +35,7 @@ struct NodeWalker {
                     case .url(let url):
                         foundURLs.append(url)
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "🔗 Found URL in \(comp) \(label): \(url)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "Found URL in \(comp) \(label): \(url)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .dangerous,
                             penalty: PenaltySystem.Penalty.hiddenRedirectQuery,
                             url: urlOrigin,
@@ -46,7 +46,7 @@ struct NodeWalker {
                     case .uuid(let result):
                         let uuidText = result.formatted ?? result.original
                         urlInfo.warnings.append(SecurityWarning(
-                            message: "🧬 UUID in \(comp) \(label): \(uuidText) \(result.classification)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                            message: "UUID in \(comp) \(label): \(uuidText) \(result.classification)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
                             severity: .tracking,
                             penalty: PenaltySystem.Penalty.uuidInQuery,
                             url: urlOrigin,

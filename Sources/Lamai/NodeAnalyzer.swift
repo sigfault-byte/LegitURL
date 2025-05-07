@@ -9,13 +9,13 @@ import Foundation
 struct NodeAnalyzer {
     
     /// Detect email addresses in a string.
-    /// - Returns: `[String]?` — `nil` if no emails were found, otherwise an array of found emails.
+    //if no emails were found, otherwise an array of found emails.
     static func detectEmail(_ value: String) -> [String]? {
         let emails = CommonTools.detectEmailAddresses(in: value)
         return emails.isEmpty ? nil : emails
     }
     
-    /// Check if an IP is detected (IPv4 or IPv6)
+    /// Check if an IP is detected
     static func checkIfIp4(_ value: String) -> String? {
         if CommonTools.isIPv4(value) {
             return value
@@ -37,7 +37,7 @@ struct NodeAnalyzer {
         return nil
     }
     
-    // Look if the value is one or many uuid CORRECTLY structured and return a struc with details of the uuid(s)
+    //// Look if the value is one or many uuid CORRECTLY structured and return a struc with details of the uuid(s)
     static func detectUUIDs(from value: String) -> [DecodingTools.UUIDAnalysisResult] {
         var results: [DecodingTools.UUIDAnalysisResult] = []
         
@@ -151,7 +151,7 @@ struct NodeAnalyzer {
             return Array(dict.keys)
         }
 
-        // 🧪 Now scan for embedded JSON (e.g., after label)
+        // Now scan for embedded JSON (e.g., after label)
         if let start = value.firstIndex(of: "{"),
            let end = value.lastIndex(of: "}") {
             let jsonSubstring = value[start...end]
