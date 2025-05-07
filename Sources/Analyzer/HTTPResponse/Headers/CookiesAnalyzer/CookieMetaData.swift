@@ -1,5 +1,5 @@
 //  CookieMetaData.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 07/04/2025.
 //
@@ -47,7 +47,9 @@ func populateCookieMetadata(_ cookie: HTTPCookie) -> CookieMetadata {
 
 func parseCookies(from headers: [String], for url: String) -> [CookieMetadata] {
     guard let urlObject = URL(string: url) else {
+        #if DEBUG
         print("Invalid URL format: \(url)")
+        #endif
         return []
     }
 

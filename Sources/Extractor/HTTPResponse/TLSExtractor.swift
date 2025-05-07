@@ -1,5 +1,5 @@
 //  TLSExtract.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 07/04/2025.
 //
@@ -37,7 +37,7 @@ struct TLSExtractor {
         
         var sslCertificateDetails: [String: Any] = [:]
         
-        // ✅ Extract certificate details using ASN1Decoder
+        //  Extract certificate details using ASN1Decoder
         if let certificateChain = SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate],
            let firstCertificate = certificateChain.first {
             
@@ -81,11 +81,11 @@ struct TLSExtractor {
                 )
                 sslCertificateDetails["ParsedCertificate"] = parsedCert
             } else {
-//                print("❌ Failed to decode certificate using ASN1Decoder")
+//                print(" Failed to decode certificate using ASN1Decoder")
             }
         }
         
-        // ✅ Store extracted details globally
+        //  Store extracted details globally
         HTTPResponseExtractor.sharedInstance.sslCertificateDetails = sslCertificateDetails
         
         // Accept the SSL certificate, this is terrible but necessary

@@ -20,7 +20,8 @@ struct HTMLAnalyzerFast {
         }
         
         guard let (htmlRange, htmlClosed) = result else {
-            warnings.append(SecurityWarning(message: "No HTML found in response. Either the server is misconfigured, the dev are hotdogwater or it's a bad scam.",
+//            warnings.append(SecurityWarning(message: "No HTML found in response. Either the server is misconfigured, the dev are hotdogwater or it's a bad scam.",
+            warnings.append(SecurityWarning(message: "No HTML structure detected in the response body. This is unexpected for a web page and may indicate a server issue or a malicious response.",
                                             severity: .critical,
                                             penalty: PenaltySystem.Penalty.critical,
                                             url: origin,
@@ -29,13 +30,15 @@ struct HTMLAnalyzerFast {
                                            ))
             return (nil, nil)
         }
-        guard htmlClosed else {
-            warnings.append(SecurityWarning(message: "HTML appears malformed (missing </html> closing tag). This is common in scam kits or broken pages from hotdogwater devs.",
-                                            severity: .critical,
-                                            penalty: PenaltySystem.Penalty.critical,
+        if htmlClosed == false {
+//            warnings.append(SecurityWarning(message: "HTML appears malformed (missing </html> closing tag). This is common in scam kits or broken pages from hotdogwater devs.",
+            warnings.append(SecurityWarning(message: "Missing closing </html> tag. This indicates a malformed HTML structure, which can be a sign of development errors or potentially malicious intent.",
+                                            severity: .suspicious,
+                                            penalty: PenaltySystem.Penalty.unclosedHTMLTag,
                                             url: origin,
-                                            source: .body))
-            return (nil, nil)
+                                            source: .body,
+                                            bitFlags: [.BODY_HTML_MALFORMED]
+                                           ))
         }
         
         let (scripts, metaSCP) = ScriptAndMetaExtractor.extract(body: body,

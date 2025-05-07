@@ -1,6 +1,6 @@
 //
 //  WarningFlags.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 16/04/2025.
 //

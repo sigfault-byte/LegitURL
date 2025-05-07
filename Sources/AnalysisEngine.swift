@@ -14,7 +14,9 @@ struct AnalysisEngine {
     
     // MARK: - Public Entry Point
     public static func analyze(urlString: String) async {
+        #if DEBUG
         self.analysisStartTime = Date()
+        #endif
         AnalysisStateReset.reset()
 //        load user singletn + statics
         UserHeuristicsCache.load()
@@ -106,10 +108,12 @@ struct AnalysisEngine {
                 //flush singleton
                 UserHeuristicsCache.flush()
                 Finalyzer.finalizeAnalysis()
+                #if DEBUG
                 if let start = analysisStartTime {
                     let duration = Date().timeIntervalSince(start)
                     print("🌐 Full analyze() duration: \(String(format: "%.3f", duration)) seconds")
                 }
+                #endif
             }
             return
         }
@@ -118,7 +122,7 @@ struct AnalysisEngine {
 
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
         URLQueue.shared.offlineQueue[currentIndex].processingNow = true
-//        print("🚀 Starting online analysis for URL:", currentURLInfo.components.fullURL ?? "unknown")
+//        print(" Starting online analysis for URL:", currentURLInfo.components.fullURL ?? "unknown")
         
         if !URLQueue.shared.onlineQueue.contains(where: { $0.id == currentURLInfo.id }) {
             URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
@@ -126,7 +130,7 @@ struct AnalysisEngine {
 
         do {
             let onlineInfo = try await HTTPGetCoordinator.extractAsync(urlInfo: currentURLInfo)
-//            print("✅ Finished GET extract for:", currentURLInfo.components.fullURL ?? "unknown")
+//            print("Finished GET extract for:", currentURLInfo.components.fullURL ?? "unknown")
             
             
             guard let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) else {
@@ -155,7 +159,7 @@ struct AnalysisEngine {
             
             let OnlineAnalysisURLInfo = await HTTPRespAnalyzer.analyze(urlInfo: updatedURLInfo)
             URLQueue.shared.offlineQueue[index] = OnlineAnalysisURLInfo
-//            print("✅ Online analysis complete for:", OnlineAnalysisURLInfo.components.fullURL ?? "unknown")
+//            print("Online analysis complete for:", OnlineAnalysisURLInfo.components.fullURL ?? "unknown")
             URLQueue.shared.offlineQueue[index].processedOnline = true
             
             // Check if any critical finding where found
@@ -241,7 +245,7 @@ struct AnalysisEngine {
         
         let newURLInfo = extractComponents(from: cleanedRedirectURL)
         
-//        print("🔁 Adding redirect URL to offline queue:", cleanedRedirectURL)
+//        print("Adding redirect URL to offline queue:", cleanedRedirectURL)
         URLQueue.shared.offlineQueue.append(newURLInfo)
         
         await processQueue()

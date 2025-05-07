@@ -29,8 +29,9 @@ struct DomainAndTLDExtractor {
         if let domain = domainCandidate, let tld = longestValidTLD {
             return (domain, tld)
         }
-        
+        #if DEBUG
         print("❌ ERROR: No valid TLD found")
+        #endif
         return nil
     }
 }

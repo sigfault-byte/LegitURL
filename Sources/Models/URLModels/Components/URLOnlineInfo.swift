@@ -1,5 +1,5 @@
 //  URLOnlineInfo.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 08/04/2025.
 //

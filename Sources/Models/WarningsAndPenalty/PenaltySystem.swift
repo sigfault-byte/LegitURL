@@ -76,6 +76,7 @@ struct PenaltySystem {
         static let jsFingerPrinting                    = -30
         static let hotdogWaterDev                      = -30
         static let unusualScritSrcFormat               = -30
+        static let unclosedHTMLTag                     = -30
         static let atobJSONparserCombo                 = -25
         static let bomboclotScript                     = -25
         static let metaRefreshInBody                   = -25

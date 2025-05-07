@@ -1,6 +1,6 @@
 //
 //  QRScannerViewModel.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 21/04/2025.
 //
@@ -10,7 +10,7 @@
 //  ⇣
 //ScannerViewController (AVFoundation QR logic)
 //  ⇣
-//metadataOutput(...) detects QR → stops session
+//metadataOutput(...) detects QR → stops session doublecheck
 //  ⇣
 //Delegate sends code → Coordinator calls closure
 //  ⇣

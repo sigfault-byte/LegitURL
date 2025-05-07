@@ -13,14 +13,18 @@ import Foundation
 func isValidTLD(_ tld: String) -> Bool {
     // 1. Locate the database in the app bundle
     guard let dbURL = Bundle.main.url(forResource: "public_suffix_list", withExtension: "sqlite") else {
+        #if DEBUG
         print("ERROR: Database file not found in Bundle.")
+        #endif
         return false
     }
     
     // 2. Open the database
     var db: OpaquePointer?
     if sqlite3_open(dbURL.path, &db) != SQLITE_OK {
+        #if DEBUG
         print("ERROR: Failed to open database:", String(cString: sqlite3_errmsg(db)!))
+        #endif
         return false
     }
     
@@ -43,8 +47,16 @@ func isValidTLD(_ tld: String) -> Bool {
         }
         
         // Bind the TLD to the placeholder
-        if sqlite3_bind_text(stmt, 1, cleanTLD, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self)) != SQLITE_OK {
+        // SQLite C API expects a destructor callback for the string memory.
+        // Passing `SQLITE_TRANSIENT` tells SQLite to make a private copy of the string data.
+        // This is necessary because the lifetime of the Swift string's C string representation
+        // is not guaranteed after the call to sqlite3_bind_text returns.
+        // We use `unsafeBitCast(-1, to: sqlite3_destructor_type.self)` to represent SQLITE_TRANSIENT in Swift.
+        //
+        if sqlite3_bind_text(stmt, 1, cleanTLD, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self)) != SQLITE_OK { // cursed
+            #if DEBUG
             print("ERROR: Failed to bind TLD value:", cleanTLD)
+            #endif
         }
         
         // Execute and read result
@@ -53,7 +65,9 @@ func isValidTLD(_ tld: String) -> Bool {
             return count > 0
         }
     } else {
+        #if DEBUG
         print("ERROR: Failed to prepare SQL statement:", String(cString: sqlite3_errmsg(db)!))
+        #endif
     }
     
     // 5. Fallback if something fails
@@ -67,7 +81,7 @@ func isValidTLD(_ tld: String) -> Bool {
  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //    func debugQuery() {
 //        guard let db = db else {
-//            print("❌ ERROR: Database is not initialized.")
+//            print(" ERROR: Database is not initialized.")
 //            return
 //        }
 //
@@ -75,23 +89,23 @@ func isValidTLD(_ tld: String) -> Bool {
 //        var stmt: OpaquePointer?
 //
 //        if sqlite3_prepare_v2(db, query, -1, &stmt, nil) == SQLITE_OK {
-//            print("✅ Database is OPEN! Listing TLDs containing 'com':")
+//            print(" Database is OPEN! Listing TLDs containing 'com':")
 //
 //            while sqlite3_step(stmt) == SQLITE_ROW {
 //                let suffix = String(cString: sqlite3_column_text(stmt, 0))
-//                print("🔹 Found:", suffix)
+//                print(" Found:", suffix)
 //            }
 //
 //            sqlite3_finalize(stmt)
 //        } else {
-//            print("❌ ERROR: Failed to prepare SQL statement:", String(cString: sqlite3_errmsg(db)!))
+//            print(" ERROR: Failed to prepare SQL statement:", String(cString: sqlite3_errmsg(db)!))
 //        }
 //    }
 //
 //    /// **Dump the entire TLD database**
 //    func dumpDatabase() {
 //        guard let db = db else {
-//            print("❌ ERROR: Database is not initialized.")
+//            print(" ERROR: Database is not initialized.")
 //            return
 //        }
 //
@@ -99,27 +113,27 @@ func isValidTLD(_ tld: String) -> Bool {
 //        var stmt: OpaquePointer?
 //
 //        if sqlite3_prepare_v2(db, query, -1, &stmt, nil) == SQLITE_OK {
-//            print("✅ Dumping all TLDs from DB:")
+//            print(" Dumping all TLDs from DB:")
 //
 //            var foundCom = false
 //            while sqlite3_step(stmt) == SQLITE_ROW {
 //                let id = sqlite3_column_int(stmt, 0)
 //                let suffix = String(cString: sqlite3_column_text(stmt, 1))
-//                print("🔹 ID:", id, "| Suffix:", suffix)
+//                print(" ID:", id, "| Suffix:", suffix)
 //
 //                if suffix == "com" {
-//                    print("🔥🔥🔥 FOUND 'com' IN SWIFT AT ID \(id)!!! 🔥🔥🔥")
+//                    print(" FOUND 'com' IN SWIFT AT ID \(id)!!! ")
 //                    foundCom = true
 //                }
 //            }
 //
 //            if !foundCom {
-//                print("❌❌❌ SWIFT CANNOT SEE 'com' IN DB ❌❌❌")
+//                print(" SWIFT CANNOT SEE 'com' IN DB ")
 //            }
 //
 //            sqlite3_finalize(stmt)
 //        } else {
-//            print("❌ ERROR: Failed to prepare SQL statement:", String(cString: sqlite3_errmsg(db)!))
+//            print(" ERROR: Failed to prepare SQL statement:", String(cString: sqlite3_errmsg(db)!))
 //        }
 //    }
 //}

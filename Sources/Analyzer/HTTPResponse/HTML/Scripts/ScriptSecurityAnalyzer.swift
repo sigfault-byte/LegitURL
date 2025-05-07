@@ -30,7 +30,7 @@ struct ScriptSecurityAnalyzer {
 //        }
         
         // Flag abnormal script origin
-        let dataURICount = checkingScriptOrigin(originURL: origin, scripts: &scripts, warnings: &warnings)
+        let (dataURICount, protocolRelativeCounter) = checkingScriptOrigin(originURL: origin, scripts: &scripts, warnings: &warnings)
         
         //TODO: Double check the script possibilities
         if dataURICount > 0 {
@@ -43,6 +43,17 @@ struct ScriptSecurityAnalyzer {
                 bitFlags: WarningFlags.BODY_SCRIPT_DATAURI
             ))
         }
+        if protocolRelativeCounter > 0 {
+            warnings.append(SecurityWarning(
+                message: "This page includes \(protocolRelativeCounter) script(s) using protocol-relative URLs (e.g., //domain.com). These are archaic and risky, as they rely on the current protocol and can lead to mixed content issues.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.protocolRelativeScriptSrc,
+                url: origin,
+                source: .body,
+                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL
+            ))
+        }
+        
         
         //TODO: compute nonce value entropy, maybe add script hash to ?
         let (nonceList, srcList, internalCount) = extractScriptAttributes(from: scripts.scripts)
@@ -50,21 +61,23 @@ struct ScriptSecurityAnalyzer {
         checkScriptDensity(internalCount: internalCount, externalCount: srcList.count, htmlSize: htmlRange.count, originURL: origin, into: &warnings)
         
         ScriptInlineAnalyzer.analyze(scripts: &scripts, body: body, origin: origin, into: &warnings)
+
         
         return ScriptSourceToMatchCSP(nonceList: nonceList, externalSources: srcList)
     }
     
     //MARK --- Helper
     
-    private static func checkingScriptOrigin(originURL: String, scripts: inout ScriptExtractionResult, warnings: inout [SecurityWarning]) -> Int {
+    private static func checkingScriptOrigin(originURL: String, scripts: inout ScriptExtractionResult, warnings: inout [SecurityWarning]) -> (Int, Int) {
         var dataUriCounter = 0
+        var protocolRelativeCounter = 0
 
         for (index, script) in scripts.scripts.enumerated() {
             guard let origin = script.origin else { continue }
 
             switch origin {
             case .httpExternal:
-                    scripts.scripts[index].findings4UI = [("HTTP script detected", SecurityWarning.SeverityLevel.critical)]
+                scripts.scripts[index].findings4UI = [("HTTP script detected", SecurityWarning.SeverityLevel.critical)]
                 warnings.append(SecurityWarning(
                     message: "External script loaded over HTTP. This is insecure and exposes users to injection risks.",
                     severity: .critical,
@@ -73,20 +86,21 @@ struct ScriptSecurityAnalyzer {
                     source: .body
                 ))
             case .protocolRelative:
-                    scripts.scripts[index].findings4UI = [("Protocol relative", SecurityWarning.SeverityLevel.suspicious)]
-                warnings.append(SecurityWarning(
-                        message: "Protocol relative script loaded. This is archaic and insecure and exposes users to injection risks.",
-                        severity: .suspicious,
-                        penalty: PenaltySystem.Penalty.protocolRelativeScriptSrc,
-                        url: originURL,
-                        source: .body,
-                        bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL,
-                    ))
                     
+                    if let integrity = script.integrityValue, !integrity.isEmpty {
+                        scripts.scripts[index].findings4UI = [("Protocol relative (with SRI)", .info)]
+                    } else {
+                        scripts.scripts[index].findings4UI = [("Protocol relative", .suspicious)]
+                    }
+                    protocolRelativeCounter += 1
             case .dataURI:
-                scripts.scripts[index].findings4UI = [("Data URI script detected", SecurityWarning.SeverityLevel.suspicious)]
-                dataUriCounter += 1
-
+                    
+                    if let nonce = script.nonceValue, !nonce.isEmpty {
+                        scripts.scripts[index].findings4UI = [("Data URI script (nonce protected)", .info)]
+                    } else {
+                        scripts.scripts[index].findings4UI = [("Data URI script detected", .dangerous)]
+                    }
+                    dataUriCounter += 1
             case .unknown:
                 scripts.scripts[index].findings4UI = [("Script origin unknown", SecurityWarning.SeverityLevel.dangerous)]
                 warnings.append(SecurityWarning(
@@ -97,7 +111,6 @@ struct ScriptSecurityAnalyzer {
                     source: .body,
                     bitFlags: WarningFlags.BODY_SCRIPT_UNKNOWN_ORIGIN
                 ))
-
             case .malformed:
                 scripts.scripts[index].findings4UI = [("Script is malformed", SecurityWarning.SeverityLevel.suspicious)]
                 warnings.append(SecurityWarning(
@@ -108,13 +121,12 @@ struct ScriptSecurityAnalyzer {
                     source: .body,
                     bitFlags: WarningFlags.BODY_SCRIPT_UNKNOWN_ORIGIN
                 ))
-
             default:
                 break
             }
         }
 
-        return dataUriCounter
+        return (dataUriCounter, protocolRelativeCounter)
     }
     
     private static func computeInlineScriptBytes(_ scripts: [ScriptScanTarget]) -> Int {

@@ -3,10 +3,10 @@ struct Finalyzer {
         let warnings = urlInfos.flatMap { $0.warnings }
         
         let totalPenalty = warnings.map { $0.penalty }.reduce(0, +)
-//      DEBUG
+        #if DEBUG
         let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
         penaltyDetails.forEach { print($0) }
-//       END
+        #endif
         let currentScore = URLQueue.shared.legitScore.score
         var newScore = currentScore + totalPenalty
         if newScore < 0 {

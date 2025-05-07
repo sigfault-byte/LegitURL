@@ -7,7 +7,7 @@
 import UIKit
 import Foundation
 
-//TODO : reject anything not compliant to RFC1738
+//TODO : reject anything not compliant to RFC1738 ?
 
 struct CommonTools {
     /// **Checks and prepares user input URL before deeper analysis**
@@ -246,7 +246,9 @@ struct CommonTools {
             }
             return emails
         } catch {
+            #if DEBUG
             print("Error detecting email addresses: \(error)")
+            #endif
             return []
         }
     }

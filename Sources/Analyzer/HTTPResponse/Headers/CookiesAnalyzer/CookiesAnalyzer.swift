@@ -1,6 +1,6 @@
 //
 //  CookiesAnalyzer.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 06/04/2025.
 //
@@ -15,7 +15,9 @@
 //  Long expiry dates (Expires or Max-Age) -> persistent tracking / finger printing
 //  How to differentiate scam tactics from "legitimate" tracking for ads and marketting? Looks like they have the same markers...
 //  -> maybe: track entropy, cookie naming, volume, and possibly domain age + cert info later for tie-breakers.
-
+//
+// httpCookie makes no difference between sameSitePolicy = none and nil.
+// The browser patched it themselves in ~2020. Still if someone uses cookie, it should be correctly configured, or assume that samesite=none is defaul
 import Foundation
 
 struct CookiesAnalyzer {

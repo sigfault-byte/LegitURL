@@ -1,5 +1,5 @@
 //  DecodingNode.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 24/03/2025.
 //
@@ -144,18 +144,18 @@ extension DecodedNode {
         for finding in findings {
             switch finding {
             case .url(let url):
-                print("\(indent)  🔍 URL Found: \(url)")
+                print("\(indent)  URL Found: \(url)")
             case .uuid(let result):
                 let uuidText = result.formatted ?? result.original
-                print("\(indent)  🔍 UUID Found: \(uuidText) (\(result.classification))")
+                print("\(indent)  UUID Found: \(uuidText) (\(result.classification))")
             case .scamWord(let word):
-                print("\(indent)  ⚠️ Scam Word: \(word)")
+                print("\(indent)   Scam Word: \(word)")
             case .phishingWord(let word):
-                print("\(indent)  ⚠️ Phishing Word: \(word)")
+                print("\(indent)   Phishing Word: \(word)")
             case .entropy(let score, let value):
-                print("\(indent)  🧪 High Entropy: \(value) ≈ \(String(format: "%.2f", score))")
+                print("\(indent)   High Entropy: \(value) ≈ \(String(format: "%.2f", score))")
             case .longEntropyLike(let value):
-                print("\(indent)  🧪 Long suspicious blob: \(value)")
+                print("\(indent)   Long suspicious blob: \(value)")
             case .isIPv4(let value):
                 print("\(indent)  IPv4 Found: \(value)")
             case .isIPv6(let value):
@@ -163,16 +163,16 @@ extension DecodedNode {
             case .email(let value):
                 print("\(indent)  Email Found: \(value)")
             case .json(let keys): // Display JSON findings
-                print("\(indent)  📦 JSON Found with keys: \(keys.joined(separator: ", "))")
+                print("\(indent)   JSON Found with keys: \(keys.joined(separator: ", "))")
             case .brandExact(let brand): // Display brand exact match
-                print("\(indent)  🏷️ Brand Exact Match: \(brand)")
+                print("\(indent)   Brand Exact Match: \(brand)")
             case .brandContained(let brand): // Display brand contained
-                print("\(indent)  🧩 Brand Contained: \(brand)")
+                print("\(indent)   Brand Contained: \(brand)")
             case .brandSimilar(let brand): // Display brand similar
-                print("\(indent)  🔍 Brand Similar: \(brand)")
+                print("\(indent)   Brand Similar: \(brand)")
             }
         }
-        print("-----EndOfNode--------------------")
+        print("-----------------------------EndOfNode-------------------------------")
         for child in children {
             child.printTree(indent: indent + "  ")
         }

@@ -1,6 +1,6 @@
 //
 //  HostAnalysis.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 22/03/2025.
 //

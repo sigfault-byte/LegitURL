@@ -1,5 +1,5 @@
 //  LamaiAnalyzerHub.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 27/03/2025.
 //

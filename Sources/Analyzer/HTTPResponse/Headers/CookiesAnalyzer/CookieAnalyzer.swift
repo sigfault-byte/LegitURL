@@ -1,53 +1,9 @@
-// DOMAIN STRUCTURE
-//┌─────────────────────────────┐
-//│         example.com         │
-//└────────────┬────────────────┘
-//             │
-//   ┌─────────┴────────────┐
-//   │                      │
-//www.example.com     api.example.com
-//   │                      │
-//login.example.com   shop.example.com
+//  CookieAnalyzer.swift
+//  LegitURL
+//
+//  Created by Chief Hakka on 07/04/2025.
 //
 //
-// COOKIE DOMAIN SCOPE
-//Set-Cookie: Domain=example.com
-//→ Sent only to: example.com
-//
-//Set-Cookie: Domain=.example.com
-//→ Sent to: example.com, www.example.com, api.example.com, etc.
-//
-//Set-Cookie: Domain=sub.example.com
-//→ Sent only to: sub.example.com
-//
-// Wildcards like *.example.com are NOT allowed
-// But Set-Cookie: Path=/ → cookie is sent to all paths on the same domain (site-wide scope)
-// Not shared across domains or subdomains unless Domain=.example.com is explicitly set
-//PATH STRUCTURE UNDER example.com
-///
-//├── index.html
-//├── account/
-//│   ├── login/
-//│   └── settings/
-//└── shop/
-//    ├── cart/
-//    └── checkout/
-//
-//COOKIE PATH SCOPE
-//Request URL: https[:]//example.com/account/login
-//
-//1. No Path attribute →
-//   → Cookie Path = /account/
-//   → Sent to: /account/, /account/login/, /account/settings/
-//   → Not sent to /shop/ or /
-//
-//2. Path=/
-//   → Sent to ALL paths under domain (site-wide)
-//
-//3. Path=/account/
-//   → Sent only to: /account/, /account/login/, etc.
-//
-//Cookie Path = Directory of the request URI if unspecified
 
 func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: Set<String>, host: String) -> CookieAnalysisResult {
     if seenCookie.contains(cookie.name) {
@@ -162,3 +118,55 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
 
     return CookieAnalysisResult(cookie: cookie, severity: severity, flags: bitFlags, entropy: entropyScore)
 }
+
+
+// DOMAIN STRUCTURE
+//┌─────────────────────────────┐
+//│         example.com         │
+//└────────────┬────────────────┘
+//             │
+//   ┌─────────┴────────────┐
+//   │                      │
+//www.example.com     api.example.com
+//   │                      │
+//login.example.com   shop.example.com
+//
+//
+// COOKIE DOMAIN SCOPE
+//Set-Cookie: Domain=example.com
+//→ Sent only to: example.com
+//
+//Set-Cookie: Domain=.example.com
+//→ Sent to: example.com, www.example.com, api.example.com, etc.
+//
+//Set-Cookie: Domain=sub.example.com
+//→ Sent only to: sub.example.com
+//
+// Wildcards like *.example.com are NOT allowed
+// But Set-Cookie: Path=/ → cookie is sent to all paths on the same domain (site-wide scope)
+// Not shared across domains or subdomains unless Domain=.example.com is explicitly set
+//PATH STRUCTURE UNDER example.com
+///
+//├── index.html
+//├── account/
+//│   ├── login/
+//│   └── settings/
+//└── shop/
+//    ├── cart/
+//    └── checkout/
+//
+//COOKIE PATH SCOPE
+//Request URL: https[:]//example.com/account/login
+//
+//1. No Path attribute →
+//   → Cookie Path = /account/
+//   → Sent to: /account/, /account/login/, /account/settings/
+//   → Not sent to /shop/ or /
+//
+//2. Path=/
+//   → Sent to ALL paths under domain (site-wide)
+//
+//3. Path=/account/
+//   → Sent only to: /account/, /account/login/, etc.
+//
+//Cookie Path = Directory of the request URI if unspecified

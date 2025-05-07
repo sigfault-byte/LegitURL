@@ -1,6 +1,6 @@
 //
 //  URLAnalysisView.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 31/03/2025.
 //
@@ -55,8 +55,10 @@ struct URLAnalysisView: View {
             }
             .navigationBarHidden(true)
             .listStyle(.insetGrouped)
-            .safeAreaInset(edge: .bottom) {
+            .overlay(alignment: .bottom) {
                 WarningBannerComponent(viewModel: viewModel.warningsVM)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .zIndex(1)
             }
             .toolbar {
                 // Bottom bar for Home & Help

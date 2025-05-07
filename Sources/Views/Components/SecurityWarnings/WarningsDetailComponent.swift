@@ -9,11 +9,11 @@ struct WarningsDetailComponent: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .center, spacing: 8) {
-                Capsule()
-                    .fill(Color.secondary.opacity(0.4))
-                    .frame(width: 40, height: 5)
-                    .padding(.top, 8)
+//            VStack(alignment: .center, spacing: 8) {
+//                Capsule()
+//                    .fill(Color.secondary.opacity(0.4))
+//                    .frame(width: 40, height: 5)
+//                    .padding(.top, 8)
 
                 VStack(alignment: .leading, spacing: 24) {
                     HStack(spacing: 12) {
@@ -75,7 +75,7 @@ struct WarningsDetailComponent: View {
                     }
                 }
                 .padding()
-            }
+//            }
         }
         .navigationTitle("Security Warnings")
         .navigationBarTitleDisplayMode(.inline)

@@ -74,6 +74,7 @@ struct TLSCertificateAnalyzer {
         }
         
         // 3. Expiry Window
+        // Real usage not a timer !
         let now = Date()
         var penalyzed = false
         if let notAfter = certificate.notAfter {

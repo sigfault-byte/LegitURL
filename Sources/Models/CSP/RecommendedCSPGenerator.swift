@@ -4,7 +4,7 @@
 //
 //  Created by Chief Babylon Slayer
 //
-
+//TODO: Need sha check... Maybe sri too. before trying recommendedCSP
 import Foundation
 import CryptoKit
 

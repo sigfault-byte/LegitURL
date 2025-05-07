@@ -1,6 +1,6 @@
 //
 //  HeadersKeyWords.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 20/03/2025.
 //

@@ -1,6 +1,6 @@
 //
 //  TLSHeuristics.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 05/04/2025.
 //
@@ -60,21 +60,26 @@ struct TLSHeuristics {
 
 // TODO: Passive TLS SAN Analysis Infrastructure
 // ------------------------------------------------
+// Reminder:
+// steampowered.com -> DV -> too many SANs
+// redirect to store.steampowered.com -> EV -> 2 SANs
+
+//
 // TLS certificates with a high number of SANs (e.g. > 30) and no wildcards are highly suspicious.
 // Especially when:
-// - Each SAN is an unrelated FQDN (no shared base domain)
-// - Only one SAN matches the target domain
-// - Issuer is Let's Encrypt (or other free CA)
+//  Each SAN is an unrelated FQDN (no shared base domain)
+//  Only one SAN matches the target domain
+//  Issuer is Let's Encrypt (or other free CA)
 // This pattern strongly suggests automated scam infra (phishing kits or redirect networks).
 //
 // We can leverage this as a passive fingerprinting signal:
-// - Use the SAN list as a graph node connecting domains across different scans
-// - If a domain scores as DANGEROUS and its cert includes unrelated SANs,
+//   Use the SAN list as a graph node connecting domains across different scans
+//   If a domain scores as DANGEROUS and its cert includes unrelated SANs,
 //   store the cert fingerprint and SANs in a local database (SQLite).
 //
 // Future use cases:
-// - If another domain appears in that cert's SANs, elevate its risk (greylist logic)
-// - If a known scam domain is linked via SANs → critical penalty for all siblings
+//   If another domain appears in that cert's SANs, elevate its risk (greylist logic)
+//   If a known scam domain is linked via SANs → critical penalty for all siblings
 //
 // Note: Avoid static blacklists — instead, grow a passive cert-based graph over time.
 // This allows LegitURL to infer trust relationships (or abuse clusters) using TLS alone.

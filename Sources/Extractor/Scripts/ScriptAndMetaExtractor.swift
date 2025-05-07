@@ -1,6 +1,6 @@
 //
 //  ScriptExtractor.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 14/04/2025.
 //
@@ -13,7 +13,9 @@ struct ScriptAndMetaExtractor {
                         htmlRange: Range<Int>,
                         warnings: inout [SecurityWarning]) -> (ScriptExtractionResult?, metaCSP: Data?)
     {
+        #if DEBUG
         let startTime = Date()
+        #endif
         let tagPositions = DataSignatures.extractAllTagMarkers(in: body, within: htmlRange)
         var headPos = 0
         var bodyPos = 0
@@ -23,7 +25,9 @@ struct ScriptAndMetaExtractor {
         var scriptCandidates: [ScriptScanTarget] = []
         //populate the array of candidates
         ScriptHelperFunction.populateScriptTarget(&scriptCandidates, tagPositions: tagPositions)
+        #if DEBUG
         let t1 = Date()
+        #endif
         //Look for body tag and pre filter the scriptCandidate
         ScriptHelperFunction.checkForOpenAndCloseTags(in: body,
                                  headerPos: &headPos,
@@ -74,9 +78,10 @@ struct ScriptAndMetaExtractor {
             ))
             return (nil, nil)
         }
+        #if DEBUG
         let t2 = Date()
         print("Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
-        
+        #endif
         // MARK: Look if some meta are injecting meta equiv CSP
         let metaCSP = CSPMetaExtractor.extract(from: body, tags:tagPositions, range: headPos..<headEndPos!)
 //            var confirmedScripts = checkForScriptTags(body, scriptCandidates: &scriptCandidates, asciiToCompare: interestingPrefix.script, lookAhead: 8)
@@ -89,9 +94,10 @@ struct ScriptAndMetaExtractor {
 //        let headFindings = HTMLHeadAnalyzer.analyze(headContent: body[headRange], tagPos: tagPositions, tagPosToDismiss: tagToDismiss, warnings: &warnings, origin: origin)
         // guard if there are no script to analyze
         guard !initialScripts.isEmpty else { return (nil, nil) }
-        
+        #if DEBUG
         let t3 = Date()
         print("Step 2 - Script detection took \(Int(t3.timeIntervalSince(t2) * 1000))ms")
+        #endif
         // find the tag closure of the script and check if there is a self closing slash
         
         if initialScripts.count != closingScriptPositions.count {
@@ -133,31 +139,47 @@ struct ScriptAndMetaExtractor {
         }
         var confirmedScripts = initialScripts
         ScriptHelperFunction.pairScriptsWithClosings(scripts: &confirmedScripts, closingTags: closingScriptPositions, body: body)
-
+        
+        #if DEBUG
         let t4 = Date()
         print("Step 3 - Tag closure detection took \(Int(t4.timeIntervalSince(t3) * 1000))ms")
+        #endif
         // primary school math to find context
         ScriptHelperFunction.classifyContext(for: &confirmedScripts, headPos: headPos, bodyPos: bodyPos)
+        
+        #if DEBUG
         let t5 = Date()
         print("Step 4 - Context classification took \(Int(t5.timeIntervalSince(t4) * 1000))ms")
+        #endif
         // look for src
         ScriptHelperFunction.scanScriptSrc(in: body, scripts: &confirmedScripts)
         //filter out js application data!
         ScriptHelperFunction.filterOutDataScripts(&confirmedScripts)
+        #if DEBUG
         let t6 = Date()
         print(" Step 5 - Src position scan took \(Int(t6.timeIntervalSince(t5) * 1000))ms")
+        #endif
         // sort the scripts to their origin
         ScriptHelperFunction.assignScriptSrcOrigin(in: body, scripts: &confirmedScripts)
+        
+        #if DEBUG
         let t7 = Date()
         print("Step 6 - Script origin classification took \(Int(t7.timeIntervalSince(t6) * 1000))ms")
+        #endif
         //find nonce script and value
         ScriptHelperFunction.findNonceScript(in: body, scripts: &confirmedScripts)
+        //get integrityValue
+        ScriptHelperFunction.findIntegrityScript(in: body, scripts: &confirmedScripts)
+        
+        #if DEBUG
         let t8 = Date()
         print("Step 7 - Script find nonce took \(Int(t8.timeIntervalSince(t7) * 1000))ms")
+        
         
         let duration = Date().timeIntervalSince(startTime)
         print("Total scan completed in \(Int(duration * 1000))ms")
         print("Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
+        #endif
         //            DEBUG
 //        for script in confirmedScripts {
 //            guard let endTag = script.endTagPos else { continue }
@@ -172,7 +194,7 @@ struct ScriptAndMetaExtractor {
 //            print("Script [\(type)] from \(script.start) to \(endTag) — origin: \(origin) in \(context?.rawValue)")
 //
 //            if let fullDecoded = String(data: fullSnippet, encoding: .utf8) {
-//                print("🔹 Full tag preview:")
+//                print(" Full tag preview:")
 //                if fullDecoded.count > 60 {
 //                    print("...\(fullDecoded.prefix(30))\n...\(fullDecoded.suffix(30))")
 //                } else {

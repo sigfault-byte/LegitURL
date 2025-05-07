@@ -14,6 +14,9 @@ struct ScriptPreview: Identifiable {
     let context: ScriptScanTarget.ScriptContext?
     let contentPreview: String
     let findings: [(message: String, severity: SecurityWarning.SeverityLevel)]?
+    let extractedSrc: String?
+    let nonce: String?
+    let integrity: String?
 }
 
 struct ScriptToPreview {
@@ -67,7 +70,10 @@ struct ScriptToPreview {
                 isInline: script.origin == .inline,
                 context: script.context,
                 contentPreview: decoded,
-                findings: findings
+                findings: findings,
+                extractedSrc: script.extractedSrc,
+                nonce: script.nonceValue,
+                integrity: script.integrityValue
             )
             previews.append(preview)
         }

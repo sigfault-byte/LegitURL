@@ -1,6 +1,6 @@
 //
 //  HelperFunctions.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 14/04/2025.
 //
@@ -9,8 +9,10 @@ import Foundation
 struct ScriptHelperFunction {
     static func pairScriptsWithClosings(scripts: inout [ScriptScanTarget], closingTags: [Int], body: Data) {
         guard scripts.count == closingTags.count else {
-            //TODO:            this is  redundnat there s a guard before the function call
+            //TODO: this is  redundnat there s a guard before the function call
+            #if DEBUG
             print("Cannot zip scripts with closings count mismatch.")
+            #endif
             return
         }
         
@@ -131,7 +133,9 @@ struct ScriptHelperFunction {
             if respectTagEnd, let tagEnd = scripts[i].end {
                 earlyRange = start..<min(tagEnd + 1, body.count)
             } else {
+                #if DEBUG
                 print("THIS SHOULD NOT HAPPEN ALALALALALALAALALALALALALALLAALLALALALAALLALALALALALA THIS IS IN SCANSCRIPT AFTER THE ENDTAG LOOKING FOR THE RANGE OF THE SRC")
+                #endif
                 earlyRange = start..<min(start + lookAhead, body.count)
             }
             let eqSigns = DataSignatures.extractAllTagMarkers(in: body, within: earlyRange, tag: UInt8(ascii: "="))
@@ -265,6 +269,51 @@ struct ScriptHelperFunction {
                         scripts[i].nonceValue = decoded
                     }
                     break // Found one nonce, no need to keep scanning this script
+                }
+            }
+        }
+    }
+    
+    // Maybe merge both function into one?
+    static func findIntegrityScript(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 64, respectTagEnd: Bool = true) {
+        for i in 0..<scripts.count {
+            guard let tagEnd = scripts[i].end else { continue }
+
+            let start = scripts[i].start
+            let scanRange: Range<Int>
+            if respectTagEnd {
+                scanRange = start..<min(tagEnd, body.count)
+            } else {
+                scanRange = start..<min(start + lookAhead, body.count)
+            }
+
+            let eqSigns = DataSignatures.extractAllTagMarkers(in: body, within: scanRange, tag: UInt8(ascii: "="))
+
+            for eq in eqSigns {
+                if eq < 9 { continue }
+
+                // Check for "integrity" (case-insensitive)
+                let chars = (0..<9).map { body[eq - 9 + $0] | 0x20 }
+                if chars == Array("integrity".utf8.map { $0 | 0x20 }) {
+                    scripts[i].integrityPos = eq
+
+                    // Extract quote-wrapped value
+                    let quoteCandidates = DataSignatures.extractAllTagMarkers(in: body, within: eq..<scanRange.upperBound, tag: UInt8(ascii: "\"")) +
+                                          DataSignatures.extractAllTagMarkers(in: body, within: eq..<scanRange.upperBound, tag: UInt8(ascii: "'"))
+
+                    let sortedQuotes = quoteCandidates.sorted()
+                    guard sortedQuotes.count >= 2 else { continue }
+
+                    let qStart = sortedQuotes[0]
+                    let qEnd = sortedQuotes[1]
+                    guard qEnd > qStart + 1 else { continue }
+
+                    let valueRange = (qStart + 1)..<qEnd
+                    let integrityValue = body[valueRange]
+                    if let decoded = String(data: integrityValue, encoding: .utf8) {
+                        scripts[i].integrityValue = decoded
+                    }
+                    break
                 }
             }
         }

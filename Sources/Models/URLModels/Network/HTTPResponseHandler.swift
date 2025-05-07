@@ -1,6 +1,6 @@
 //
 //  HandleHTTPResponse.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 18/03/2025.
 //

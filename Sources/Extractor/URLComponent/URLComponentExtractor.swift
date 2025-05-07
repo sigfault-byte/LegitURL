@@ -4,7 +4,6 @@
 //
 //  Created by Chief Hakka on 07/03/2025.
 //
-//<<<<<------- THERE IS NO SPOON ----->>>>
 import Foundation
 import Punycode
 

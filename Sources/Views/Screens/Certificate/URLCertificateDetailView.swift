@@ -1,6 +1,6 @@
 //
 //  URLCertificateDetailView.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 05/04/2025.
 //

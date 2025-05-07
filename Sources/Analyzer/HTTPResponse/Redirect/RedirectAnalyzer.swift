@@ -1,6 +1,6 @@
 //
 //  RedirectAnalyzer.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 25/03/2025.
 //

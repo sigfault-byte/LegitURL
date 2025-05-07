@@ -13,11 +13,11 @@ struct WarningBannerComponent: View {
         let severityCounts = viewModel.severityCounts
 
         if !severityCounts.isEmpty {
-            HStack {
+            VStack {
+                Spacer()
                 HStack(spacing: 8) {
                     Text("Findings:")
                         .fontWeight(.medium)
-
                     ForEach(SecurityWarning.SeverityLevel.allWarnings, id: \.self) { severity in
                         if let count = severityCounts[severity], count > 0 {
                             HStack(spacing: 4) {
@@ -30,20 +30,24 @@ struct WarningBannerComponent: View {
                     }
                 }
                 .padding(.vertical, 12)
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
+                )
                 .onTapGesture {
                     viewModel.showingWarningsSheet = true
                 }
+                .ignoresSafeArea(edges: .bottom)
             }
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
-            )
             .sheet(isPresented: $viewModel.showingWarningsSheet) {
                 WarningsDetailComponent(
                     viewModel: WarningsComponentModel(preGrouped: viewModel.grouped)
                 )
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
         }
     }

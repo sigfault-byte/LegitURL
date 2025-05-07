@@ -3,7 +3,8 @@
 //  LegitURL
 //
 //  Created by Chief Hakka on 11/03/2025.
-//// not used anymore, this is too much
+// not used anymore
+// read carefully the RFC, maybe the old one about URL. And apply the logic? ...
 
 import Foundation
 

@@ -12,12 +12,14 @@ extension URLQueue {
         }
     }
     
-    // Ensure safe update from the background
+    // Ensure safe update from the background ???
     func addWarning(to urlID: UUID, warning: SecurityWarning) {
         if let index = self.offlineQueue.firstIndex(where: { $0.id == urlID }) {
             self.offlineQueue[index].warnings.append(warning)
         } else {
-            print("❌ Could not find URLInfo with ID \(urlID) to add warning")
+            #if DEBUG
+            print(" Could not find URLInfo with ID \(urlID) to add warning")
+            #endif
         }
     }
     

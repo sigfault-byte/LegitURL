@@ -1,6 +1,6 @@
 //
 //  BadJSFunctions.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 14/04/2025.
 //

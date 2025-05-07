@@ -1,5 +1,5 @@
 //  DataSignatures.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 11/04/2025.
 //
@@ -19,7 +19,7 @@ struct DataSignatures {
 
         return tagPositions
     }
-//    Need to "fallBack" to end of document is </html> is not found! Ma
+
     public static func extractHtmlTagRange(in body: Data) -> (Range<Int>, htmlClosed: Bool)? {
         let prefixRange = body.startIndex..<min(500, body.count)
         let suffixRange = max(body.count - 500, 0)..<body.count
@@ -32,7 +32,7 @@ struct DataSignatures {
         }
 
         let closeRange = body.range(of: htmlCloseTag, options: [], in: suffixRange)
-        let end = closeRange?.upperBound ?? body.endIndex
+        let end = closeRange?.upperBound ?? body.endIndex // fallback to end of doc if </html> doesnt exist
         return (openRange.lowerBound..<end, closeRange != nil)
     }
 

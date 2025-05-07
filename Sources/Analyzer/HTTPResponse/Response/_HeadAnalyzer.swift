@@ -1,10 +1,11 @@
 //
 //  HTMLHeadAnalyzer.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 16/04/2025.
 //
-//TODO To Finish this need some meta refreh exemple. The logic to match the title to the domain is nasty
+//              UNUSED
+//TODO: To Finish this need some meta refreh exemple. The logic to match the title to the domain is nasty
 import Foundation
 struct HeadAnalyzer {
     static func analyze(headContent: Data,

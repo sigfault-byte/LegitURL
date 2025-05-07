@@ -1,6 +1,6 @@
 //
 //  AnalysisContextManager.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 20/04/2025.
 //

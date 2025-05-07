@@ -17,12 +17,18 @@ struct HotDogWaterView: View {
                     .font(.title2)
                     .bold()
                     .padding(.bottom, 8)
+
+                let originCounts = Dictionary(grouping: previews.map { $0.origin?.rawValue.capitalized ?? "Unknown" }) { $0 }
+                    .mapValues { $0.count }
+
+                ScriptOriginBarView(data: originCounts)
+                    .padding(.bottom, 8)
                 
                 ForEach(previews.indices, id: \.self) { index in
                     let preview = previews[index]
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("\(preview.origin?.rawValue.capitalized ?? "Unknown")")
+                            Text("\(preview.origin?.rawValue ?? "Unknown")")
                                 .font(.headline)
                             
                             if let context = preview.context {
@@ -66,9 +72,24 @@ struct HotDogWaterView: View {
                             .buttonStyle(.plain)
                         }
                         
+                        if let src = preview.extractedSrc, !src.isEmpty {
+                            Divider()
+                            Text("Source:\n'\(src)'")
+                                .font(.subheadline)
+                        }
+                        if let nonce = preview.nonce, !nonce.isEmpty {
+                            Divider()
+                            Text("Secured by nonce:\n'\(nonce)'")
+                                .font(.subheadline)
+                        }
+                        if let sha = preview.integrity, !sha.isEmpty {
+                            Divider()
+                            Text("Protected by a hash ( not yet verified by LegitURL ):\n'\(sha)'")
+                                .font(.subheadline)
+                        }
                         if let findings = preview.findings, !findings.isEmpty {
                             let summarized = summarizeFindings(findings)
-//                            Doestn work when there are many eement. Need to build a custom component....
+//                            Doestn work when there are many eement. Need  a custom component....
 //                            HStack {
                                 ForEach(summarized.indices, id: \.self) { index in
                                     let item = summarized[index]
@@ -78,6 +99,8 @@ struct HotDogWaterView: View {
                                 }
 //                            }
                         }
+                        
+                        
                     }
                     .padding()
                     .background(Color(.secondarySystemBackground))

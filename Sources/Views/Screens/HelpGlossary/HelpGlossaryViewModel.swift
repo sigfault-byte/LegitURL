@@ -1,6 +1,6 @@
 //
 //  HelpGlossaryViewModel.swift
-//  URLChecker
+//  LegitURL
 //
 //  Created by Chief Hakka on 21/04/2025.
 //
@@ -17,8 +17,9 @@ struct HelpGlossaryData {
         guard let url = Bundle.main.url(forResource: "glossary", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let decoded = try? JSONDecoder().decode([GlossaryTerm].self, from: data) else {
-            //DEBUG
-            print("failed to load glossary jason")
+            #if DEBUG
+            print("Glossary failed to load. Make sure jason is included in the main bundle.")
+            #endif
             return []
         }
         return decoded

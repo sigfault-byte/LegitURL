@@ -27,7 +27,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         // Ensure that both scheme (e.g., "https") and host (e.g., "example.com") are available.
         guard let scheme = urlInfo.components.scheme,
               let host = urlInfo.components.host else {
-//            print("❌ Invalid URL components for GET request:", urlInfo.components.fullURL ?? "nil")
+//            print("Invalid URL components for GET request:", urlInfo.components.fullURL ?? "nil")
             return
         }
         
@@ -37,7 +37,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         let sanitizedURLString = "\(scheme.lowercased())://\(host.lowercased())\(path)"
         // Convert the sanitized URL string into a URL object.
         guard let url = URL(string: sanitizedURLString) else {
-//            print("❌ Failed to construct valid URL:", sanitizedURLString)
+//            print("Failed to construct valid URL:", sanitizedURLString)
             return
         }
         
