@@ -261,6 +261,17 @@ struct ScriptInlineAnalyzer {
                     //                        print(" Detected document.cookie context:\n\(preview)\n")
                     //                    }
                     
+//                    // Print debugging for document.cookie=
+//                    if name == "cookie" {
+//                        let contextStart = max(0, pos - 40)
+//                        let contextEnd = min(soupData.count, pos + 60)
+//                        if let contextStr = String(data: soupData[contextStart..<contextEnd], encoding: .utf8) {
+//                            print("Cookie context near position \(pos):\n\(contextStr)")
+//                            print("isAssignment:", isAssignment)
+//                        }
+//                    }
+
+                    
                     if name == "cookie" && isAssignment && !setcookie {
                         if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
                             let index = match.scriptIndex
@@ -300,22 +311,29 @@ struct ScriptInlineAnalyzer {
                         ))
                     }
                     
-                    let displayName = (name == "cookie") ? "document.cookie" : name
+                    let displayName: String
+                    if name == "cookie" {
+                        displayName = setcookie ? "document.cookie=" : "document.cookie"
+                    } else {
+                        displayName = name
+                    }
                     matchCounts[displayName, default: 0] += 1
                     if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
                         let index = match.scriptIndex
                         let current = scripts.scripts[index].findings4UI ?? []
-                        scripts.scripts[index].findings4UI = current + [("'\(displayName)' access", .suspicious)]
+                        scripts.scripts[index].findings4UI = current + [("'\(displayName)'", setcookie ? .suspicious : .info)]
                     }
                 }
             }
         }
         
         for (displayName, count) in matchCounts {
-            let baseName = displayName.replacingOccurrences(of: "document.", with: "")
+            let baseName = displayName
+            //temp hack
+            guard baseName != "document.cookie" else { continue }
             let (penalty, severity): (Int, SecurityWarning.SeverityLevel) = {
                 switch baseName {
-                    case "cookie":
+                    case "document.cookie=":
                         return (PenaltySystem.Penalty.jsCookieAccess, .suspicious)
                     case "localStorage":
                         return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)

@@ -135,7 +135,8 @@ extension CookieFlagBits {
         }
         
         // Access Control (7–9)
-        if contains(.sameSiteNone)          { reasons.append("SameSite=None") }
+        if contains(.samesiteLax)           { reasons.append("SameSite=Lax, correclty set") }
+        if contains(.sameSiteNone)          { reasons.append("SameSite=None — could be unset. Browsers default to Lax, but it should be declare explicitly.") }
         if contains(.sameSiteNone) && contains(.session) {
             reasons.append("Suspicious: Session cookie with SameSite=None")
         }

@@ -36,7 +36,17 @@ class DestinationInfoComponentModel: ObservableObject {
     }
     
     var displayMessage: Bool {
-        return self.isAnalysisComplete && !self.summaryMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if self.isAnalysisComplete {
+            let trimmed = self.summaryMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty {
+                DispatchQueue.main.async {
+                    self.summaryMessage = self.score >= 85 ? "No major issues detected" : "Consult the logs for more details"
+                }
+            }
+            return true
+        } else {
+            return false
+        }
     }
     
     init(

@@ -91,7 +91,7 @@ struct ComboAlert {
         // 3. Lying about cookie access
         if f & WarningFlags.COOKIE_JS_ACCESS.rawValue == 0 {
             if (f & WarningFlags.BODY_JS_READ_COOKIE.rawValue != 0 || f & WarningFlags.BODY_JS_SET_EDIT_COOKIE.rawValue != 0) {
-                combo.message = "This site claims to be secure and not accessing cookies, but its code is secretly reading or changing your browser cookies."
+                combo.message = "This site header gives cookie not supposed to be read by js, but its code is reading or changing browser cookies."
                 URLQueue.shared.legitScore.score += -5
                 return
             }
