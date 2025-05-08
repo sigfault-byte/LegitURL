@@ -21,7 +21,7 @@ struct CSPDirectiveAnalysis {
         }
 
         if (flags.contains(.hasNonce) || flags.contains(.hasHash)) && flags.contains(.unsafeInline) {
-            result.append("'Nonce' or 'sha' is invalidated by 'unsafe-inline'.")
+            result.append("'Nonce' or 'sha' protection is nullified by 'unsafe-inline'.")
         }
 
         if directive == "object-src", !flags.contains(.none) {

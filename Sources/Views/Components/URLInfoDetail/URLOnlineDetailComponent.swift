@@ -25,6 +25,7 @@ struct URLOnlineDetailComponent: View {
                 }
             }
             bodyNavigationLink(for: onlineInfo)
+            
             if let parsedHeaders = onlineInfo.parsedHeaders {
                 NavigationLink(destination: RawToFormated(title: "Response Headers", content: formatParsedHeaders(parsedHeaders))) {
                     Text("Response Headers")
@@ -70,7 +71,7 @@ private func bodyNavigationLink(for info: OnlineURLInfo) -> some View {
                     }
                 },
                 label: {
-                    Text(isHeavyBody ? "Heavy Response Body (⚠️~\(bodySizeKB) KB)" : "Response Body")
+                    Text(isHeavyBody ? "Heavy Response Body (⚠️~\(bodySizeKB) KB ⚠️)" : "Response Body (~\(bodySizeKB) KB))")
                 }
             )
         }

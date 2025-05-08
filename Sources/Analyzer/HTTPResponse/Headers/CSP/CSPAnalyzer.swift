@@ -126,6 +126,7 @@ struct CSPAnalyzer {
                 )
                 warnings.append(contentsOf: extraWarnings)
             }
+            //TODO: check if sha then check is the count match, and compute sha
         }
         
 
@@ -167,7 +168,7 @@ struct CSPAnalyzer {
                     hasOnlySelf = false
                 }
                 if type == .keyword {
-                    if value != Data("'self'".utf8) {
+                    if value != Data("'self'".utf8) && !value.isEmpty {
                         hasOnlySelf = false
                     }
                 }

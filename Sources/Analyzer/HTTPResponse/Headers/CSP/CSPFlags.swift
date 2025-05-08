@@ -55,7 +55,10 @@ func parseCSP(_ structuredCSP: [String: [Data: CSPValueType]]) -> [String: Int32
                     flags.insert(.allowsSelf)
                 } else if value.starts(with: safeCSPValue.nonce) {
                     flags.insert(.hasNonce)
-                } else if value.starts(with: Data("'sha".utf8)) {
+                } else if (value.starts(with: safeCSPValue.sha256Hash) ||
+                           value.starts(with: safeCSPValue.sha384Hash) ||
+                            value.starts(with: safeCSPValue.sha512Hash))
+                             {
                     flags.insert(.hasHash)
                 }
             } else if type == .source {
@@ -111,6 +114,7 @@ extension CSPBitFlag {
         if contains(.wildcard)          { reasons.append("allows wildcard sources (*)") }
         if contains(.none)              { reasons.append("explicitly denies all sources ('none')") }
         if contains(.hasNonce)          { reasons.append("requires a valid nonce for script execution") }
+        if contains(.hasHash)           { reasons.append("requires a valid hash for script execution")}
         if contains(.allowsHTTP)        { reasons.append("allows HTTP sources (insecure)") }
         if contains(.allowsHTTPS)       { reasons.append("allows HTTPS sources") }
         if contains(.allowsBlob)        { reasons.append("allows blob:")}
