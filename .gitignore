@@ -1,24 +1,43 @@
 # MARK: - Xcode User-Specific
-*.xcuserdatad/
-*.xcscmblueprint
-*.xccheckout
-*.xcworkspace/
-*.xcuserstate
+*.xcuserdatad/ # User specific Data?
+*.xcscmblueprint # tracks the current source control setup ?
+*.xccheckout # Xcode things with git?
+*.xcuserstate # how many tabs, where is the scroll etc
+xcuserdata/ 3 ??
+*.mode1v3 # ??
 
 # MARK: - macOS System Files
-.DS_Store
+.DS_Store # MacOs special file
+*.swp # vim artifact
 
 # MARK: - Build Artifacts
-DerivedData/
+DerivedData/ #
+build/
+*.app
+*.ipa
+*.xcarchive # deployed buidl
+*.dSYM # no idea
 *.xcdebugger/
 
 # MARK: - Swift Package Manager
-.swiftpm/
-.build/
+.swiftpm/ # Swift Package Manager UI ?
+.build/ # build artifact like linked binaries ?
 
-# MARK: - CocoaPods ( maybe in the future mi bredda )
-Pods/
+# MARK: - CocoaPods not Used
+# Pods/
+
+# MARK: - Playground Support
+timeline.xctimeline
+playground.xcworkspace
 
 # MARK: - Preview Files
 *.preview-thumbnails
+*.xcpreview*
 
+# MARK: - Logs and Crash Reports
+*.log
+*.crash
+
+# MARK: - Optional: Protect Against Accidental Config Overwrites
+# This specifically targets WorkspaceSettings.xcsettings within the project's workspace ? Not sure
+*.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
