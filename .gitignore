@@ -1,27 +1,36 @@
 # MARK: - Xcode User-Specific
-*.xcuserdatad/ # User specific Data?
-*.xcscmblueprint # tracks the current source control setup ?
-*.xccheckout # Xcode things with git?
-*.xcuserstate # how many tabs, where is the scroll etc
-xcuserdata/ 3 ??
-*.mode1v3 # ??
+# User specific Data?
+*.xcuserdatad/
+# tracks the current source control setup ?
+*.xcscmblueprint
+# Xcode things with git?
+*.xccheckout
+# how many tabs, where is the scroll etc
+*.xcuserstate
+xcuserdata/
+*.mode1v3
 
 # MARK: - macOS System Files
-.DS_Store # MacOs special file
-*.swp # vim artifact
+.DS_Store
+# Vim artifact
+*.swp
 
 # MARK: - Build Artifacts
-DerivedData/ #
+DerivedData/
 build/
 *.app
 *.ipa
-*.xcarchive # deployed buidl
-*.dSYM # no idea
+# deployed build
+*.xcarchive
+# no idea
+*.dSYM
 *.xcdebugger/
 
 # MARK: - Swift Package Manager
-.swiftpm/ # Swift Package Manager UI ?
-.build/ # build artifact like linked binaries ?
+# UI related ?
+.swiftpm/
+# Builded artificat, linked files?
+.build/
 
 # MARK: - CocoaPods not Used
 # Pods/
