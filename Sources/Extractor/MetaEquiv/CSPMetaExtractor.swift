@@ -20,11 +20,17 @@ struct CSPMetaExtractor {
         //grab the first
         let maxCandidate = tagCandidates.count
         
-        let metaCSPCandidate1 = tagCandidates[0]
-        let metaCSPCandidate2: Int? = 1 > maxCandidate ? nil : tagCandidates[1]
-        let metaCSPCandidate3: Int? = 2 > maxCandidate ? nil : tagCandidates[2]
+        let candidates: [Int]
         
-        let candidates = [metaCSPCandidate1, metaCSPCandidate2, metaCSPCandidate3].compactMap { $0 }
+        switch maxCandidate {
+        case 1:
+            candidates = [tagCandidates[0]]
+        case 2:
+            candidates = [tagCandidates[0], tagCandidates[1]]
+        default:
+            candidates = Array(tagCandidates.prefix(3))
+        }
+        
         var maxEnd: Int = 0
         
         for candidate in candidates {
@@ -33,9 +39,9 @@ struct CSPMetaExtractor {
                 
                 //Useless fun optimization
                 let start = DataSignatures.extractAllTagMarkers(in: html, within: candidate+40..<candidate+100, tag: byteLetters.equalSign)
-                if candidate == metaCSPCandidate1 { maxEnd = metaCSPCandidate2 != nil ? metaCSPCandidate2! : range.upperBound }
-                if candidate == metaCSPCandidate2 { maxEnd = metaCSPCandidate3 != nil ? metaCSPCandidate3! : range.upperBound }
-                if candidate == metaCSPCandidate3 { maxEnd = range.upperBound }
+                if candidate == candidates.first { maxEnd = candidates.count > 1 ? candidates[1] : range.upperBound }
+                else if candidate == candidates.dropFirst().first { maxEnd = candidates.count > 2 ? candidates[2] : range.upperBound }
+                else if candidate == candidates.dropFirst(2).first { maxEnd = range.upperBound }
                 
                 let end = DataSignatures.extractAllTagMarkers(in: html, within: start[0] + 1..<maxEnd, tag: byteLetters.endTag)
                 metaDataSCP = html[start[0] + 1..<end[0]]

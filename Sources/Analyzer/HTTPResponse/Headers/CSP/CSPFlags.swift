@@ -37,7 +37,6 @@ func parseCSP(_ structuredCSP: [String: [Data: CSPValueType]]) -> [String: Int32
         for (value, type) in values {
             if type == .keyword ||
                 type == .nonce ||
-                type == .wildcard ||
                 type == .hash{
                 if value == dangerousCSPValues.unsafeInline {
                     flags.insert(.unsafeInline)
@@ -61,7 +60,7 @@ func parseCSP(_ structuredCSP: [String: [Data: CSPValueType]]) -> [String: Int32
                              {
                     flags.insert(.hasHash)
                 }
-            } else if type == .source {
+            } else if type == .source || type == .wildcard {
                 flags.formUnion(evaluateSourceBitFlags(for: value))
                 //TODO: add a fallback for unknown
             }
@@ -77,6 +76,7 @@ private func evaluateSourceBitFlags(for value: Data) -> CSPBitFlag {
     var flags: CSPBitFlag = []
 
     if value == dangerousCSPValues.wildcard {
+        print("--------------------------------------------")
         flags.insert(.wildcard)
     } else if value.starts(with: dangerousCSPValues.data) {
         flags.insert(.allowsData)

@@ -23,8 +23,12 @@ struct ScriptAndDefaultDirective {
 
         // Unsafe Inline
         if bitFlagCSP.contains(.unsafeInline) {
+            var specialWarning = ""
+            if bitFlagCSP.contains(.hasNonce) || bitFlagCSP.contains(.hasHash) {
+                specialWarning = " It nullifies Nonce or SHA"
+            }
             warnings.append(SecurityWarning(
-                message: "'unsafe-inline' present in \(directiveName) — this overrides nonce or hash protections.",
+                message: "'unsafe-inline' present in \(directiveName).\(specialWarning).",
                 severity: .dangerous,
                 penalty: PenaltySystem.Penalty.unsafeInlineScriptSrc,
                 url: url,
@@ -45,7 +49,7 @@ struct ScriptAndDefaultDirective {
         // Unsafe Eval
         if bitFlagCSP.contains(.unsafeEval) {
             warnings.append(SecurityWarning(
-                message: "'unsafe-eval' present in \(directiveName) — this allows dynamic JS execution and cannot be mitigated with nonce/hash.",
+                message: "'unsafe-eval' present in \(directiveName) this allows dynamic JS execution and cannot be mitigated with nonce/hash.",
                 severity: .dangerous,
                 penalty: PenaltySystem.Penalty.unsafeEvalScriptSrc,
                 url: url,

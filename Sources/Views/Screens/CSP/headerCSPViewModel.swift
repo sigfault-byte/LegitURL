@@ -36,6 +36,13 @@ struct CSPDirectiveAnalysis {
             result.append("Allows 'http:' script sources — insecure and unnecessary in modern deployments.")
         }
         
+        if flags.contains(.wildcard) &&
+            (flags.contains(.allowsHTTPS) ||
+             flags.contains(.specificURL) ||
+             flags.contains(.allowsSelf)) {
+            result.append("'*' is combined with other source, which makes no sense")
+        }
+        
         if flags.contains(.allowsSelf) && (flags.contains(.allowsHTTP) || flags.contains(.allowsHTTPS)) {
             result.append("'self' is combined with insecure HTTP/HTTPS sources, which is overriding the protection.")
         }

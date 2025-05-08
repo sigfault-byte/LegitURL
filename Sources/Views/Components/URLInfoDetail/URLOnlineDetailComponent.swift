@@ -71,7 +71,7 @@ private func bodyNavigationLink(for info: OnlineURLInfo) -> some View {
                     }
                 },
                 label: {
-                    Text(isHeavyBody ? "Heavy Response Body (⚠️~\(bodySizeKB) KB ⚠️)" : "Response Body (~\(bodySizeKB) KB))")
+                    Text(isHeavyBody ? "Heavy Response Body (~\(bodySizeKB) KB)" : "Response Body (~\(bodySizeKB) KB))")
                 }
             )
         }
