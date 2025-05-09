@@ -266,7 +266,7 @@ Checks include:
   - `unsafe-eval`
   - `unsafe-inline` 
 
-- Only `script-src` and `default-src` values are currently analyzed and penalized,  
+- Only `script-src` and `default-src` directives' values are currently analyzed and penalized,  
 but all directives are parsed to detect inconsistencies or suspicious entries.  
 This ensures future directives aren’t silently ignored, even if they’re not yet scored.
 - Compares CSP nonces with actual inline script nonces (mismatch is flagged)
@@ -286,7 +286,7 @@ This ensures future directives aren’t silently ignored, even if they’re not 
 - 🟥 **Red = Unsafe**  
   Poor security, risky behavior, or suspicious patterns.  
   Doesn’t always mean scam — but if you don’t know the site, don’t waste your time.  
-  **They didn’t even try to protect you, or they rely on the browser to cover for them.**
+  **The server didn’t even try to protect users — or it relies on the browser to cover for its weaknesses.**
 
 - 🟧 **Orange = Suspicious**  
   Mixed signals: some good, some weak.  
@@ -301,43 +301,91 @@ This ensures future directives aren’t silently ignored, even if they’re not 
 
 ### Advanced users can view detailed breakdowns:
 
-- URL Components  
-- All the security findings / logs  
+- URL components  
+- All security findings and logs  
 - Full HTTP headers  
 - CSP policy  
 - Cookies  
 - Certificate info  
-- HTML body (max 1.2 MB)  
-- Extracted JS (up to 3072 bytes per script)
+- HTML body (display cap: 1.2 MB)  
+- Extracted inline JavaScript (display cap: 3072 bytes per script)
 
 ## 3. Scoring System
 
-Every URL starts with a baseline score of **100**.
-Penalties reduce this score based on detected signals:
+Every **redirect chain** is evaluated as a whole, with a base score of **100**.
 
-Examples:
-- Scam word in subdomain
-- Watchlist brand in domain
-- High-entropy obfuscated path
-- Dangerous JS in body
-- Fresh DV certificate
-- Insecure or tracking cookie
+The final rating reflects both individual issues and **patterns across the chain**.
+
+### Examples of penalized signals:
+- Scam word in subdomain  
+- Watchlist brand in domain  
+- High-entropy or obfuscated path  
+- Dangerous JavaScript in body  
+- Fresh DV certificate  
+- Insecure or tracking cookies  
 - Misconfigured headers
 
-Scores vary based on where and how the signals are found:
-- `applepie.com` is weighted differently than `secure-apple.com`
+The impact of each signal depends on **where** and **how** it appears:
 
-The app uses bit flags to track signal types across redirect chains.  
-Combos are elevated:
-- Scam subdomain + brand domain → critical flag
-- Fresh DV cert + weak headers + malformed HTML → dangerous
+- `applepie.com` is treated differently than `secure-apple.com`  
+- A cookie on a `200 OK` is not the same if set during a redirect
+
+### Bit Flags & Scoring Logic
+
+LegitURL uses **bit flags** to track signal types across the entire redirect chain.  
+When certain combinations are detected, the score is **aggressively downgraded**, even if each signal alone wouldn’t be critical.
+
+#### Examples of elevated-risk combinations:
+- Scam keyword in subdomain + known brand in domain → **Critical**
+- Fresh DV certificate + weak headers + malformed HTML → **Dangerous**
+- URL 1: [ScamWord]  
+- URL 2: [Brand + DV Cert]  
+		→ Result: [Scam + Brand + DV] → CRITICAL
 
 ## 4. Core Detection & Heuristics
 
-Dependencies:
+### Dependencies
 
-- [ASN1Decoder](https://github.com/filom/ASN1Decoder)
-  - Used to decode and parse the TLS certificates 
-- [PunycodeSwift](https://github.com/gumob/PunycodeSwift)
-  - USed for converting internationalized domain name (IDNs) to their ASCII representation.
+- [ASN1Decoder](https://github.com/filom/ASN1Decoder)  
+  Used to decode and parse TLS certificate structures (X.509), including CN, SANs, issuer, validity, and extensions.
+
+- [PunycodeSwift](https://github.com/gumob/PunycodeSwift)  
+  Used to convert Internationalized Domain Names (IDNs) to their ASCII-compatible encoding (ACE) for uniform comparison.
+
+---
+
+### Heuristic System
+
+LegitURL does not rely on blacklists, allowlists, or pre-trained models.  
+It uses a strict set of **deterministic heuristics** to detect scam patterns, weak security posture, and suspicious behaviors.
+
+Signals are grouped and scored across five main areas:
+
+1. **URL structure** (domain, subdomain, path, query, fragment)
+2. **TLS certificate** (CN/SANs, CA chain, validity)
+3. **HTTP headers** (CSP, HSTS, leak-prone headers)
+4. **Cookies** (security attributes, tracking potential)
+5. **HTML & JS body** (structure, script density, suspicious JS usage)
+
+Each signal is converted into a penalty and sometimes a bit flag.  
+Flags are accumulated per-URL and across the redirect chain to evaluate both local and global risks.
+
+Some signals are **contextual** — meaning their impact depends on where and how they appear:
+
+- A tracking cookie on a `3xx` response is penalized more than one on a `200`
+- A scammy-looking subdomain is scored more harshly if the domain matches a known brand
+- Some signals are marked as **INFO**, meaning they are potentially relevant but not inherently bad
+
+#### Examples of INFO-only signals:
+- Certificate is DV / OV / EV (informative, not penalized)
+- Internal redirect to a different subdomain
+- Small cookies (under 10 bytes) with low entropy
+
+These INFO signals may indicate patterns that deserve attention or correlation —  
+but they do not directly reduce the score unless part of a flagged combination.
+### These signals are hidden by default in the warning view, so only true **penalized** signals are shown unless the user expands them.
+---
+
+
+
 

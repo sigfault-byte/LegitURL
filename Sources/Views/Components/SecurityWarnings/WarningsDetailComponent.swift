@@ -3,7 +3,7 @@ import SwiftUI
 struct WarningsDetailComponent: View {
     @ObservedObject var viewModel: WarningsComponentModel
     @State private var expandedWarningIDs: Set<UUID> = []
-    @State private var showInfoWarnings: Bool = true
+    @State private var showInfoWarnings: Bool = false
     
     var onDismissAndNavigate: ((String) -> Void)?
 
