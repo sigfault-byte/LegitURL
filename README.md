@@ -1,181 +1,314 @@
-## LegitURL
-> A privacy-focused iOS app to assess URL legitimacy through strict heuristics and clear analysis
+## LegitURL  
+> Like a **nutrition label for links** — LegitURL shows how secure and trustworthy a website really is, based on technical behavior, not reputation.  
+> Because trust should be earned — not assumed.
 
-> If you want users to trust you, you need to demonstrate a commitment to security and quality in your web development practices.
+LegitURL is a privacy-focused iOS app that helps both non-technical and technical users assess the **legitimacy of an unknown web link**.
 
-LegitURL is an iOS app designed to analyze URLs and help users — both non-technical and technical — assess the legitimacy of a web link.
+It uses strict, transparent heuristics to compute a **Legitimacy Score**, based solely on how the site behaves:  
+- Is the certificate valid?  
+- Are the security headers correct?  
+- Are there shady redirects, cookies, or inline scripts?
 
-Its goal is to apply strict heuristics to compute a *Legitimacy Score* based on the information and patterns it can detect, by blindly analysing various signals.
+The app analyzes these signals **blindly**, meaning it doesn’t care if the domain is famous or obscure.  
+It only cares if the site **demonstrates a commitment to security and quality in its web development practices** —  
+or if the URL itself shows signs of deception, like **lookalike domains** or **scam patterns**.
 
 ## 1. Who is LegitURL for?
 
-The app’s primary audience is non-technical users. Its main purpose is to help them quickly determine whether a link is suspicious.
+Most people can’t tell if a link is safe — especially when it’s shortened, disguised, or coming from an unknown source.  
+Browsers rarely warn you unless a page is *blatantly* malicious.
 
-The original idea behind the app was simply to follow a link to its final destination and reveal it, showing users exactly where the link would take them.
+**LegitURL gives you a second opinion before you click.**
 
-However, during development, it became clear that achieving this properly required deeper technical analysis. As a result, LegitURL now also offers features that technical users may appreciate: it clearly displays URL components, HTTP headers, TLS certificates, cookies, and extracted scripts from the HTML body after performing a single, minimal HTTP request to the server, without exposing any user-identifying information.
+Its primary audience is non-technical users who want to know:  
+> *"Can I trust this link I just found in a message, an ad, or an email?"*
+
+The app checks both:
+- The **structure of the URL** (to detect scam tricks like `secure-paypal-login.com`)
+- The **behavior of the website** (headers, cookies, redirects, TLS certificates, and more)
+
+Originally, the goal was simple: follow a link and reveal its final destination.  
+But as the project evolved, it became clear that proper analysis required deeper inspection.
+
+As a result, LegitURL now also includes features that technical users might appreciate:  
+- Full URL decomposition  
+- HTTP header inspection  
+- TLS certificate analysis  
+- Cookie behavior  
+- Content Security Policy (CSP) evaluation  
+- Inline script extraction from the HTML body (after a single, minimal GET request)
+
+All done **without exposing any user-identifying information**.
 
 ## 2. How Does It Work
 
-Users paste a link, press a button, and receive a safety score assessment, displayed using three possible colors: green, orange, or red.
+Users can paste, type, or scan a QR code to input a URL.  
+With a single tap, they receive a **Legitimacy Score**, displayed as:  
+🟩 Green, 🟧 Orange, or 🟥 Red.
 
-The app analyzes a URL in two phases:
+The app analyzes each URL in **two phases**:
 
-1. It first checks the URL components offline.
-2. Then, it performs a minimal HTTP GET request to the core URL (without query parameters) to inspect the response headers, TLS certificate, cookies, and HTML body.
+1. **Offline inspection**  
+   LegitURL dissects the full URL structure — including domain, subdomains, path, query parameters, and fragments.  
+   It looks for scam patterns, encoded traps, brand impersonation, suspicious gibberish, and more.
 
-Additionally, users can populate their own watchlists of domains, brands, or keywords they wish to monitor.
+2. **Online behavior analysis**  
+   The app then performs a **minimal HTTP GET request**, stripped of query parameters and fragments, to the *core* URL.  
+   It captures and inspects:
+   - Response headers  
+   - TLS certificate  
+   - Cookies
+   - HTML body (fully analyzed, first 1.2MB shown)  
+   - Inline scripts (fully parsed, first 3072 bytes per script shown)
 
-The app also includes a built-in glossary of various web and security-related terms to help users better understand the analysis results.
+###  Redirect-aware, but not redirect-blind
 
-## 2.1 Input
+If the link triggers redirects, **each destination is looped back into analysis** — just like a new URL.  
+This allows LegitURL to detect:
+- Tracking redirects
+- Scam chains
+- Downgrades in security
+- Silent rewrites (even when no `Location` header is sent)
 
-Only secure (https) links are analyzed, in accordance with Apple’s URLSession guidelines. If no scheme is specified, `http://` is automatically prefixed.
+Every step is inspected independently — no assumptions, no shortcuts.
 
-Non-secure (http) links are considered unsafe by default and are flagged without further analysis.
+---
+
+Users can also:
+
+- Create custom watchlists (brands, keywords, domains) to monitor
+- Explore a built-in glossary of web and security terms to better understand the findings
+
+## 2.1 Valid Input
+
+Only URLs using the **HTTP protocol over TLS (`https://`)** are analyzed — in line with Apple’s `URLSession` requirements.  
+This means links using other protocols such as `ftp://`, `ssh://`, or `file://` are **not supported**.
+
+If no scheme is specified, `https://` is automatically assumed.  
+Non-secure (`http://`) links are considered unsafe by default and are **flagged immediately**, without performing any network request.
 
 ## 2.2 URL Components Analysis
 
-The URL is first broken down using Apple’s `URLComponents` and Mozilla’s Public Suffix List (PSL) to correctly identify the domain, subdomains, and top-level domain (TLD).
+LegitURL first inspects the structure of the link **before contacting any server**.  
+It breaks the URL into parts — domain, subdomains, path, query parameters, and fragments — and checks for signs of scams, impersonation, or tracking.
 
-Checks include:
-- Underscores (`_`) in subdomains are removed.
+### What is checked:
+- **Brand impersonation** — like `secure-paypal-login.com`
+- **Lookalike tricks** — mixed character sets (e.g., Cyrillic + Latin), or similar spelling
+- **Scam keywords** — known phishing words or suspicious combinations
+- **Encoded tricks** — hidden emails, UUIDs, or links inside query strings
+- **Redirect patterns** — URLs hiding other URLs inside them
 
-- Hyphens (`-`) in domains or subdomains are used to split parts for deeper analysis.
+Every part of the URL — domain, path, query, and even fragment — is analyzed with appropriate weight:
+- Domains and subdomains are the **most important**
+- Path and fragment are scanned for context and intent
+- Query values are decoded recursively using a custom system called **Lamai**
 
-- The domain is converted to IDNA (Internationalized Domain Name in Applications).
+---
 
-- Brand impersonation attempts are detected using both default and user-provided brand lists.
+### Technical details:
 
-- Script composition is analyzed:
-  - Mixed Latin, Cyrillic, or Greek is flagged as suspicious.
-  - Entire non-ASCII domains are checked against TLD consistency.
-- Scam words, phishing keywords, and brand lookalikes are detected using:
+- Domains are split using Apple’s `URLComponents` and the Mozilla PSL (Public Suffix List)
+- IDNA (punycode) normalization is applied
+- Hyphens and underscores might be split for tokenization
+- Mixed-script detection flags suspicious combinations (e.g., Cyrillic+Latin)
+- Brand lookalikes or gibberish detected using:
   - Levenshtein distance
   - 2-gram similarity
-  - The iOS dictionary (with entropy fallback)
+  - iOS dictionary (to detect real words)
+  - Entropy fallback for gibberish detection 
+- Path, Query and fragment values are parsed, decoded (Base64, URL-encoded, etc.), and inspected for:
+  - Emails, IPs, UUIDs, nested URLs
+  - Scam terms or gibberish
 
-The path is split on `/` and analyzed using the same logic.
+Decoded URLs are **re-analyzed recursively**, applying the same strict logic as the original.
 
-Findings in query and fragment components are treated as lower-signal than those in domains or subdomains.
-
-If the query and fragment are well-formed (i.e., no unusual `?#` or `#?` patterns):
-- They are parsed into key-value arrays.
-- If the fragment resembles a query string, the same logic is applied.
-- Otherwise, the fragment is analyzed like a path, with additional checks:
-  - UUIDs
-  - Nested URLs
-  - Emails
-  - Redirect patterns
-  - Suspicious JavaScript markers
-
-Query keys and values are sent into a custom recursive decoder called **Lamai**, which attempts Base64, Unicode, URL encoding, and percent decoding.
-
-Lamai evaluates each decoding branch up to depth 5 and analyzes leaf nodes for:
-- Email addresses
-- IPs
-- URLs
-- UUIDs
-- Scam terms
-- Entropy fallback if no result
-
-Discovered URLs (from decoding or raw content) are recursively analyzed.
+---
 
 ## 2.3 Response Analysis
 
-The app performs a GET request to the core URL. Timeout is set to 10 seconds.
+After inspecting the structure of the URL, LegitURL sends a **single, secure request** to see how the website behaves.
 
-It does not follow redirects, but captures:
-- Headers
-- HTML body
-- TLS certificate
+It checks:
+- What kind of response the site gives
+- Whether it tries to redirect you
+- If its certificate and headers follow modern security practices
+- And whether anything shady shows up in the page's code or cookies
 
-Redirect status codes (3xx) are inspected to see whether:
-- The domain changes (external redirect)
-- The path changes (internal redirect)
+The request is **strictly controlled**:
+- No personal data is sent
+- No session is stored
+- No cookies, no autofill, no fingerprinting
+- Just a clean snapshot of the server’s first impression
+
+---
+
+### Technical details
+
+The GET request is made using a controlled configuration that avoids leaking any user data.  
+LegitURL simulates a fresh, anonymous visit — **no cookies, no storage, no session reuse.**
+
+<details>
+<summary>Click to view request code (Swift)</summary>
+
+```swift
+// Create a URLRequest for the URL.
+var request = URLRequest(url: url)
+request.httpMethod = "GET" // Specify the HTTP method.
+request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", forHTTPHeaderField: "User-Agent")
+request.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
+request.setValue("gzip, deflate, br", forHTTPHeaderField: "Accept-Encoding")
+request.timeoutInterval = 10
+
+// Configure a dedicated URLSession for this request.
+let config = URLSessionConfiguration.default
+config.requestCachePolicy = .reloadIgnoringLocalCacheData
+config.httpCookieStorage = nil
+config.urlCache = nil
+config.httpShouldSetCookies = false
+config.httpShouldUsePipelining = false
+config.httpMaximumConnectionsPerHost = 1
+config.timeoutIntervalForRequest = 10
+config.timeoutIntervalForResource = 15
+config.httpCookieAcceptPolicy = .never
+```
+</details>
+
+- The request is:
+  - Sent over HTTPS only  
+  - Time-limited to **10 seconds**
+
+- The response is parsed but **not followed**:
+  - Redirects (`3xx`) are captured, not followed blindly
+  - External vs. internal redirects are identified
+  - Missing `Location` headers are flagged as **silent rewrites**
+
+Captured content includes:
+
+- **Headers** — inspected for security misconfigurations
+- **TLS Certificate** — checked for:
+  - CN / SAN matching
+  - Expiration
+  - Issuer / trustworthiness
+- **HTML body** — fully analyzed, with a 1.2 MB display cap
+- **Inline scripts** — extracted and scanned (first 3072 bytes per inline script shown)
+- **Cookies** — fully parsed and scored by privacy and lifespan
+
+If a redirect is detected, the destination is **looped back** into the same full analysis pipeline.
 
 ### TLS Certificate Analysis
 
 Checks include:
+
 - Domain listed in SAN
 - Certificate validity (not expired)
-- Chain validity
+- Valid CA chain
 - Self-signed detection
 - Certificate freshness (too short or too long)
-- Flooded SAN list detection (especially for DV certs)
+- Flooded SAN list detection (common in DV cert abuse)
+
+---
 
 ### Cookie Analysis
 
-If response ≠ 200, cookies are considered suspicious.
+- Cookies set on non-`200` responses are considered suspicious  
+- Attributes analyzed:
+  - Value size and entropy
+  - `SameSite`, `HttpOnly`, `Secure` presence
 
-Cookie attributes analyzed:
-- Value size
-- Value entropy
-- `SameSite`, `HttpOnly`, `Secure`
-- Exportability / reusability across chains
+  
+  > Note: LegitURL does **not assume `SameSite=Lax`** when the attribute is missing.  
+  While modern browsers may treat missing SameSite as `Lax` by default,  
+  **LegitURL treats absence as a missing protection** for two reasons:
+  - iOS does not reliably expose whether the header was explicitly set
+  - Security should be **opt-in**, not assumed from browser defaults
+  - Exportability / reusability across domains
 
-Cookies are flagged as:
-- Tracking
-- Suspicious
-- Dangerous
+- Cookies are flagged as:
+  - **Tracking**
+  - **Suspicious**
+  - **Dangerous**
 
-Previously seen cookies across redirects are not penalized again but tracked. Cookies set on 3xx responses are penalized more heavily.
+Cookies previously seen in the redirect chain are not penalized again, but tracked.  
+Cookies set during `3xx` responses are penalized **more heavily**.
+
+---
 
 ### HTML Body Analysis
 
-Triggered only if response is 200 and content-type is `text/html`.
+Triggered only if response is `200` and content-type is `text/html`.
 
 Checks include:
+
 - Valid HTML structure (`<html>`, `<head>`, `<body>`)
 - Malformed `<script>` tags
-- Ratio of script size to HTML content
-- Density of script content (inline and external)
-- Suspicious JS patterns:
-  - Setter functions: `eval()`, `atob()`, etc.
-  - Accessors: `document.cookie`, `sessionStorage`, `WebAssembly`
-  - Suspicious pairings (e.g., `getElementById()` near `.submit()`)
+- Script-to-content ratio
+- Density of inline and external script content ( nromalized to script per 1kB)
+- Suspicious JavaScript patterns:
+  - Setters like `eval()`, `atob()`
+  - Accessors like `document.cookie`, `sessionStorage`, `WebAssembly`
+  - Risky behavior pairings (e.g., `getElementById()` near `.submit()`)
 
-Nonce values and external script URLs are stored for CSP comparison.
-SRI and inline hash validation not yet implemented.
+Nonce values and external script URLs are stored for **CSP comparison**.  
+Subresource Integrity (SRI) detection is supported (hashes are shown), but not yet validated due to the performance cost of asynchronous verification.  
+Script SHA values are extracted and displayed but not cryptographically verified yet.
+
+---
 
 ### Header Analysis
 
 Checks include:
 
-- Presence of `Content-Security-Policy` (CSP)
-  - Missing CSP is heavily penalized
-  - Requires at least one of: `script-src`, `default-src`, or `require-trusted-types-for`
-  - Penalizes `unsafe-eval` always, `unsafe-inline` conditionally
-  - Only `script-src` and `default-src` values currently penalized
-  - Compares CSP nonce with detected inline script nonces (mismatch flagged, no penalty yet)
-  - Flags unused CSP URLs or external script mismatches
+#### Content-Security-Policy (CSP)
+- Missing CSP is heavily penalized
+- Requires one of: `script-src`, `default-src`, or `require-trusted-types-for`
+- Penalizes:
+  - `unsafe-eval`
+  - `unsafe-inline` 
 
-- HSTS (`Strict-Transport-Security`) presence and duration
-- Content-Type declaration
+- Only `script-src` and `default-src` values are currently analyzed and penalized,  
+but all directives are parsed to detect inconsistencies or suspicious entries.  
+This ensures future directives aren’t silently ignored, even if they’re not yet scored.
+- Compares CSP nonces with actual inline script nonces (mismatch is flagged)
+- Flags unused or unrelated `script-src` entries
+
+#### Other Security Headers
+- `Strict-Transport-Security` (HSTS) presence and duration
+- `Content-Type` declaration
 - `X-Content-Type-Options: nosniff`
-- Referrer policy
-- Header leakage (e.g., `Server`, `X-Powered-By`)
+- `Referrer-Policy`
+- Header leakage via `Server`, `X-Powered-By`, and similar fields
 
 ## 2.4 Output
 
-The app outputs a safety rating:
+### The app outputs a safety rating:
 
-- 🟥 Red = Dangerous
+- 🟥 **Red = Unsafe**  
+  Poor security, risky behavior, or suspicious patterns.  
+  Doesn’t always mean scam — but if you don’t know the site, don’t waste your time.  
+  **They didn’t even try to protect you, or they rely on the browser to cover for them.**
 
-- 🟧 Orange = Suspicious
+- 🟧 **Orange = Suspicious**  
+  Mixed signals: some good, some weak.  
+  Often caused by bad hygiene, lazy setup, or partial protection.  
+  **Trusted brands may land here — they lean on reputation instead of doing it right.**
 
-- 🟩 Green = Safe
+- 🟩 **Green = Safe**  
+  Strong security signals: clean redirects, proper headers, trusted certificates.  
+  **Not bulletproof — but a clear sign the site is doing things right.**
 
+---
 
-Advanced users can view detailed breakdowns:
+### Advanced users can view detailed breakdowns:
 
-- URL Components
-- Full HTTP headers
-- CSP policy
-- Cookies 
-- Certificate info
-- HTML body (max 1.2MB)
-- Extracted JS (up to 3072 bytes per script) 
+- URL Components  
+- All the security findings / logs  
+- Full HTTP headers  
+- CSP policy  
+- Cookies  
+- Certificate info  
+- HTML body (max 1.2 MB)  
+- Extracted JS (up to 3072 bytes per script)
 
 ## 3. Scoring System
 

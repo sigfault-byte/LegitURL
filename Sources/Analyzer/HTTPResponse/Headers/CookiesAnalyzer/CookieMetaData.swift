@@ -137,12 +137,14 @@ extension CookieFlagBits {
         // Access Control (7–9)
         if contains(.samesiteLax)           { reasons.append("SameSite=Lax, correclty set") }
         if contains(.sameSiteNone)          { reasons.append("SameSite=None — could be unset. Browsers default to Lax, but it should be declare explicitly.") }
-        if contains(.sameSiteNone) && contains(.session) {
-            reasons.append("Suspicious: Session cookie with SameSite=None")
-        }
-        if contains(.sameSiteNone) && !contains(.secure) {
-            reasons.append("Invalid: SameSite=None used without Secure (modern browsers should reject this)")
-        }
+        //First need to find how to differentiate nil fron a real none
+        
+//        if contains(.sameSiteNone) && contains(.session) {
+//            reasons.append("Session cookie with SameSite=None")
+//        }
+//        if contains(.sameSiteNone) && !contains(.secure) {
+//            reasons.append("SameSite=None used without Secure (modern browsers should reject this)")
+//        }
 
         // Security Attributes (10–11)
         if contains(.secure) == false       { reasons.append("Secure flag missing (can be sent over HTTP)") }
