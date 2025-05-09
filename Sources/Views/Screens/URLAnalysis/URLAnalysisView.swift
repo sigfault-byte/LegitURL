@@ -52,6 +52,15 @@ struct URLAnalysisView: View {
                         Spacer()
                     }
                 }
+                // Spacer for warning banner if needed
+                if !viewModel.warningsVM.grouped.isEmpty {
+                    Section {
+                        Color.clear
+                            .frame(height: 80)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets())
+                    }
+                }
             }
             .navigationBarHidden(true)
             .listStyle(.insetGrouped)
