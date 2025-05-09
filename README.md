@@ -216,8 +216,7 @@ Checks include:
   - Value size and entropy
   - `SameSite`, `HttpOnly`, `Secure` presence
 
-  
-  > Note: LegitURL does **not assume `SameSite=Lax`** when the attribute is missing.  
+  > LegitURL does **not assume `SameSite=Lax`** when the attribute is missing.  
   While modern browsers may treat missing SameSite as `Lax` by default,  
   **LegitURL treats absence as a missing protection** for two reasons:
   - iOS does not reliably expose whether the header was explicitly set
@@ -291,7 +290,8 @@ This ensures future directives aren’t silently ignored, even if they’re not 
 - 🟧 **Orange = Suspicious**  
   Mixed signals: some good, some weak.  
   Often caused by bad hygiene, lazy setup, or partial protection.  
-  **Trusted brands may land here — they lean on reputation instead of doing it right.**
+  **Trusted brands may land here — they might lean on reputation instead of doing it right.  
+  This doesn't necessarily mean the site is malicious, but it indicates potential security weaknesses or privacy-unfriendly practices you should be aware of.**
 
 - 🟩 **Green = Safe**  
   Strong security signals: clean redirects, proper headers, trusted certificates.  
@@ -386,6 +386,368 @@ but they do not directly reduce the score unless part of a flagged combination.
 ### These signals are hidden by default in the warning view, so only true **penalized** signals are shown unless the user expands them.
 ---
 
+## 5. Core Detection Features
 
+LegitURL relies primarily on **Swift’s Foundation library**, with only two external dependencies:
+
+- [PunycodeSwift](https://github.com/gumob/PunycodeSwift) — for converting internationalized domain names (IDNs) to ASCII
+- [ASN1Decoder](https://github.com/filom/ASN1Decoder) — for decoding and parsing X.509 TLS certificates
+
+---
+
+### Internal Reference Lists
+
+LegitURL includes several internal datasets to support heuristic detection:
+
+- **Mozilla Public Suffix List (PSL)**  
+  Stored in a local SQLite database, with two columns:
+  - Raw TLD
+  - Punycode TLD (for IDN matching)
+
+- **Known Brands & Trusted Domains**  
+  A small but growing list of brand names and their legitimate websites.  
+  Used to detect impersonation attempts or domain mismatches.  
+  Fully user-expandable from within the app.
+
+- **Scam & Phishing Keywords**  
+  A curated list of suspicious words and phrases often used in scams.  
+  Includes generic terms like `account`, `secure-login`, `verify`, etc.  
+  Fully user-expandable from within the app.
+
+- **Suspicious JavaScript Functions & Accessors**  
+  Used in body/script analysis to flag potentially risky behavior:
+  - `eval()`, `Function()`, `setTimeout(..., "code")`
+  - `atob()`, `btoa()`
+  - `fetch()`, `navigator.sendBeacon()`
+  - `document.write`, `document.cookie`, `sessionStorage`, etc.
+
+---
+
+### Matching & Scanning
+
+- Most exact matches use `.contains` from Swift Foundation.
+- For byte-level inspection, LegitURL uses **custom functions** that scan forwards from a byte offset, with logic to ignore tabs, spaces, and `\n` characters as needed.
+- This is used in body parsing and JS inspection to locate and extract relevant tag content quickly.
+
+---
+
+### Typo Detection
+
+All typo detection uses:
+- **Levenshtein distance = 1**, backed by  
+- **2-gram similarity fallback** (triggered when Levenshtein fails)
+
+---
+
+### Lamai — Recursive Decoder
+
+Lamai is LegitURL’s custom recursive decoder. It attempts to make sense of encoded values found in:
+- Query strings  
+- Fragments  
+- Cookie values  
+- Redirect URLs
+
+#### How it works:
+- Tries base64 (with automatic padding if `%4 ≠ 0`)
+- Attempts URL, percent, and Unicode decoding
+- Follows each decoding path as far as it can go (max depth)
+- Each decoding branch checks for:
+  - Scam keywords
+  - Brand impersonation
+  - Nested values (UUID, IPs, emails, JSON blobs)
+  - Structural patterns
+- **Entropy is a last resort**, only evaluated when decoding fails.  
+  It's powerful but risky — high entropy doesn’t guarantee encoding, and early checks can block meaningful paths.
+
+---
+
+### HTML Body Analysis
+
+- Fast byte scanning detects `<html>`, `<head>`, `<body>`, and `<script>` tags
+- Checks for:
+  - Structural validity (proper opening/closing tags)
+  - Script tag localisation classification (inline vs. external)
+  - Suspicious JS patterns
+  - HTML to JS ratio
+- Performance:
+  - `google.com` (~180KB): ~5ms  
+  - `steampowered.com` (~780KB): ~20ms
+
+---
+
+### Cookie Analysis
+
+- Uses a **32-bit mask** to represent cookie traits:
+  - `HttpOnly` missing
+  - `Secure` missing
+  - Various value size
+  - High entropy
+  - Expiracy
+  - SameSite policy
+- Combines flags into higher-level heuristics:
+  - Example: a 100-byte cookie with 365-day expiry and no `HttpOnly` → flagged as **tracking or malicious**
+  - `SameSite=None` + no `Secure` or `HttpOnly` → flagged as **potentially dangerous**
+- The system tries to balance **strictness with fairness**, acknowledging some cookies are marketing-related while others may be riskier.
+
+  > LegitURL does **not assume `SameSite=Lax`** when the attribute is missing.  
+  While modern browsers may treat missing SameSite as `Lax` by default
+
+---
+
+### TLS Certificate Analysis
+
+- After decoding the X.509 certificate, LegitURL checks:
+  - Chain validity (alongside URLSession’s built-in checks)
+  - Expiration and issue date (detects **fresh certs** or overly long lifespans)
+  - CA type: DV / OV / EV via OID policy extension
+  - SAN (Subject Alternative Name) entries — wildcard, scope, and proper domain inclusion
+
+**Note:** While it is possible to bypass URLSession to do full manual cert validation, this would likely lead to App Store rejection. LegitURL respects system level validation but performs its own analysis on top for **scoring and signal extraction**.
+
+---
+
+### HTTP Headers Analysis
+
+LegitURL analyzes HTTP headers only on **200 OK responses**, ensuring the content being evaluated is directly served — not redirected.
+
+#### Content-Security-Policy (CSP)
+
+LegitURL focuses on detecting broken or misleading CSP configurations:
+
+- Only `script-src` and `default-src` are penalized (for now)
+- Using `nonce-` or `shaXXX-` with `'unsafe-inline'` → **nullifies the nonce**
+- Combining `'self'` with `*` or `https:` → flagged as contradictory
+- Compares actual inline script nonce values with the CSP nonce
+- External script URLs are checked against what's allowed in the CSP
+- Flags excessive or unused domains in `script-src` as suspicious
+
+#### Other Security Headers
+
+These headers are also inspected:
+
+- `Strict-Transport-Security` (HSTS) — presence and max-age
+- `X-Content-Type-Options` — should be `nosniff`
+- `Referrer-Policy` — expected to be `strict-origin` or stronger
+- `Server`, `X-Powered-By` — flagged if leaking unnecessary metadata
+
+> Even trusted domains often misconfigure these. LegitURL applies consistent penalties to encourage real security — not just appearances.
+
+## 6. Example Use Case
+
+### Example 1: Brand Impersonation with Suspicious TLD
+
+If the user has correctly added `bankoftrust.com` to their **watchlist**, the app will:
+
+- Treat `bankoftrust.com` as a **trusted root domain**
+- Skip domain-level penalty checks for it
+- Still flag any **use of “bankoftrust”** in unrelated subdomains or domains
+
+---
+
+**Pasted URL: https://secure-login.trustedbank.com.userauth-check.info/session?token=xyz**
+
+**URL Breakdown:**
+
+- **Domain:** `userauth-check`
+- **TLD:** `.info`
+- **Subdomain:** `secure-login.trustedbank.com`
+- **Path:** `/session`
+- **Query:** `token=xyz`
+
+---
+
+### Offline Analysis:
+
+| Component      | Observation | Signal Type | Action |
+|----------------|-------------|-------------|--------|
+| **Domain**     | `userauth` not in dictionary | Weak signal | No penalty |
+| **TLD**        | `.info` has poor reputation | Moderate signal | -20 penalty |
+| **Subdomain**  | Contains scam/phishing terms + brand impersonation (`trustedbank.com`) | Critical combo | Heavy penalty |
+| **Path**       | `session` resembles API endpoint (expects value) | Contextual weak signal | -10 penalty |
+| **Query**      | Passed to Lamai, no relevant signals found | — | No penalty |
+
+---
+
+### Conclusion:
+
+- Subdomain + `.info` TLD + API-style path forms a **high-risk pattern**
+- Offline logic recognizes this combo and applies a **critical penalty**
+- Total score drops to **0/100**
+- **Online check is skipped** — it's already flagged as too risky
+
+---
+
+### Verdict:
+
+> This URL impersonates a known brand using a deceptive subdomain, a suspicious TLD, and a query path that mimics login flow.  
+> **Final Score: 0/100 — flagged as DANGEROUS**
+
+### Example 2: Redirect Chain with Tracking Cookies and Suspicious Scripts
+
+Let’s say a user encounters a shortened link in a promoted X.com post:  
+**Pasted URL: bit.ly/mihoyanagi**
+
+---
+
+**Initial URL Breakdown:**
+
+- **Domain:** `bit`
+- **TLD:** `.ly`
+- **Path:** `/mihoyanagi`
+
+---
+
+### Offline Analysis:
+
+| Component | Observation | Signal Type | Action |
+|-----------|-------------|-------------|--------|
+| **Path**  | Not recognized by dictionary | None | No penalty |  
+| **Redirect** | 301 → domain changes | Weak signal | -10 |
+
+**→ Score remains 100**
+
+---
+
+### Online Analysis Begins
+
+**Request sent with real iOS User-Agent and clean headers**
+
+---
+
+#### Redirect 1: `https://jolyvip.com/mihoyanagi`
+
+| Component | Observation | Signal Type | Action |
+|-----------|-------------|-------------|--------|
+| **Path**  | Not recognized by dictionary | None | No penalty |
+| **Redirect**     | 302 → domain changes again | Weak signal | -10 | 
+| **TLS**          | 4 days old | Moderate signal | -10 |
+| **Cookie 1**     | 10 bytes, no flags, 31-day lifespan, `SameSite=Lax` | Weak | - |
+| **Cookie 2**     | 213 bytes, no flags, `SameSite=Lax` | Moderate | -15 |
+
+---
+
+#### Final URL: `https://coingrok.io`
+
+| Component        | Observation | Signal Type | Action |
+|------------------|-------------|-------------|--------|
+| **HTML Body**       | 74% inline JavaScript, script density 1.282 | Suspicious | -25 |
+| **CSP**             | Missing | -50 |
+| **X-Powered-By**    | `Next.js` backend leaked | Weak signal | -5 |
+| **Server Header**   | `cloudflare` | Informational | No penalty |
+
+---
+
+### Verdict:
+
+> This link leads through a **redirect chain with cookie abuse, shady TLDs, tracking attempts, and excessive inline scripts**.  
+> Final domain leaks stack metadata and hosts CSP violations.  
+> **Final Score: 0/100 — flagged as DANGEROUS**
+
+### Example 3: Cloaked Scam Infrastructure via Shared TLS Certificate
+
+Let’s consider the following link:  
+**https://www.man-entreprise.com/vrp/ayxxxxxxx/yyyy**  
+*(Query parameters have been altered to avoid exposing personal data.)*
+
+---
+
+**Initial URL Breakdown:**
+
+- **Domain:** `man-entreprise`
+- **TLD:** `.com`
+- **Path:** `/vrp/ayxxxxxxx/yyyy`
+
+---
+
+### Offline Analysis:
+
+| Component | Observation | Signal Type | Action |
+|-----------|-------------|-------------|--------|
+| **Domain** | Clean | — | No penalty |
+| **Path**   | Not recognized, not suspicious | — | No penalty |
+
+**→ Score remains 100**
+
+---
+
+### Online Analysis Begins
+
+**Request sent with real iOS User-Agent and clean headers**
+
+---
+
+#### Redirect 1: `https://ed.manageo.biz/clt-su/SFR/formulaire16_2tps.jsp?...`
+
+| Component       | Observation | Signal Type | Action |
+|-----------------|-------------|-------------|--------|
+| **Redirect**    | 302 to `.biz` domain | Moderate | -10 |
+| **TLD**         | `.biz` — poor reputation | Moderate | -15 |
+| **Query string**| Malformed, some keys empty, odd characters | Suspicious | -15 |
+| **TLS**         | DV cert (Let's Encrypt), ~10 days old | Informational | No penalty yet |
+
+---
+
+#### TLS Certificate (from `man-entreprise.com`)
+
+| Attribute         | Value |
+|------------------|-------|
+| **Type**         | DV (Domain Validation) |
+| **Issuer**       | Let's Encrypt |
+| **Age**          | 10 days |
+| **SAN Entries**  | 76 fully-qualified domains, unrelated | 🚨 High-risk |
+| **Wildcard**     | None |
+
+→ 🚨 Strong signal of **cloaking infrastructure via shared certificate**
+
+---
+
+#### Final URL: `https://ed.manageo.biz`
+
+| Component         | Observation | Signal Type | Action |
+|-------------------|-------------|-------------|--------|
+| **Response**      | 200 OK | — | — |
+| **Cookie**        | `JSESSIONID` missing `Secure` flag | Weak | -10 |
+| **Script origin** | Undetectable or malformed | Suspicious | -15 |
+| **Script density**| 1.325 scripts per 1000 bytes | Abnormally high | -15 |
+| **TLS**           | DV cert, Let's Encrypt, 25 unrelated SANs | Infra signal | -30 |
+
+---
+
+### Verdict:
+
+> This link leads to a **suspicious redirect chain** starting from a clean domain that shares a **Let's Encrypt DV certificate** with 76 unrelated sites.  
+> It lands on a `.biz` domain serving **cloaked or obfuscated JavaScript**, with **leaked personal data** and malformed query patterns.  
+> The final destination shares a similarly structured certificate — indicating **shared scam infrastructure** at scale.
+
+**Final Score: 0/100 — flagged as CRITICAL**
+
+### Example 4: Major Brands, Minor Effort
+
+These sites are globally recognized — but when analyzed blindly, as if they were unknown, their setups fall short.
+
+| Site               | Score   | Key Issues |
+|--------------------|---------|------------|
+| `www.google.com`   | 0/100   | CSP is report-only with `unsafe-eval` and `unsafe-inline` (even with a nonce); sets tracking cookies |
+| `m.youtube.com`    | 44/100  | Sets tracking cookies; 92% of HTML is JavaScript; missing `</body>` tag; no `Referrer-Policy` |
+| `facebook.com`     | 6/100   | Sets 3 large, secure cookies; 96% of HTML is JavaScript; uses `unsafe-eval`; cookies are modified by JS despite being inaccessible via `document.cookie` |
+| `amazon.com`       | 15/100  | Uses `document.write()` inline; no CSP at all |
+
+> These aren’t scams — but if you didn’t already trust them, **nothing in their technical behavior would earn your trust.**
+
+###  Example 5: Major Brand good effort, or close.
+
+### Example 5: Major Brands That Try — Or Almost Do
+
+Some high-profile sites make a visible effort to secure users — and it shows.
+
+| Site                                | Score   | Notes |
+|-------------------------------------|---------|-------|
+| `stripe.com`                        | 99/100  | Strong CSP, secure headers, minimal leakage — but one cookie is JS-accessible |
+| 🇫🇷`immatriculation.ants.gouv.fr`🇫🇷    | 96/100  | Excellent headers; heavy page (3MB); CSP allows 5 script sources, but only 1 is used |
+| `apple.com`                         | 60/100  | CSP includes `unsafe-inline` and `unsafe-eval`; weak `Referrer-Policy` |
+
+> Stripe clearly wants to appear trustworthy — and backs it up with real protections.  
+> The French government site is surprisingly solid.  
+> Apple… may have just forgotten about their headers.
 
 
