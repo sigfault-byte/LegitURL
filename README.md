@@ -1,42 +1,53 @@
+> **This is a WIP.**  
+> LegitURL works — and it's strict, by choice.  
+> But a lot is still being added, tuned, or cleaned up.  
+> It’s already useful, but not finished. That’s kind of the fun part.
+
 ## LegitURL  
-> Like a **nutrition label for links** — LegitURL shows how secure and trustworthy a website really is, based on technical behavior, not reputation.  
+> Like a **nutrition label for links**  
+> Scan a URL to see its 🟩 🟧 🟥 Legitimacy based on **technical behavior**, not reputation.  
 > Because trust should be earned — not assumed.
 
-LegitURL is a privacy-focused iOS app that helps both non-technical and technical users assess the **legitimacy of an unknown web link**.
+**LegitURL is a privacy-focused iOS app** that helps you:  
+- **Spot scams** (e.g., `secure-paypal-login.com`)  
+- **Avoid trackers** (shady redirects, invasive cookies)  
+- **Inspect security** (TLS certs, headers, scripts)  
 
-It uses strict, transparent heuristics to compute a **Legitimacy Score**, based solely on how the site behaves:  
-- Is the certificate valid?  
-- Are the security headers correct?  
-- Are there shady redirects, cookies, or inline scripts?
+It uses strict, transparent heuristics to compute a **Legitimacy Score**, based entirely on how the site behaves.
 
-The app analyzes these signals **blindly**, meaning it doesn’t care if the domain is famous or obscure.  
-It only cares if the site **demonstrates a commitment to security and quality in its web development practices** —  
-or if the URL itself shows signs of deception, like **lookalike domains** or **scam patterns**.
+LegitURL analyzes all signals **blindly** — it doesn’t care if the domain is famous or obscure.  
+It only cares whether the site **demonstrates a commitment to security and quality**,  
+or whether the URL shows signs of deception, like **lookalike domains** or **scam indicators**.
 
 ## 1. Who is LegitURL for?
 
-Most people can’t tell if a link is safe — especially when it’s shortened, disguised, or coming from an unknown source.  
+Most people can’t tell if a link is safe — especially when it’s shortened, disguised, or came from an unknown source.  
 Browsers rarely warn you unless a page is *blatantly* malicious.
 
 **LegitURL gives you a second opinion before you click.**
 
-Its primary audience is non-technical users who want to know:  
+Its core audience is anyone who asks:  
 > *"Can I trust this link I just found in a message, an ad, or an email?"*
 
-The app checks both:
-- The **structure of the URL** (to detect scam tricks like `secure-paypal-login.com`)
-- The **behavior of the website** (headers, cookies, redirects, TLS certificates, and more)
+**Ideal for:**  
+- Casual users who want a fast safety check  
+- Privacy-conscious users avoiding trackers  
+- Developers inspecting headers, CSP, and TLS
 
-Originally, the goal was simple: follow a link and reveal its final destination.  
-But as the project evolved, it became clear that proper analysis required deeper inspection.
+LegitURL checks both:  
+- The **structure of the URL** (to catch scams like `secure-paypal-login.com`)  
+- The **behavior of the site** (headers, cookies, redirects, TLS certs, and more)
 
-As a result, LegitURL now also includes features that technical users might appreciate:  
+The original idea was simple: follow a link and show where it leads.  
+But that wasn’t enough — real analysis required deeper inspection.
+
+So the app grew into something more technical, now offering:  
 - Full URL decomposition  
 - HTTP header inspection  
 - TLS certificate analysis  
-- Cookie behavior  
-- Content Security Policy (CSP) evaluation  
-- Inline script extraction from the HTML body (after a single, minimal GET request)
+- Cookie behavior scoring  
+- Content-Security-Policy (CSP) evaluation  
+- Inline script extraction (from a single, minimal GET request)
 
 All done **without exposing any user-identifying information**.
 
@@ -48,91 +59,118 @@ With a single tap, they receive a **Legitimacy Score**, displayed as:
 
 The app analyzes each URL in **two phases**:
 
-1. **Offline inspection**  
-   LegitURL dissects the full URL structure — including domain, subdomains, path, query parameters, and fragments.  
-   It looks for scam patterns, encoded traps, brand impersonation, suspicious gibberish, and more.
+---
 
-2. **Online behavior analysis**  
-   The app then performs a **minimal HTTP GET request**, stripped of query parameters and fragments, to the *core* URL.  
-   It captures and inspects:
-   - Response headers  
-   - TLS certificate  
-   - Cookies
-   - HTML body (fully analyzed, first 1.2MB shown)  
-   - Inline scripts (fully parsed, first 3072 bytes per script shown)
+### 1. Offline Inspection
 
-###  Redirect-aware, but not redirect-blind
+LegitURL dissects the full URL structure — including domain, subdomains, path, query parameters, and fragment.  
+It checks for:
 
-If the link triggers redirects, **each destination is looped back into analysis** — just like a new URL.  
-This allows LegitURL to detect:
-- Tracking redirects
-- Scam chains
-- Downgrades in security
-- Silent rewrites (even when no `Location` header is sent)
-
-Every step is inspected independently — no assumptions, no shortcuts.
+- Scam patterns
+- Encoded traps
+- Brand impersonation
+- Gibberish / non-dictionary terms
+- Suspicious or misleading formatting
 
 ---
 
-Users can also:
+### 2. Online Behavior Analysis
 
-- Create custom watchlists (brands, keywords, domains) to monitor
-- Explore a built-in glossary of web and security terms to better understand the findings
+LegitURL performs a **minimal HTTP GET request** to the *core* URL  
+(query parameters and fragments are stripped first).
+
+It captures and analyzes:
+
+- Response headers  
+- TLS certificate  
+- Cookies  
+- HTML body (fully parsed; display capped at 1.2MB)  
+- Inline scripts (fully parsed; 3072-byte display cap per script)
+
+If the link triggers redirects, **each destination is looped back through the same analysis** — treated like a new URL.  
+This allows LegitURL to detect:
+
+- Tracking redirects  
+- Scam chains  
+- Downgrades in security  
+- Silent server-side rewrites (even when no `Location` header is sent)
+
+→ **No assumptions. No shortcuts. Every step is independently verified.**
+
+---
+
+### Bonus Features
+
+- Create custom **watchlists** for domains, keywords, or brands  
+- Browse a built-in **glossary** to understand headers, TLS concepts, and security terms
 
 ## 2.1 Valid Input
 
 Only URLs using the **HTTP protocol over TLS (`https://`)** are analyzed — in line with Apple’s `URLSession` requirements.  
-This means links using other protocols such as `ftp://`, `ssh://`, or `file://` are **not supported**.
+Links using other protocols such as `ftp://`, `ssh://`, or `file://` are **not supported**.
 
 If no scheme is specified, `https://` is automatically assumed.  
-Non-secure (`http://`) links are considered unsafe by default and are **flagged immediately**, without performing any network request.
+Non-secure (`http://`) links are considered unsafe by default and are **immediately flagged**, with **no network request performed**.
 
 ## 2.2 URL Components Analysis
 
-LegitURL first inspects the structure of the link **before contacting any server**.  
-It breaks the URL into parts — domain, subdomains, path, query parameters, and fragments — and checks for signs of scams, impersonation, or tracking.
+LegitURL inspects the full structure of a URL **before contacting any server**.  
+If a critical signal is found during offline checks, no network request is made at all.
+
+The URL is broken into parts — domain, subdomains, path, query parameters, and fragments — and each is checked for signs of:
+
+- Scam behavior
+- Brand impersonation
+- Obfuscation
+- Tracking infrastructure
+
+---
 
 ### What is checked:
-- **Brand impersonation** — like `secure-paypal-login.com`
-- **Lookalike tricks** — mixed character sets (e.g., Cyrillic + Latin), or similar spelling
-- **Scam keywords** — known phishing words or suspicious combinations
-- **Encoded tricks** — hidden emails, UUIDs, or links inside query strings
-- **Redirect patterns** — URLs hiding other URLs inside them
 
-Every part of the URL — domain, path, query, and even fragment — is analyzed with appropriate weight:
-- Domains and subdomains are the **most important**
-- Path and fragment are scanned for context and intent
-- Query values are decoded recursively using a custom system called **Lamai**
+- **Brand impersonation** — e.g., `secure-paypal-login.com`
+- **Lookalike tricks** — mixed character sets (e.g., Cyrillic + Latin), or visually similar spelling
+- **Scam keywords** — known phishing terms or suspicious word combinations
+- **Encoded tricks** — hidden emails, UUIDs, or URLs inside query strings
+- **Redirect patterns** — embedded or nested URLs passed as parameters
+
+Each part is scored with appropriate weight:
+
+- **Domains and subdomains** carry the most importance
+- **Path and fragment** provide behavioral context
+- **Query values** are decoded recursively using a custom system called **Lamai**
 
 ---
 
 ### Technical details:
 
-- Domains are split using Apple’s `URLComponents` and the Mozilla PSL (Public Suffix List)
-- IDNA (punycode) normalization is applied
-- Hyphens and underscores might be split for tokenization
-- Mixed-script detection flags suspicious combinations (e.g., Cyrillic+Latin)
-- Brand lookalikes or gibberish detected using:
-  - Levenshtein distance
-  - 2-gram similarity
-  - iOS dictionary (to detect real words)
-  - Entropy fallback for gibberish detection 
-- Path, Query and fragment values are parsed, decoded (Base64, URL-encoded, etc.), and inspected for:
-  - Emails, IPs, UUIDs, nested URLs
-  - Scam terms or gibberish
+- Domains are parsed using Apple’s `URLComponents` and the Mozilla Public Suffix List (PSL)
+- IDNA (Punycode) normalization ensures proper handling of internationalized domains
+- Hyphens and underscores are optionally tokenized for deeper analysis
+- Mixed-script detection flags character set combos (e.g., Cyrillic + Latin)
 
-Decoded URLs are **re-analyzed recursively**, applying the same strict logic as the original.
+**Brand spoofing and gibberish detection** uses:
+- Levenshtein distance (typo-based similarity)
+- 2-gram similarity (pattern-based matching)
+- iOS dictionary lookups to identify real words
+- Entropy fallback to catch random or machine-generated strings
 
----
+**Path, query, and fragment values** are:
+- Decoded (Base64, percent-encoded, Unicode, etc.)
+- Inspected for known structures and patterns:
+  - Email addresses, IPs, UUIDs, nested URLs
+  - Scam terms or obfuscated tokens
+
+Decoded values — especially URLs — are **recursively re-analyzed** with the same strict logic as the original input.
 
 ## 2.3 Response Analysis
 
-After inspecting the structure of the URL, LegitURL sends a **single, secure request** to see how the website behaves.
+After inspecting the URL structure, LegitURL sends a **single, secure request** to see how the server behaves.
 
 It checks:
-- What kind of response the site gives
+- What kind of response the site returns
 - Whether it tries to redirect you
-- If its certificate and headers follow modern security practices
+- Whether its certificate and headers follow modern security practices
 - And whether anything shady shows up in the page's code or cookies
 
 The request is **strictly controlled**:
@@ -143,10 +181,10 @@ The request is **strictly controlled**:
 
 ---
 
-### Technical details
+### Technical Details
 
-The GET request is made using a controlled configuration that avoids leaking any user data.  
-LegitURL simulates a fresh, anonymous visit — **no cookies, no storage, no session reuse.**
+The GET request is made using a sandboxed configuration that avoids leaking any user data.  
+LegitURL simulates a fresh, anonymous visit — **no cookies, no storage, no session reuse**.
 
 <details>
 <summary>Click to view request code (Swift)</summary>
@@ -154,7 +192,7 @@ LegitURL simulates a fresh, anonymous visit — **no cookies, no storage, no ses
 ```swift
 // Create a URLRequest for the URL.
 var request = URLRequest(url: url)
-request.httpMethod = "GET" // Specify the HTTP method.
+request.httpMethod = "GET"
 request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", forHTTPHeaderField: "User-Agent")
 request.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
 request.setValue("gzip, deflate, br", forHTTPHeaderField: "Accept-Encoding")
@@ -175,12 +213,12 @@ config.httpCookieAcceptPolicy = .never
 </details>
 
 - The request is:
-  - Sent over HTTPS only  
+  - Sent over **HTTPS only**, to URLs stripped of their query parameters and fragments  
   - Time-limited to **10 seconds**
 
 - The response is parsed but **not followed**:
-  - Redirects (`3xx`) are captured, not followed blindly
-  - External vs. internal redirects are identified
+  - Redirects (`3xx`) are captured, not followed blindly  
+  - External vs. internal redirects are identified  
   - Missing `Location` headers are flagged as **silent rewrites**
 
 Captured content includes:
@@ -221,7 +259,6 @@ Checks include:
   **LegitURL treats absence as a missing protection** for two reasons:
   - iOS does not reliably expose whether the header was explicitly set
   - Security should be **opt-in**, not assumed from browser defaults
-  - Exportability / reusability across domains
 
 - Cookies are flagged as:
   - **Tracking**
@@ -242,7 +279,7 @@ Checks include:
 - Valid HTML structure (`<html>`, `<head>`, `<body>`)
 - Malformed `<script>` tags
 - Script-to-content ratio
-- Density of inline and external script content ( nromalized to script per 1kB)
+- Density of inline and external script content ( normalized to script per 1kB)
 - Suspicious JavaScript patterns:
   - Setters like `eval()`, `atob()`
   - Accessors like `document.cookie`, `sessionStorage`, `WebAssembly`
@@ -344,16 +381,6 @@ When certain combinations are detected, the score is **aggressively downgraded**
 
 ## 4. Core Detection & Heuristics
 
-### Dependencies
-
-- [ASN1Decoder](https://github.com/filom/ASN1Decoder)  
-  Used to decode and parse TLS certificate structures (X.509), including CN, SANs, issuer, validity, and extensions.
-
-- [PunycodeSwift](https://github.com/gumob/PunycodeSwift)  
-  Used to convert Internationalized Domain Names (IDNs) to their ASCII-compatible encoding (ACE) for uniform comparison.
-
----
-
 ### Heuristic System
 
 LegitURL does not rely on blacklists, allowlists, or pre-trained models.  
@@ -390,8 +417,13 @@ but they do not directly reduce the score unless part of a flagged combination.
 
 LegitURL relies primarily on **Swift’s Foundation library**, with only two external dependencies:
 
-- [PunycodeSwift](https://github.com/gumob/PunycodeSwift) — for converting internationalized domain names (IDNs) to ASCII
-- [ASN1Decoder](https://github.com/filom/ASN1Decoder) — for decoding and parsing X.509 TLS certificates
+### Dependencies
+
+- [ASN1Decoder](https://github.com/filom/ASN1Decoder)  
+  Used to decode and parse TLS certificate structures (X.509), including CN, SANs, issuer, validity, and extensions.
+
+- [PunycodeSwift](https://github.com/gumob/PunycodeSwift)  
+  Used to convert Internationalized Domain Names (IDNs) to their ASCII-compatible encoding (ACE) for uniform comparison.
 
 ---
 
@@ -461,65 +493,182 @@ Lamai is LegitURL’s custom recursive decoder. It attempts to make sense of enc
 
 ---
 
-### HTML Body Analysis
+### HTML and Script Analysis (Byte-Level Parsing)
 
-- Fast byte scanning detects `<html>`, `<head>`, `<body>`, and `<script>` tags
-- Checks for:
-  - Structural validity (proper opening/closing tags)
-  - Script tag localisation classification (inline vs. external)
-  - Suspicious JS patterns
-  - HTML to JS ratio
-- Performance:
-  - `google.com` (~180KB): ~5ms  
-  - `steampowered.com` (~780KB): ~20ms
+- **Document boundaries** are pre-scanned in the first and last 500 bytes:
+  - If `<html>` is missing → **critical penalty**, document marked as non-HTML (no further parsing)
+  - If `</html>` is missing → **moderate penalty**, fallback end is set to end of the document
+
+- All `<` positions are scanned to locate tags:
+  - If followed by `/`, checks for closing `</head>`, `</body>`, `</script>`
+  - Otherwise, checks for opening `<head>`, `<body>`, or `<script>` in the next few bytes
+
+- **Inside `<head>`**:
+  - Searches for `<meta http-equiv="Content-Security-Policy">`
+
+- **Inside `<script>`**:
+  - Attempts to locate the closing `</script>` within the first 3072 bytes
+  - Extracts:
+    - `nonce` value
+    - `integrity` attribute (SRI)
+
+- Scripts are sorted by context and origin:
+  - For `<script src=...>`: scans for `=` followed by quoted values
+  - Determines source origin (e.g., `'self'`, external URL, protocol-relative, data URI)
+
+- **Inline script content is concatenated into a “JavaScript Soup”**, then scanned:
+  - Searches for all `(` and `.` byte positions
+  - At each candidate:
+    - Check previous 1–3 bytes for common JS accessors or function names
+    - Apply filters to skip junk matches
+
+- Matches are compared against a list of **risky JS functions** (e.g., `eval`, `atob`, `btoa`, `document.write`)
+- Detects suspicious **combinations** like:
+  - `document.getElementById()` followed by `.submit()`
+  - `atob()` followed by `JSON.parse()`
 
 ---
 
-### Cookie Analysis
+### Cookie Scoring Engine (Byte + Flag-Based Heuristics)
 
-- Uses a **32-bit mask** to represent cookie traits:
-  - `HttpOnly` missing
-  - `Secure` missing
-  - Various value size
-  - High entropy
-  - Expiracy
-  - SameSite policy
-- Combines flags into higher-level heuristics:
-  - Example: a 100-byte cookie with 365-day expiry and no `HttpOnly` → flagged as **tracking or malicious**
-  - `SameSite=None` + no `Secure` or `HttpOnly` → flagged as **potentially dangerous**
-- The system tries to balance **strictness with fairness**, acknowledging some cookies are marketing-related while others may be riskier.
+- iOS flattens headers via `URLSession`, merging duplicate `Set-Cookie` keys
+- Cookies are parsed using `HTTPCookie` and then **encoded as bit flags**:
+  - Missing `HttpOnly`
+  - Missing `Secure`
+  - Expiry > 30 days
+  - Size thresholds
+  - Entropy levels
+  - Set on a non 200
+  - `SameSite` policy state  
 
-  > LegitURL does **not assume `SameSite=Lax`** when the attribute is missing.  
-  While modern browsers may treat missing SameSite as `Lax` by default
+  
+  > A missing SamesitePolicy is **not** defaulted to `lax`
+  
+
+- Flag combinations are mapped to penalty levels:
+  - Small cookie (<10 bytes) with low entropy → **ignored**
+  - Session cookies without `HttpOnly` → **capped penalty** (CSRF risk)
+  - Large cookie (>100 bytes) with high entropy → **often flagged as dangerous**
+
+> Cookie logic is still evolving.  
+> It’s tricky to balance RGPD logic — where a banner asks for consent, but cookies are already set — versus short-lived session cookies and long-lived marketing junk.
+> In theory, no cookie should be set at all — LegitURL simulates a clean, anonymous GET with no query parameters.
 
 ---
 
 ### TLS Certificate Analysis
 
-- After decoding the X.509 certificate, LegitURL checks:
-  - Chain validity (alongside URLSession’s built-in checks)
-  - Expiration and issue date (detects **fresh certs** or overly long lifespans)
-  - CA type: DV / OV / EV via OID policy extension
-  - SAN (Subject Alternative Name) entries — wildcard, scope, and proper domain inclusion
+LegitURL performs manual analysis of the site's TLS certificate, after decoding the raw X.509 structure.
 
-**Note:** While it is possible to bypass URLSession to do full manual cert validation, this would likely lead to App Store rejection. LegitURL respects system level validation but performs its own analysis on top for **scoring and signal extraction**.
+Checks include:
+
+- **Chain validity**
+  - Verified alongside `URLSession`’s built-in trust checks  
+  - Many sites rely on the browser to complete missing intermediate chains — LegitURL flags this as a signal of **incomplete or lazy TLS setup**
+- **Expiration and issue date**
+  - Flags **newly issued certificates** (e.g., <7 days old)  
+  - Flags **overly long durations** (>13 months)
+- **CA Type**
+  - Extracted via OID from policy extension  
+  - Supports detection of DV, OV, and EV certs
+- **Subject Alternative Name (SAN) entries**
+  - Checks for:
+    - Wildcard usage
+    - Scope (subdomain vs unrelated FQDNs)
+    - Legitimate coverage of the target domain
+
+> While LegitURL could bypass `URLSession` to run fully manual certificate validation, doing so may lead to App Store rejection.  
+> Instead, it uses system-level trust — and builds **scoring logic** on top of it.
+> Some servers only serve the leaf certificate, relying on browsers to auto-complete the trust chain using cached intermediates.
+
+> Unfortunately, when Apple’s secure TLS enforcement is enabled, URLSession doesn’t distinguish between:  
+	•	Missing certificate  
+	•	Incomplete chain (leaf only)  
+	•	Invalid or untrusted certificate  
+
+> This means LegitURL can’t always tell why the TLS validation failed — only that it did.
+> If the handshake fails under strict, system-default rules, it’s treated as a critical signal.
 
 ---
 
+### SAN Pattern Analysis — Detecting Cloaked Scam Infrastructure
+
+In particular, LegitURL inspects the SAN field for **abnormal domain spread**:
+
+> A certificate issued by Let's Encrypt with **many individual FQDNs** (e.g., 10–100 entries), no wildcards, and a short lifespan is a strong signal of **malicious infrastructure** designed for evasion.
+
+---
+
+#### Why It Matters
+
+- **Legit orgs use wildcards**
+  - E.g., `*.example.com` for `api.`, `login.`, `cdn.`, etc.
+  - It’s efficient, maintainable, and works with internal subdomains
+
+- **Let’s Encrypt wildcards require DNS-01**
+  - Scammers avoid this because it requires control of DNS
+  - They use HTTP-01 for quick provisioning on throwaway servers
+
+- **Dozens of FQDNs on a single cert?**
+  - No real business does this — but it’s perfect for:
+    - Phishing kits
+    - Redirect chains
+    - Scam landing pages
+    - Disposable botnet mailers
+
+- **Unrelated domains = intentional obfuscation**
+  - A SAN list filled with random, loosely related, or totally unrelated domains is a red flag
+  - It’s often part of a **scamkit cloaking network**
+
+- **Risk is compounded**
+  - When combined with shady TLDs (`.biz`, `.click`), obfuscated JS, bad CSP, and tracking cookies —  
+    → **It’s no longer coincidence. It’s infrastructure.**
+
+> Counterexample:
+> steampowered.com uses a Let’s Encrypt DV certificate with 48 SANs and no wildcard — a pattern that would normally raise red flags.
+
+> However, the domain redirects to store.steampowered.com, which presents an EV certificate with only 2 SANs — scoped and trustworthy.
+
+> In this case, LegitURL waives the penalty for the original certificate, recognizing the redirect to a more secure, verified endpoint.
+
+---
+
+### Conclusion
+
+This TLS behavior deviates from best practices and reveals intent:  
+> Not to serve users securely — but to **cloak an entire ecosystem of scam domains** behind a single certificate.
+
 ### HTTP Headers Analysis
 
-LegitURL analyzes HTTP headers only on **200 OK responses**, ensuring the content being evaluated is directly served — not redirected.
+LegitURL analyzes HTTP headers **only on `200 OK` responses**, ensuring the content being evaluated is *directly served* — not redirected.
 
 #### Content-Security-Policy (CSP)
 
-LegitURL focuses on detecting broken or misleading CSP configurations:
+- Searches for either `Content-Security-Policy` or `Content-Security-Policy-Report-Only`
+  - If the former is missing, a **heavy penalty** is applied  
+  - If only the `Report-Only` version is found, it's used for analysis (but still penalized)
 
-- Only `script-src` and `default-src` are penalized (for now)
-- Using `nonce-` or `shaXXX-` with `'unsafe-inline'` → **nullifies the nonce**
-- Combining `'self'` with `*` or `https:` → flagged as contradictory
-- Compares actual inline script nonce values with the CSP nonce
-- External script URLs are checked against what's allowed in the CSP
-- Flags excessive or unused domains in `script-src` as suspicious
+- Ensures the header ends with a semicolon (`;`)
+  - If not, appends one
+
+- Splits the header into directives using `;` as a separator
+
+- If `script-src` is missing:
+  - Falls back to `default-src`
+  - If both are missing, checks for `require-trusted-types-for 'script'`
+  - If **none** of these are found, the policy is considered **incomplete**, and the same penalty as a missing CSP is applied
+
+- Maps combinations and directive values to **bitflags** for scoring
+
+- Compares:
+  - Extracted inline script `nonce` values
+  - External script origins  
+
+  against allowed sources in the CSP header
+
+> Most modern threats don’t need to breach the server, they exploit what runs in the browser.
+> A strict CSP won’t stop every attack, but it does shrink the client-side attack surface.
+
 
 #### Other Security Headers
 
@@ -530,7 +679,7 @@ These headers are also inspected:
 - `Referrer-Policy` — expected to be `strict-origin` or stronger
 - `Server`, `X-Powered-By` — flagged if leaking unnecessary metadata
 
-> Even trusted domains often misconfigure these. LegitURL applies consistent penalties to encourage real security — not just appearances.
+> Even trusted domains often misconfigure these. 
 
 ## 6. Example Use Case
 
@@ -733,8 +882,6 @@ These sites are globally recognized — but when analyzed blindly, as if they we
 | `amazon.com`       | 15/100  | Uses `document.write()` inline; no CSP at all |
 
 > These aren’t scams — but if you didn’t already trust them, **nothing in their technical behavior would earn your trust.**
-
-###  Example 5: Major Brand good effort, or close.
 
 ### Example 5: Major Brands That Try — Or Almost Do
 

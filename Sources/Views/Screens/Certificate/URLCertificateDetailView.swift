@@ -25,7 +25,7 @@ struct URLCertificateDetailView: View {
                     ("Valid From", cert.notBefore?.formatted()),
                     ("Valid Until", cert.notAfter?.formatted()),
                     ("Self-Signed", cert.isSelfSigned ? "Yes" : nil),
-                    ("SANs", cert.subjectAlternativeNames?.joined(separator: "\n"))
+                    ("SANs (\(cert.subjectAlternativeNames?.count ?? 0))", cert.subjectAlternativeNames?.joined(separator: "\n"))
                 ].compactMap { label, value in
                     value.map { (label, $0) }
                 }, id: \.0) { label, value in
