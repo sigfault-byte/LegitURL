@@ -8,6 +8,17 @@
 > Scan a URL to see its 🟩 🟧 🟥 Legitimacy based on **technical behavior**, not reputation.  
 > Because trust should be earned — not assumed.
 
+- [1. Who is LegitURL for?](#1-who-is-legiturl-for)
+- [2. How Does It Work](#2-how-does-it-work)
+- [3. Scoring System](#3-scoring-system)
+- [4. Core Detection & Heuristics](#4-core-detection--heuristics)
+- [5. Example Use Cases](#5-example-use-cases)
+- [6. Major Brand Scores](#6-major-brand-scores)
+- [7. The Philosophy Behind LegitURL](#7-the-philosophy-behind-legiturl)
+- [8. Why LegitURL Exists](#8-why-legiturl-exists)
+- [9. Contact & License](#9-contact--license)
+
+
 **LegitURL is a privacy-focused iOS app** that helps you:  
 - **Spot scams** (e.g., `secure-paypal-login.com`)  
 - **Avoid trackers** (shady redirects, invasive cookies)  
@@ -149,17 +160,17 @@ Each part is scored with appropriate weight:
 - Hyphens and underscores are optionally tokenized for deeper analysis
 - Mixed-script detection flags character set combos (e.g., Cyrillic + Latin)
 
-**Brand spoofing and gibberish detection** uses:
-- Levenshtein distance (typo-based similarity)
-- 2-gram similarity (pattern-based matching)
-- iOS dictionary lookups to identify real words
-- Entropy fallback to catch random or machine-generated strings
+**Brand spoofing and gibberish detection** uses:  
+- Levenshtein distance (typo-based similarity)  
+- 2-gram similarity (pattern-based matching)  
+- iOS dictionary lookups to identify real words  
+- Entropy fallback to catch random or machine-generated strings  
 
-**Path, query, and fragment values** are:
-- Decoded (Base64, percent-encoded, Unicode, etc.)
-- Inspected for known structures and patterns:
-  - Email addresses, IPs, UUIDs, nested URLs
-  - Scam terms or obfuscated tokens
+**Path, query, and fragment values** are:  
+- Decoded (Base64, percent-encoded, Unicode, etc.)  
+- Inspected for known structures and patterns:  
+  - Email addresses, IPs, UUIDs, nested URLs  
+  - Scam terms or obfuscated tokens  
 
 Decoded values — especially URLs — are **recursively re-analyzed** with the same strict logic as the original input.
 
@@ -753,7 +764,7 @@ Let’s say a user encounters a shortened link in a promoted X.com post:
 | **Path**  | Not recognized by dictionary | None | No penalty |  
 | **Redirect** | 301 → domain changes | Weak signal | -10 |
 
-**→ Score remains 100**
+**→ Score 90**
 
 ---
 
@@ -780,7 +791,7 @@ Let’s say a user encounters a shortened link in a promoted X.com post:
 | Component        | Observation | Signal Type | Action |
 |------------------|-------------|-------------|--------|
 | **HTML Body**       | 74% inline JavaScript, script density 1.282 | Suspicious | -25 |
-| **CSP**             | Missing | -50 |
+| **CSP**             | Missing | |-50 |
 | **X-Powered-By**    | `Next.js` backend leaked | Weak signal | -5 |
 | **Server Header**   | `cloudflare` | Informational | No penalty |
 
@@ -896,5 +907,7 @@ Some high-profile sites make a visible effort to secure users — and it shows.
 > Stripe clearly wants to appear trustworthy — and backs it up with real protections.  
 > The French government site is surprisingly solid.  
 > Apple… may have just forgotten about their headers.
+
+
 
 
