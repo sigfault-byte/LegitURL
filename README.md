@@ -1,7 +1,7 @@
 > **This is a WIP.**  
 > LegitURL works — and it's strict, by choice.  
 > But a lot is still being added, tuned, or cleaned up.  
-> It’s already useful, but not finished. That’s kind of the fun part.
+> It’s already useful, but not finished.
 
 ## LegitURL  
 > Like a **nutrition label for links**  
@@ -12,8 +12,8 @@
 - [2. How Does It Work](#2-how-does-it-work)
 - [3. Scoring System](#3-scoring-system)
 - [4. Core Detection & Heuristics](#4-core-detection--heuristics)
-- [5. Example Use Cases](#5-example-use-cases)
-- [6. Major Brand Scores](#6-major-brand-scores)
+- [5. Core Detection Features](#5-code-detection-features)
+- [6. Example Use Case](#6-example-use-case)
 - [7. The Philosophy Behind LegitURL](#7-the-philosophy-behind-legiturl)
 - [8. Why LegitURL Exists](#8-why-legiturl-exists)
 - [9. Contact & License](#9-contact--license)
@@ -892,7 +892,7 @@ These sites are globally recognized — but when analyzed blindly, as if they we
 | `facebook.com`     | 6/100   | Sets 3 large, secure cookies; 96% of HTML is JavaScript; uses `unsafe-eval`; cookies are modified by JS despite being inaccessible via `document.cookie` |
 | `amazon.com`       | 15/100  | Uses `document.write()` inline; no CSP at all |
 
-> These aren’t scams — but if you didn’t already trust them, **nothing in their technical behavior would earn your trust.**
+> These aren’t scams — but if we didn’t already trust them, **nothing in their technical behavior would give trust signal.**
 
 ### Example 5: Major Brands That Try — Or Almost Do
 
@@ -909,5 +909,46 @@ Some high-profile sites make a visible effort to secure users — and it shows.
 > Apple… may have just forgotten about their headers.
 
 
+## 7. The Philosophy Behind LegitURL
+
+LegitURL humbly tries to show what browsers are silently correcting for us.  
+
+In the early days of the web, **browsers had** to be forgiving. If they weren’t, developers would’ve given up, overwhelmed by how strict the platform could be. But, decades later, that leniency remains, and it’s now hiding problems instead of solving them.  
+
+Browsers have become **the compilers of the internet**,  except they don’t crash with a segfault. They just keep rendering. They try to “fix” our mistakes: silently rewriting malformed HTML, guessing character encodings, injecting missing tags, and even executing scripts with poor CSP setups. The HTTP headers? **They’re like compiler flags**,  but most websites either forget them or misuse them entirely.  
+
+While this may have made sense 25 years ago, today it’s less defensible. Many of the websites that get away with bad setups aren’t abandoned; **they’re actively making money**. Their excuse is often “legacy stack” or “it’s too much work.” But if the site is still live and bringing value, there’s no excuse not to invest in proper engineering.  
+
+The rise of bloated frontend frameworks didn’t help. Teams now download a dozen packages — some they don’t understand — and ship bloated builds full of eval(), random cookies, third-party scripts, and lazy security decisions.  
+
+Eventually, **even browsers had enough**. Around 2020, they began enforcing defaults, like treating missing SameSite attributes as Lax. They promoted Content-Security-Policy, not as a silver bullet, but as a way to shrink the attack surface. It won’t sanitize inputs or block DDoS traffic. But it protects the browser — and by extension, the user — from being forced to make bad assumptions.  
+
+**Browsers are blamed for being slow or memory-hungry. But think about it: they’re not just rendering websites. They’re debugging them in real time**.  
+
+LegitURL exists to highlight this. Not to punish, but to give users visibility into what’s really going on behind the scenes. The web isn’t just wide — it’s wild. And even the biggest, most trusted sites often rely on bad hygiene while demanding that junior devs invert binary trees in COBOL to get hired.  
+
+## 8. Why LegitURL Exists
+
+A few months ago, a relative fell victim to a phishing scam. The bank refused to reimburse them, claiming they couldn’t prove the user was at fault—yet offered no evidence of robust security on their own platform. The phishing link, now offline, was insidious: it hid the real bank’s website in the URL fragment, a trick invisible to most users.  
+
+This experience hit hard. I wanted to build a tool to empower non-technical users to see where a link really leads—highlighting the true domain, TLD, and any red flags like deceptive fragments.  
+LegitURL started as a simple way to catch scams, but the deeper I dug, the clearer it became: **the web is riddled with issues far beyond phishing**.  
+
+Too many websites skip basic security practices. Redirects often mask tracking or deception,  technical behavior rarely matches a site’s reputation, leaving users vulnerable. LegitURL evolved to expose these flaws, analyzing URLs with strict, transparent heuristics to reveal what browsers silently forgive.
+I also wanted a fast, offline-capable app to replicate the manual checks I’d do for a URL—because having that power at your fingertips is practical and empowering. LegitURL exists to give users a second opinion, protect their privacy, and push for a safer, more accountable web.
 
 
+## 9. Contact & License
+
+LegitURL is released under the **GNU AGPLv3 license**.
+
+You’re free to use, study, and improve the code — even in commercial projects —  
+**but any derivative work, especially one used over a network (e.g. as a web service),  
+must also be made public under the same license.**
+
+This protects users and ensures the project remains open and honest.
+
+> See [LICENSE](LICENSE) for full terms.
+
+For questions, feedback, or if you want to collaborate, contact:  
+iskndre@protonmail.me

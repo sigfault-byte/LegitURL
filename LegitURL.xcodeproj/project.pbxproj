@@ -16,6 +16,7 @@
 		2406CE772DCA6B2D0029B046 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		249557102D86D6EC0094E1D8 /* LegitURL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LegitURL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		24F49ED72DC329AF0028FC51 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		24FA8B542DCF80D10037DAAC /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -71,6 +72,7 @@
 				24E29A9F2DB7DCA20036E457 /* Sources */,
 				24E29B0E2DB7DCA70036E457 /* Tools */,
 				2406CE772DCA6B2D0029B046 /* README.md */,
+				24FA8B542DCF80D10037DAAC /* LICENSE.md */,
 			);
 			sourceTree = "<group>";
 		};
