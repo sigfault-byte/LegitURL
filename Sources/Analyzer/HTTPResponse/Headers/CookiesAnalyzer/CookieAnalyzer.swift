@@ -48,7 +48,7 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         let duration = expiry.timeIntervalSinceNow
         if duration <= 0 {
             bitFlags.insert(.expired)
-        } else if duration > 86400 {
+        } else if duration > 2_500_000 {  // ~ 30 days
             bitFlags.insert(.persistent)
         } else if !cookie.value.isEmpty {
             bitFlags.insert(.shortLivedPersistent)

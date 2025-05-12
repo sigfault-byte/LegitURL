@@ -112,7 +112,7 @@ struct PenaltySystem {
         static let jsReadsCookie                       = -5
         
         ///Cookie////
-        static let cookiesOnNon200                     = -20
+        static let cookiesOnNon200                     = -15
         static let moreThan64BofCookie                 = -15
         static let moreThan16BofCookie                 = -5
         ///TLS///

@@ -18,11 +18,11 @@ import Foundation
 
 struct ScriptAndDefaultDirective {
 
-    static func analyze(directiveName: String, bitFlagCSP: CSPBitFlag, sourceCount: [CSPBitFlag: Int] = [:], url: String) -> [SecurityWarning] {
+    static func analyze(directiveName: String, bitFlagCSP: CSPBitFlag, sourceCount: [CSPBitFlag: Int] = [:], url: String, source: String) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
 
         // Unsafe Inline
-        if bitFlagCSP.contains(.unsafeInline) {
+        if bitFlagCSP.contains(.unsafeInline) && !bitFlagCSP.contains(.strictDynamic) {
             var specialWarning = ""
             if bitFlagCSP.contains(.hasNonce) || bitFlagCSP.contains(.hasHash) {
                 specialWarning = " It nullifies Nonce or SHA"
@@ -30,14 +30,14 @@ struct ScriptAndDefaultDirective {
             warnings.append(SecurityWarning(
                 message: "'unsafe-inline' present in \(directiveName).\(specialWarning).",
                 severity: .dangerous,
-                penalty: PenaltySystem.Penalty.unsafeInlineScriptSrc,
+                penalty: source == "CSP?" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_CSP_UNSAFE_INLINE]
             ))
-        } else if bitFlagCSP.contains(.hasNonce) || bitFlagCSP.contains(.hasHash) {
+        } else if (bitFlagCSP.contains(.hasNonce) || bitFlagCSP.contains(.hasHash)) && bitFlagCSP.contains(.strictDynamic) {
             warnings.append(SecurityWarning(
-                message: "Inline script protection via nonce or hash detected in \(directiveName).",
+                message: "Inline script protection via nonce or hash detected in \(directiveName), alongside with strict-dynamic.",
                 severity: .info,
                 penalty: PenaltySystem.Penalty.informational,
                 url: url,
@@ -51,7 +51,7 @@ struct ScriptAndDefaultDirective {
             warnings.append(SecurityWarning(
                 message: "'unsafe-eval' present in \(directiveName) this allows dynamic JS execution and cannot be mitigated with nonce/hash.",
                 severity: .dangerous,
-                penalty: PenaltySystem.Penalty.unsafeEvalScriptSrc,
+                penalty: source == "CSP?" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_CSP_UNSAFE_EVAL]
@@ -63,7 +63,7 @@ struct ScriptAndDefaultDirective {
             warnings.append(SecurityWarning(
                 message: "Wildcard (*) detected in directive: \(directiveName) — allows scripts from any origin.",
                 severity: .dangerous,
-                penalty: PenaltySystem.Penalty.wildcardScriptSrc,
+                penalty: source == "CSP?" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_CSP_WILDCARD]

@@ -98,7 +98,7 @@ struct CSPAnalyzer {
         }
         let warningsToAppend = ScriptAndDefaultDirective.analyze(directiveName: scriptSrc,
                                                                      bitFlagCSP: CSPBitFlag(rawValue: directiveBitFlags[scriptSrc] ?? 0),
-                                                                     url: urlOrigin)
+                                                                 url: urlOrigin, source: source)
         
         warnings.append(contentsOf: warningsToAppend)
         

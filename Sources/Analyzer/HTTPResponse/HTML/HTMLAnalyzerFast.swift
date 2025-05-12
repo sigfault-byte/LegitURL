@@ -20,6 +20,7 @@ struct HTMLAnalyzerFast {
         }
         
         guard let (htmlRange, htmlClosed) = result else {
+            print("IL EST PASE PAR ICI")
 //            warnings.append(SecurityWarning(message: "No HTML found in response. Either the server is misconfigured, the dev are hotdogwater or it's a bad scam.",
             warnings.append(SecurityWarning(message: "No HTML structure detected in the response body. This is unexpected for a web page and may indicate a server issue or a malicious response.",
                                             severity: .critical,
