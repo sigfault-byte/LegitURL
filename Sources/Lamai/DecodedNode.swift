@@ -7,11 +7,11 @@ import Foundation
 
 class DecodedNode: Identifiable {
     let id: String = UUID().uuidString
-    let value: String                 // Original string (input or sub-part)
-    var decoded: String?             // Decoded version (if any)
+    let value: String                 // Original string
+    var decoded: String?             // Decoded version
     var method: String?              // "base64", "hex", "percent", etc
-    var depth: Int                   // How deep into the decoding tree
-    weak var parent: DecodedNode?   // Optional reference to parent node
+    var depth: Int
+    weak var parent: DecodedNode?   // eference to parent node
     var children: [DecodedNode] = []// Subparts or decoded paths
     var shouldStop: Bool = false     // Flag to prevent further decoding
     

@@ -49,7 +49,7 @@ struct CSPInspectorView: View {
                         
                         if !analysis.warnings.isEmpty {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Configuration Issues:")
+                                Text("Possible Issues:")
                                     .font(.subheadline).bold()
                                 ForEach(analysis.warnings, id: \.self) { msg in
                                     Text("• \(msg)")

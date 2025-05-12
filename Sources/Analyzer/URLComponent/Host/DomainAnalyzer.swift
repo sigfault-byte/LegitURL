@@ -15,7 +15,6 @@ struct DomainAnalyzer {
         let trustedDomains = UserHeuristicsCache.trustedDomains
         let allDomains = trustedDomains
         
-        
         // Step 1: Compare punycode-encoded and decoded versions.
         // If they differ, keep both for deeper analysis.
         let idnaEncodedDomain = urlInfo.components.idnaEncodedExtractedDomain ?? ""
@@ -38,7 +37,6 @@ struct DomainAnalyzer {
         if isWhitelisted(domain: idnaEncodedDomain.lowercased(), tld: tld, urlInfo: &urlInfo, userTrustedDomains: allDomains) {
             return
         }
-        
         // Step 3.5: Detect if domain root is entirely a brand
         checkSingleBrandRootDomain(domain: domain, urlInfo: &urlInfo, allBrands: allBrands)
         
@@ -271,7 +269,7 @@ struct DomainAnalyzer {
 
         if allBrands.contains(lowercasedDomain) {
             urlInfo.warnings.append(SecurityWarning(
-                message: "🚨 Domain '\(domain)' is entirely composed of a known or user-defined brand name, which strongly indicates impersonation.",
+                message: " Domain '\(domain)' is entirely composed of a known or user-defined brand name, which strongly indicates impersonation.",
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
                 url: domain,
@@ -294,7 +292,7 @@ private func checkScriptMismatch(domain: String, tld: String, urlInfo: inout URL
         }
         if let script = scriptSet.first, !tldScriptSet.contains(script) {
             urlInfo.warnings.append(SecurityWarning(
-                message: "🚨 Domain '\(domain)' uses only \(script) characters, but its TLD '\(tld)' is from a different script family.",
+                message: " Domain '\(domain)' uses only \(script) characters, but its TLD '\(tld)' is from a different script family.",
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
                 url: urlOrigin,
@@ -303,7 +301,7 @@ private func checkScriptMismatch(domain: String, tld: String, urlInfo: inout URL
             return
         } else {
             urlInfo.warnings.append(SecurityWarning(
-                message: "ℹ️ Domain '\(domain)' is fully non-Latin but matches the script of the TLD '\(tld)'.",
+                message: " Domain '\(domain)' is fully non-Latin but matches the script of the TLD '\(tld)'.",
                 severity: .info,
                 penalty: 0,
                 url: urlOrigin,
@@ -313,7 +311,7 @@ private func checkScriptMismatch(domain: String, tld: String, urlInfo: inout URL
         
     } else if scriptSet.contains(.ascii) && scriptSet.contains(.latinExtended) {
         urlInfo.warnings.append(SecurityWarning(
-            message: "⚠️ Domain '\(domain)' mixes basic Latin and Extended Latin characters, which may indicate subtle obfuscation.",
+            message: " Domain '\(domain)' mixes basic Latin and Extended Latin characters, which may indicate subtle obfuscation.",
             severity: .suspicious,
             penalty: PenaltySystem.Penalty.domainNonASCII,
             url: urlOrigin,
@@ -322,7 +320,7 @@ private func checkScriptMismatch(domain: String, tld: String, urlInfo: inout URL
         
     } else if scriptSet.contains(.ascii) && (scriptSet.contains(.cyrillic) || scriptSet.contains(.greek)) {
         urlInfo.warnings.append(SecurityWarning(
-            message: "🚨 Domain '\(domain)' mixes Latin and non-Latin characters, which strongly indicates a homograph attack.",
+            message: " Domain '\(domain)' mixes Latin and non-Latin characters, which strongly indicates a homograph attack.",
             severity: .critical,
             penalty: PenaltySystem.Penalty.critical,
             url: urlOrigin,
@@ -331,7 +329,7 @@ private func checkScriptMismatch(domain: String, tld: String, urlInfo: inout URL
         return
     } else if scriptSet.contains(.cyrillic) || scriptSet.contains(.greek) || scriptSet.contains(.other) {
         urlInfo.warnings.append(SecurityWarning(
-            message: "⚠️ Domain '\(domain)' contains non-Latin characters, which may be deceptive.",
+            message: " Domain '\(domain)' contains non-Latin characters, which may be deceptive.",
             severity: .suspicious,
             penalty: PenaltySystem.Penalty.domainNonASCII,
             url: urlOrigin,
@@ -351,7 +349,8 @@ private func isWhitelisted(domain: String, tld: String, urlInfo: inout URLInfo, 
             severity: .info,
             penalty: 0,
             url: urlOrigin,
-            source: .host
+            source: .host,
+            bitFlags: .DOMAIN_IS_WHITELISTED
         ))
         return true
     }

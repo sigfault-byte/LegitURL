@@ -8,13 +8,15 @@ struct ComboAlert {
     var flags: UInt64
     var message: String?
     
-    static func computeBitFlagAndInfer(from urlInfos: [URLInfo]) -> ComboAlert {
+    static func computeBitFlagAndInfer(from urlInfos: [URLInfo]) -> (ComboAlert, Bool) {
         let flags = fetchInt(from: urlInfos)
         var comboAlert = ComboAlert(flags: flags, message: nil)
         
+        let isEighthBitSet = (flags & (1 << 8)) != 0
+        
         inferMessage(for: &comboAlert)
         
-        return comboAlert
+        return (comboAlert, isEighthBitSet)
     }
     
     
@@ -33,11 +35,18 @@ struct ComboAlert {
     static func inferMessage(for combo: inout ComboAlert) {
         let f = combo.flags
 
+        // Trusted website....
+//        if f & WarningFlags.DOMAIN_IS_WHITELISTED.rawValue != 0 {
+//            combo.message = "This website is on your / the list of trusted website."
+//            return
+//        }
+        
         // 0. Basic security missing (short circuit critical)
         if f & WarningFlags.HEADERS_CSP_MISSING.rawValue != 0 {
             combo.message = "This website is missing basic security protections that help block malicious scripts."
             return
         }
+        
 
         if f & WarningFlags.HEADERS_CSP_MALFORMED.rawValue != 0 {
             combo.message = "This website's security setup is broken or incomplete, which may leave it vulnerable."

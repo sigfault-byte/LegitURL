@@ -25,12 +25,12 @@ struct ScriptAndDefaultDirective {
         if bitFlagCSP.contains(.unsafeInline) && !bitFlagCSP.contains(.strictDynamic) {
             var specialWarning = ""
             if bitFlagCSP.contains(.hasNonce) || bitFlagCSP.contains(.hasHash) {
-                specialWarning = " It nullifies Nonce or SHA"
+                specialWarning = " It nullifies Nonce or SHA."
             }
             warnings.append(SecurityWarning(
-                message: "'unsafe-inline' present in \(directiveName).\(specialWarning).",
+                message: "'unsafe-inline' present in \(directiveName).\(specialWarning)",
                 severity: .dangerous,
-                penalty: source == "CSP?" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
+                penalty: source == "CSP" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_CSP_UNSAFE_INLINE]
@@ -51,7 +51,7 @@ struct ScriptAndDefaultDirective {
             warnings.append(SecurityWarning(
                 message: "'unsafe-eval' present in \(directiveName) this allows dynamic JS execution and cannot be mitigated with nonce/hash.",
                 severity: .dangerous,
-                penalty: source == "CSP?" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
+                penalty: source == "CSP" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_CSP_UNSAFE_EVAL]
@@ -63,7 +63,7 @@ struct ScriptAndDefaultDirective {
             warnings.append(SecurityWarning(
                 message: "Wildcard (*) detected in directive: \(directiveName) — allows scripts from any origin.",
                 severity: .dangerous,
-                penalty: source == "CSP?" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
+                penalty: source == "CSP" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_CSP_WILDCARD]

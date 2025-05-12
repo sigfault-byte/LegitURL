@@ -12,7 +12,7 @@ struct CSPDirectiveAnalysis {
     var warnings: [String] {
         var result: [String] = []
 
-        if flags.contains(.unsafeInline) {
+        if flags.contains(.unsafeInline) && !flags.contains(.strictDynamic) {
             result.append("Uses 'unsafe-inline' which weakens all protections.")
         }
 
@@ -20,7 +20,9 @@ struct CSPDirectiveAnalysis {
             result.append("Allows eval(), which enables dynamic code execution.")
         }
 
-        if (flags.contains(.hasNonce) || flags.contains(.hasHash)) && flags.contains(.unsafeInline) {
+        if (flags.contains(.hasNonce) || flags.contains(.hasHash)) &&
+            flags.contains(.unsafeInline) &&
+            !flags.contains(.strictDynamic){
             result.append("'Nonce' or 'sha' protection is nullified by 'unsafe-inline'.")
         }
 

@@ -7,7 +7,7 @@
 import SwiftUI
 
 class DestinationInfoComponentModel: ObservableObject {
-//    Placeholder to wait for the real deal
+    //    Placeholder to wait for the real deal
     @Published var loadingDots: String
     
     @Published var inputDomain: String
@@ -16,6 +16,8 @@ class DestinationInfoComponentModel: ObservableObject {
             self.punycodeMissmatch = self.finalHost.contains("xn--")
         }
     }
+    @Published var isTrusted: Bool
+    
     @Published var summaryMessage: String
     @Published var hopCount: Int = 0
     @Published var domainLabel: String
@@ -26,6 +28,12 @@ class DestinationInfoComponentModel: ObservableObject {
     
     var punycodeMissmatch: Bool = false
     var summaryTitle: String {
+        let trustedMessage = "This website is on your / the list of trusted website."
+        
+        if self.isTrusted {
+            return trustedMessage
+        }
+        
         if score >= 70 {
             return "The destination appears to be legit"
         } else if score > 40 {
@@ -38,6 +46,7 @@ class DestinationInfoComponentModel: ObservableObject {
     var displayMessage: Bool {
         if self.isAnalysisComplete {
             let trimmed = self.summaryMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+            
             if trimmed.isEmpty {
                 DispatchQueue.main.async {
                     self.summaryMessage = self.score >= 85 ? "No major issues detected" : "Consult the logs for more details"
@@ -50,14 +59,16 @@ class DestinationInfoComponentModel: ObservableObject {
     }
     
     init(
-         inputDomain: String,
-         finalHost: String,
-         summaryMessage: String,
-         hopCount: Int,
-         domainLabel: String,
-         tldLabel: String,
-         isAnalysisComplete: Bool = false,
-         score: Int)
+        inputDomain: String,
+        finalHost: String,
+        summaryMessage: String,
+        hopCount: Int,
+        domainLabel: String,
+        tldLabel: String,
+        isAnalysisComplete: Bool = false,
+        score: Int,
+        isTrusted: Bool = false
+    )
     {
         self.loadingDots = "."
         self.inputDomain = ""
@@ -68,6 +79,7 @@ class DestinationInfoComponentModel: ObservableObject {
         self.tldLabel = tldLabel
         self.isAnalysisComplete = isAnalysisComplete
         self.score = score
+        self.isTrusted = isTrusted
         
         
         Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
@@ -75,7 +87,7 @@ class DestinationInfoComponentModel: ObservableObject {
                 timer.invalidate()
                 return
             }
-
+            
             if self.loadingDots.count >= 25 {
                 self.loadingDots = "."
             } else {
@@ -85,13 +97,17 @@ class DestinationInfoComponentModel: ObservableObject {
     }
     
     var scoreColor: Color {
-        switch self.score {
-        case 80...100:
+        if self.isTrusted {
             return .green
-        case 50..<80:
-            return .orange
-        default:
-            return .red
+        }
+        
+        switch self.score {
+            case 70...100:
+                return .green
+            case 40..<70:
+                return .orange
+            default:
+                return .red
         }
     }
 }

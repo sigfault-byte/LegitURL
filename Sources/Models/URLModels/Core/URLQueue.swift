@@ -14,6 +14,8 @@ class URLQueue: ObservableObject {
     @Published var groupedWarnings: [WarningDomainGroup] = []
     @Published var summary: String = ""
     
+    
+    
     //    seen cookies set to not double penalyze same cookie keys because we have a fresh get each time
     var cookiesSeenByRedirectChain: [UUID: Set<String>] = [:]
     
@@ -44,9 +46,11 @@ class URLQueue: ObservableObject {
 final class ScoreUpdateModel: ObservableObject {
     @Published var score: Int
     @Published var analysisCompleted: Bool
+    @Published var isTrusted: Bool = false
 
     init(score: Int = 100, analysisCompleted: Bool = false) {
         self.score = score
         self.analysisCompleted = analysisCompleted
+        self.isTrusted = false
     }
 }

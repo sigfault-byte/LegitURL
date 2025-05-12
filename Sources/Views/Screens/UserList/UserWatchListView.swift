@@ -26,7 +26,8 @@ struct UserWatchlistView: View {
                     Button("Add to Watchlist") {
                         guard !brand.trimmingCharacters(in: .whitespaces).isEmpty else { return }
 
-                        let url = URL(string: website)
+                        let cleanedWebsite = website.trimmingCharacters(in: .whitespaces)
+                        let url = URL(string: cleanedWebsite.contains("://") ? cleanedWebsite : "https://\(cleanedWebsite)")
                         viewModel.add(brand, description: description.isEmpty ? nil : description, realWebsite: url)
                         brand = ""
                         description = ""

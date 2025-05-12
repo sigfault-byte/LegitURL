@@ -33,15 +33,26 @@ struct NodeWalker {
                 for finding in node.findings {
                     switch finding {
                     case .url(let url):
-                        foundURLs.append(url)
-                        urlInfo.warnings.append(SecurityWarning(
-                            message: "Found URL in \(comp) \(label): \(url)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
-                            severity: .dangerous,
-                            penalty: PenaltySystem.Penalty.hiddenRedirectQuery,
-                            url: urlOrigin,
-                            source: (comp == "path" ? .pathSub(label: label) : source),
-                            bitFlags: WarningFlags.QUERY_URL
-                        ))
+                            if url.contains("https://") {
+                                foundURLs.append(url)
+                                urlInfo.warnings.append(SecurityWarning(
+                                    message: "Found URL in \(comp) \(label): \(url)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                                    severity: .dangerous,
+                                    penalty: PenaltySystem.Penalty.hiddenRedirectQuery,
+                                    url: urlOrigin,
+                                    source: (comp == "path" ? .pathSub(label: label) : source),
+                                    bitFlags: WarningFlags.QUERY_URL
+                                ))
+                            } else {
+                                urlInfo.warnings.append(SecurityWarning(
+                                    message: "Found partial URL in \(comp) \(label): \(url)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
+                                    severity: .info,
+                                    penalty: PenaltySystem.Penalty.informational,
+                                    url: urlOrigin,
+                                    source: (comp == "path" ? .pathSub(label: label) : source),
+                                    bitFlags: WarningFlags.QUERY_URL
+                                ))
+                            }
                         
                     case .uuid(let result):
                         let uuidText = result.formatted ?? result.original

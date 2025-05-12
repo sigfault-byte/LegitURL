@@ -12,6 +12,8 @@ class ScoreSummaryComponentModel: ObservableObject{
     
     @Published var isAnalysisComplete: Bool = false
     
+    @Published var isTrusted: Bool = false
+    
     @Published var labelText: String = "Legit Score"
     
     @Published var flickerScore: String = "00"

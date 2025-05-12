@@ -23,15 +23,19 @@ struct Finalyzer {
         let criticalWarnings = URLQueue.shared.offlineQueue
             .flatMap { $0.warnings }
             .filter { $0.severity == .critical || $0.severity == .fetchError }
+        var isTrusted = false
 
         if let firstCritical = criticalWarnings.first {
             URLQueue.shared.summary = firstCritical.message
         } else {
-            let combo = ComboAlert.computeBitFlagAndInfer(from: URLQueue.shared.offlineQueue)
+            let (combo, trustFlag) = ComboAlert.computeBitFlagAndInfer(from: URLQueue.shared.offlineQueue)
+            isTrusted = trustFlag
             if let message = combo.message, message != "" {
                 URLQueue.shared.summary = message
             }
         }
+
+        URLQueue.shared.legitScore.isTrusted = isTrusted
         
         let finalScore = computeFinalScore(for: URLQueue.shared.offlineQueue)
         URLQueue.shared.legitScore.score = finalScore

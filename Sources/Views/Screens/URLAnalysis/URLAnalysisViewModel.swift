@@ -42,7 +42,8 @@ class URLAnalysisViewModel: ObservableObject {
         domainLabel: "",
         tldLabel: "",
         isAnalysisComplete: false,
-        score: 0
+        score: 0,
+        isTrusted: false
     )
     
     @Published var warningsVM = WarningsComponentModel(
@@ -70,6 +71,7 @@ class URLAnalysisViewModel: ObservableObject {
             await self.startAnalysis()
         }
     }
+    
     
     
     func startAnalysis() async {
@@ -115,5 +117,6 @@ class URLAnalysisViewModel: ObservableObject {
         self.destinationInfoVM.tldLabel = self.urlQueue.offlineQueue.last?.components.extractedTLD ?? ""
         self.destinationInfoVM.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
         self.destinationInfoVM.score = self.urlQueue.legitScore.score
+        self.destinationInfoVM.isTrusted = self.urlQueue.legitScore.isTrusted
     }
 }

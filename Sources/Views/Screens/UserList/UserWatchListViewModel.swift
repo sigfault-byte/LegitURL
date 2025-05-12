@@ -22,6 +22,7 @@ class UserWatchlistViewModel: ObservableObject {
         guard !watchlist.contains(newItem) else { return }
 
         watchlist.append(newItem)
+        
         save()
     }
 
