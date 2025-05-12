@@ -12,7 +12,6 @@ struct ScriptInlineAnalyzer {
     
     static func analyze(scripts: inout ScriptExtractionResult, body: Data, origin: String, into warnings: inout [SecurityWarning]) {
         //        let start = Date()
-        var hotDogWaterJSSoup: String?
         var setterDetected = false
         //        Debug
 //        Too early !
@@ -25,13 +24,11 @@ struct ScriptInlineAnalyzer {
 //            }
 //        }
         
-        //        join all inline to a js soup
-        let (soup, byteRangesByScript) = generateInlineSoup(from: scripts.scripts, in: body)
-        hotDogWaterJSSoup = soup
-        //        print("soup is :", hotDogWaterJSSoup!.count)
-        // fin all possible funtion call by locating the ( find all js accessor looking for .
-        guard let soup = hotDogWaterJSSoup else { return }
-        let soupData = Data(soup.utf8)
+        // Build one contiguous Data buffer that contains every inline script.
+        let (soupData, byteRangesByScript) = generateInlineSoup(from: scripts.scripts, in: body)
+        guard !soupData.isEmpty else { return }
+
+        // Locate suspicious byte patterns
         let parenPositions = DataSignatures.extractAllTagMarkers(in: soupData, within: 0..<soupData.count, tag: UInt8(ascii: "("))
         let dotPositions = DataSignatures.extractAllTagMarkers(in: soupData, within: 0..<soupData.count, tag: UInt8(ascii: "."))
         
@@ -97,27 +94,31 @@ struct ScriptInlineAnalyzer {
         //        print("gather the data took: ", duration, "filtering took: ", timing)
     }
     
+    /// Concatenates all inline `<script>` blocks into a single `Data` buffer, separated by '\n'.
+    /// Also returns the byte ranges of each inline block *within that buffer* for later mapping.
     private static func generateInlineSoup(from scripts: [ScriptScanTarget],
-                                           in body: Data) -> (soup: String, ranges: [(range: Range<Int>, scriptIndex: Int)]) {
-        var byteRangesByScript: [(range: Range<Int>, scriptIndex: Int)] = []
+                                           in body: Data) -> (soup: Data, ranges: [(range: Range<Int>, scriptIndex: Int)]) {
+        var ranges: [(range: Range<Int>, scriptIndex: Int)] = []
+        var soup = Data()
         var currentStart = 0
-        var soup = ""
-        
+
         for (index, script) in scripts.enumerated() {
             guard script.origin == .inline,
                   let start = script.end,
                   let end = script.endTagPos,
-                  let jsContent = String(data: body[start..<end], encoding: .utf8)
-            else { continue }
-            
-            soup += jsContent + "\n"
-            let length = jsContent.utf8.count + 1 // +1 for newline
-            let range = currentStart..<(currentStart + length)
-            byteRangesByScript.append((range, index))
+                  start < end, end <= body.count else { continue }
+
+            let slice = body[start..<end]
+            soup.append(slice)
+            soup.append(contentsOf: [0x0A])          // newline separator
+
+            let length = slice.count + 1
+            let range = currentStart ..< (currentStart + length)
+            ranges.append((range, index))
             currentStart += length
         }
-        
-        return (soup, byteRangesByScript)
+
+        return (soup, ranges)
     }
     
     static func filterSuspiciousJSCalls(in soupData: Data, parenPositions: [Int], offset: Int = -1, suspiciousBytes: Set<UInt8>) -> [Int] {
@@ -153,9 +154,8 @@ struct ScriptInlineAnalyzer {
                                                  setterDetected: inout Bool,
                                                  scripts: inout ScriptExtractionResult,
                                                  byteRangesByScript: [(range: Range<Int>, scriptIndex: Int)]) {
-        let knownPatterns: [(name: String, bytes: [UInt8])] = BadJSFunctions.suspiciousJsFunction.map {
-            ($0, Array($0.utf8))
-        }
+        
+        let knownPatterns = BadJSFunctions.suspiciousJsFunctionBytes
         var matchCounts: [String: Int] = [:]
         
         for pos in positions {

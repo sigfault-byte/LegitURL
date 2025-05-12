@@ -25,7 +25,7 @@ import Foundation
 //Block unless unsafe-inline or hash
 
 
-
+//TODO: Need an example when there are externalsource but none of them are used.
 struct NonceAndExternalScript {
     static func analyze( scriptValueToCheck: ScriptSourceToMatchCSP?,
                          scriptDirective: [Data: CSPValueType],
@@ -136,21 +136,22 @@ struct NonceAndExternalScript {
             ))
         }
 //        waived of dataURI with nonce value -> still not good a SRI would be better.
-        if let script = script {
-            let dataURIScripts = script.scripts.filter { $0.origin == .dataURI }
-            
-            let allDataURIsHaveNonce = dataURIScripts.allSatisfy { $0.nonceValue != nil }
-            
-            if allDataURIsHaveNonce && !dataURIScripts.isEmpty {
-                warnings.append(SecurityWarning(
-                    message: "All data URI scripts correctly have nonce verified values.",
-                    severity: .info,
-                    penalty: 30,
-                    url: urlOrigin,
-                    source: .header
-                ))
-            }
-        }
+//        Doest work, nonce is only for inline
+//        if let script = script {
+//            let dataURIScripts = script.scripts.filter { $0.origin == .dataURI }
+//            
+//            let allDataURIsHaveNonce = dataURIScripts.allSatisfy { $0.nonceValue != nil }
+//            
+//            if allDataURIsHaveNonce && !dataURIScripts.isEmpty {
+//                warnings.append(SecurityWarning(
+//                    message: "All data URI scripts correctly have nonce verified values.",
+//                    severity: .info,
+//                    penalty: 30,
+//                    url: urlOrigin,
+//                    source: .header
+//                ))
+//            }
+//        }
         
         // Track how many scripts actually matched the CSP sources
         var usedScriptCount = 0

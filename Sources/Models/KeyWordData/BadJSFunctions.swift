@@ -80,6 +80,10 @@ struct BadJSFunctions {
             getELementById,
         ].compactMap { $0.last }.reduce(into: Set<UInt8>()) { $0.insert($1) }
     }
+    /// Pre‑computed ttuples 
+    static let suspiciousJsFunctionBytes: [(name: String, bytes: [UInt8])] = {
+        suspiciousJsFunction.map { ($0, Array($0.utf8)) }
+    }()
     
     static var suspiciousSecondLastBytes: Set<UInt8> {
         return [

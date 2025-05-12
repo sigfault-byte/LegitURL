@@ -14,6 +14,7 @@ struct PenaltySystem {
         static let userInfoInHost                      = -20
         static let subdomainUnderscore                 = -20
         static let brandImpersonation                  = -15
+        static let brandInSubdomain                    = -10
         static let brandLookaLike                      = -10
         static let underScoreInSubdomain               = -10
         static let highEntropySubDomain                = -10

@@ -20,20 +20,54 @@ struct DataSignatures {
         return tagPositions
     }
 
+    /// Returns the byte range that spans from the first “<html” tag
     public static func extractHtmlTagRange(in body: Data) -> (Range<Int>, htmlClosed: Bool)? {
-        let prefixRange = body.startIndex..<min(500, body.count)
-        let suffixRange = max(body.count - 500, 0)..<body.count
 
-        let htmlOpenTag = Data("<html".utf8)
-        let htmlCloseTag = Data("</html>".utf8)
+        // Need at least "<html" = 5 bytes to proceed.
+        guard body.count >= 5 else { return nil }
 
-        guard let openRange = body.range(of: htmlOpenTag, options: [], in: prefixRange) else {
-            return nil
+        //first ≤ 500 B
+        let prefixLimit = min(500, body.count)
+        var openStart: Int? = nil
+        var i = body.startIndex
+        while i <= prefixLimit - 5 {               // need 5 bytes: "<html"
+            if body[i] == 0x3C {                   // '<'
+                let h = body[i+1] | 0x20           // fold to lowercase
+                let t = body[i+2] | 0x20
+                let m = body[i+3] | 0x20
+                let l = body[i+4] | 0x20
+                if h == 0x68 && t == 0x74 && m == 0x6D && l == 0x6C {
+                    openStart = i
+                    break                          // found it – stop scanning prefix
+                }
+            }
+            i &+= 1
+        }
+        guard let start = openStart else { return nil }
+
+        // last ≤ 500 B
+        let suffixStartIdx = max(body.count - 500, 0)
+        var closeEnd: Int? = nil
+        var j = suffixStartIdx
+        while j <= body.count - 6 {                // need 6 bytes: "</html"
+            if body[j] == 0x3C && body[j+1] == 0x2F { // '<' '/'
+                let h = body[j+2] | 0x20
+                let t = body[j+3] | 0x20
+                let m = body[j+4] | 0x20
+                let l = body[j+5] | 0x20
+                if h == 0x68 && t == 0x74 && m == 0x6D && l == 0x6C {
+                    // skip to the next '>'
+                    var k = j + 6
+                    while k < body.count && body[k] != 0x3E { k &+= 1 }
+                    closeEnd = min(k + 1, body.count)
+                    break
+                }
+            }
+            j &+= 1
         }
 
-        let closeRange = body.range(of: htmlCloseTag, options: [], in: suffixRange)
-        let end = closeRange?.upperBound ?? body.endIndex // fallback to end of doc if </html> doesnt exist
-        return (openRange.lowerBound..<end, closeRange != nil)
+        let end = closeEnd ?? body.endIndex
+        return (start ..< end, closeEnd != nil)
     }
 
     

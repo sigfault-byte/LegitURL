@@ -129,6 +129,7 @@ struct CSPAnalyzer {
             //TODO: check if sha then check is the count match, and compute sha
         }
         
+        
 
 //                DEBUG
 //        for (directive, values) in structuredCSP {

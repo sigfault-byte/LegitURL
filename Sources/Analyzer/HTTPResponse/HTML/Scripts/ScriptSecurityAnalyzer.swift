@@ -15,6 +15,7 @@ struct ScriptSecurityAnalyzer {
         //Cpmpute html to script ratio
         computeScriptsToHtmlRation(scriptSize: totalInlineScriptBytes, htmlRange: htmlRange, originURL: origin, into: &warnings)
         
+        #if DEBUG
 //        for script in scripts {
 //            let previewStart = script.start
 //            let previewEnd = script.endTagPos ?? previewStart + 40
@@ -28,7 +29,7 @@ struct ScriptSecurityAnalyzer {
 //                print(" Unclosed script tag at \(previewStart). Unable to decode preview.")
 //            }
 //        }
-        
+        #endif
         // Flag abnormal script origin
         let (dataURICount,
              protocolRelativeCounter,
@@ -140,9 +141,9 @@ struct ScriptSecurityAnalyzer {
         
         let ratio = Double(scriptSize) / Double(htmlSize)
         let percent = Int(ratio * 100)
-//        DEBUG
+        #if DEBUG
 //        print(" Inline JS Ratio: \(percent)% (\(scriptSize) bytes of \(htmlSize) HTML)")
-
+        #endif
         if htmlSize < 896 && percent >= 50 {
             warnings.append(SecurityWarning(
                 message: "This page relies almost entirely on JavaScript to function, yet contains no visible content or fallback for non-JS environments. This is highly indicative of cloaked content or malicious redirection.",

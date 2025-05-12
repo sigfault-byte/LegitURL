@@ -32,8 +32,19 @@ struct SubdomainAnalyzer {
             if subdomainLowercased.contains(userBrand) {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Subdomain contains the brand '\(userBrand)'.",
+                    severity: SecurityWarning.SeverityLevel.suspicious,
+                    penalty: PenaltySystem.Penalty.brandInSubdomain,
+                    url: urlOrigin,
+                    source: .host,
+                    bitFlags: WarningFlags.SUBDOMAIN_CONTAINS_BRAND
+                ))
+            }
+            
+            if subdomainLowercased == (userBrand) {
+                urlInfo.warnings.append(SecurityWarning(
+                    message: "Subdomain matches the brand '\(userBrand)'.",
                     severity: SecurityWarning.SeverityLevel.dangerous,
-                    penalty: PenaltySystem.Penalty.containBrandInPath,
+                    penalty: PenaltySystem.Penalty.brandImpersonation,
                     url: urlOrigin,
                     source: .host,
                     bitFlags: WarningFlags.SUBDOMAIN_CONTAINS_BRAND
@@ -59,7 +70,7 @@ struct SubdomainAnalyzer {
             
             if raw.contains("_") {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "⚠️ Subdomain '\(raw)' contains underscores, which are unusual and may be used for obfuscation.",
+                    message: "Subdomain '\(raw)' contains underscores, which are unusual and may be used for obfuscation.",
                     severity: .suspicious,
                     penalty: PenaltySystem.Penalty.subdomainUnderscore,
                     url: urlOrigin,
@@ -71,7 +82,7 @@ struct SubdomainAnalyzer {
             let normalized = raw.replacingOccurrences(of: "_", with: "")
             if raw != normalized {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "ℹ️ Subdomain '\(raw)' was normalized by removing underscores → '\(normalized)'.",
+                    message: "Subdomain '\(raw)' was normalized by removing underscores → '\(normalized)'.",
                     severity: .info,
                     penalty: PenaltySystem.Penalty.informational,
                     url: urlOrigin,
@@ -98,7 +109,7 @@ struct SubdomainAnalyzer {
                 let isWord = CommonTools.isRealWord(part)
                 if !isWord {
                     urlInfo.warnings.append(SecurityWarning(
-                        message: "ℹ️ Subdomain segment '\(part)' is not found in the reference dictionary.",
+                        message: "Subdomain segment '\(part)' is not found in the reference dictionary.",
                         severity: .info,
                         penalty: PenaltySystem.Penalty.informational,
                         url: urlOrigin,
@@ -109,7 +120,7 @@ struct SubdomainAnalyzer {
                 let (entropyFlag, score) = CommonTools.isHighEntropy(part, 4.2)
                 if entropyFlag {
                     urlInfo.warnings.append(SecurityWarning(
-                        message: "⚠️ Subdomain segment '\(part)' appears random or obfuscated (high entropy \(String(format: "%.2f", score ?? 0))).",
+                        message: "Subdomain segment '\(part)' appears random or obfuscated (high entropy \(String(format: "%.2f", score ?? 0))).",
                         severity: .suspicious,
                         penalty: PenaltySystem.Penalty.highEntropySubDomain,
                         url: urlOrigin,
@@ -132,7 +143,7 @@ struct SubdomainAnalyzer {
             if isTrusted && brandLower == domain { continue }
             if lowered == brandLower {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "🚨 Subdomain segment '\(part)' matches the brand '\(brand)'.",
+                    message: "Subdomain segment '\(part)' matches the brand '\(brand)'.",
                     severity: .dangerous,
                     penalty: PenaltySystem.Penalty.exactBrandImpersonation,
                     url: urlOrigin,
@@ -141,7 +152,7 @@ struct SubdomainAnalyzer {
                 ))
             } else if lowered.contains(brandLower) {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "⚠️ Subdomain segment '\(part)' contains known brand '\(brand)'.",
+                    message: "Subdomain segment '\(part)' contains known brand '\(brand)'.",
                     severity: .dangerous,
                     penalty: PenaltySystem.Penalty.brandImpersonation,
                     url: urlOrigin,
@@ -153,7 +164,7 @@ struct SubdomainAnalyzer {
                 let distance = CommonTools.levenshtein(lowered, brandLower)
                 if distance == 1 && part.count >= 3 {
                     urlInfo.warnings.append(SecurityWarning(
-                        message: "⚠️ Subdomain segment '\(part)' is very similar to the brand '\(brand)' (Levenshtein = 1).",
+                        message: "Subdomain segment '\(part)' is very similar to the brand '\(brand)' (Levenshtein = 1).",
                         severity: .suspicious,
                         penalty: PenaltySystem.Penalty.brandLookaLike,
                         url: urlOrigin,
@@ -165,7 +176,7 @@ struct SubdomainAnalyzer {
                 let ngram = CommonTools.twoGramSimilarity(lowered, brandLower)
                 if ngram > 0.6 {
                     urlInfo.warnings.append(SecurityWarning(
-                        message: "⚠️ Subdomain segment '\(part)' is structurally similar to brand '\(brand)' (2-gram similarity = \(String(format: "%.2f", ngram))).",
+                        message: "Subdomain segment '\(part)' is structurally similar to brand '\(brand)' (2-gram similarity = \(String(format: "%.2f", ngram))).",
                         severity: .suspicious,
                         penalty: PenaltySystem.Penalty.brandLookaLike,
                         url: urlOrigin,
@@ -182,7 +193,7 @@ struct SubdomainAnalyzer {
         let lowercased = part.lowercased()
         if SuspiciousKeywords.phishingWords.contains(lowercased) {
             urlInfo.warnings.append(SecurityWarning(
-                message: "⚠️ Subdomain segment '\(part)' contains a phishing-related term.",
+                message: "Subdomain segment '\(part)' contains a phishing-related term.",
                 severity: .scam,
                 penalty: PenaltySystem.Penalty.phishingWordsInHost,
                 url: urlOrigin,
@@ -191,7 +202,7 @@ struct SubdomainAnalyzer {
             ))
         } else if allScamwords.contains(lowercased) {
             urlInfo.warnings.append(SecurityWarning(
-                message: "⚠️ Subdomain segment '\(part)' contains a scam-related term.",
+                message: "Subdomain segment '\(part)' contains a scam-related term.",
                 severity: .scam,
                 penalty: PenaltySystem.Penalty.scamWordsInHost,
                 url: urlOrigin,
@@ -218,7 +229,7 @@ struct SubdomainAnalyzer {
         let (isEntropyHigh, entropyScore) = CommonTools.isHighEntropy(part, 4.3)
         if isEntropyHigh {
             urlInfo.warnings.append(SecurityWarning(
-                message: "⚠️ Subdomain segment '\(part)' appears random or obfuscated (high entropy \(String(format: "%.2f", entropyScore ?? 0))).",
+                message: "Subdomain segment '\(part)' appears random or obfuscated (high entropy \(String(format: "%.2f", entropyScore ?? 0))).",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.highEntropySubDomain,
                 url: urlOrigin,

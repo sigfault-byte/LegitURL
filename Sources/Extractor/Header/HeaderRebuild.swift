@@ -51,7 +51,9 @@ struct HeaderRebuild {
         } else if headers.keys.contains(where: { $0.lowercased() == "content-security-policy-report-only" }) {
             mergedHeaders["content-security-policy-report-only"] = cleanlyFormattedCSPString
         }
-        mergedHeaders["set-cookie"] = "-Set-Cookie: " + formattedCookies
+        if headers.keys.contains(where: {$0.lowercased() == "set-cookie"}){
+            mergedHeaders["set-cookie"] = formattedCookies            
+        }
 
         let parsed = parseHeaders(mergedHeaders)
         onlineInfo.parsedHeaders = parsed
