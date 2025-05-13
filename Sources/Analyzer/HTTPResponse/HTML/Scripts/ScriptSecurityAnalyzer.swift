@@ -85,7 +85,7 @@ struct ScriptSecurityAnalyzer {
             case .dataURI:
                     scripts.scripts[index].findings4UI = [("Data URI script detected", .dangerous)]
                     if let nonce = script.nonceValue, !nonce.isEmpty {
-                        scripts.scripts[index].findings4UI = [("'nonce' attribute works on Inline Script, not Data URI", .info)]
+                        scripts.scripts[index].findings4UI = [("'nonce' attribute is for Inline Scripts", .suspicious)]
                     }
                     dataUriCounter += 1
             case .unknown:
@@ -292,7 +292,7 @@ struct ScriptSecurityAnalyzer {
         }
         if protocolRelativeCounterWithIntegrity > 0 {
             warnings.append(SecurityWarning(
-                message: "This page includes \(protocolRelativeCounterWithIntegrity) script(s) using protocol-relative URLs with integrity attributes. (LegitURL did not verify their correctness). While protected, these are archaic and risky, as they rely on the current protocol and can lead to mixed content issues.",
+                message: "This page includes \(protocolRelativeCounterWithIntegrity) script(s) using protocol-relative URLs with integrity attributes. (Their correctness was not verified). While protected, these are archaic and risky, as they rely on the current protocol and can lead to mixed content issues.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.protocolRelativeScriptSRI,
                 url: origin,
@@ -302,7 +302,7 @@ struct ScriptSecurityAnalyzer {
         }
         if protocolRelativeCounter > 0, protocolRelativeCounterWithIntegrity > 0, protocolRelativeCounter != protocolRelativeCounterWithIntegrity {
             warnings.append(SecurityWarning(
-                message: "\(protocolRelativeCounterWithIntegrity) protocol-relative script URLs have integrity attributes, while \(protocolRelativeCounter) others do not. This makes no sense.",
+                message: "\(protocolRelativeCounterWithIntegrity) protocol-relative script URLs have integrity attributes, while \(protocolRelativeCounter) others do not.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.protocolRelativeScriptSrc,
                 url: origin,

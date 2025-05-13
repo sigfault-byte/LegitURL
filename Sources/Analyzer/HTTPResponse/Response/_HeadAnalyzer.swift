@@ -45,9 +45,9 @@ struct HeadAnalyzer {
         for i in candidate {
             let pos = i
             guard pos + 1 < headcontent.count else { continue }
-            if DataSignatures.matchesAsciiTag(at: pos, in: headcontent, asciiToCompare: interestingPrefix.title) {
+            if DataSignatures.matchesAsciiTag(at: pos, in: headcontent, asciiToCompare: InterestingPrefix.title) {
                 prefilterCandidate.append(i)
-            } else if DataSignatures.matchesAsciiTag(at: pos, in: headcontent, asciiToCompare: interestingPrefix.meta) {
+            } else if DataSignatures.matchesAsciiTag(at: pos, in: headcontent, asciiToCompare: InterestingPrefix.meta) {
                 prefilterCandidate.append(i)
             }
         }

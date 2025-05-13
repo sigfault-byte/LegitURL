@@ -28,7 +28,7 @@ class DestinationInfoComponentModel: ObservableObject {
     
     var punycodeMissmatch: Bool = false
     var summaryTitle: String {
-        let trustedMessage = "This website is on your / the list of trusted website."
+        let trustedMessage = "This website is on the list of trusted website."
         
         if self.isTrusted {
             return trustedMessage

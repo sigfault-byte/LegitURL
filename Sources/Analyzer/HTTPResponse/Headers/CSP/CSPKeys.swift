@@ -5,6 +5,7 @@
 //  Created by Chief Hakka on 07/04/2025.
 //
 // MARK: - Core Content Directives
+//https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy
 
 //directive-name [source-expression] [source-expression] ... ;
 
@@ -49,6 +50,10 @@ struct dangerousCSPValues {
     static let unsafeInline: Data = "'unsafe-inline'".data(using: .utf8) ?? Data() // Allows inline scripts or styles — XSS risk
     static let unsafeEval: Data = "'unsafe-eval'".data(using: .utf8) ?? Data() // Allows eval() and similar — code injection risk
     static let wasmUnsafeEval: Data = "'wasm-unsafe-eval'".data(using: .utf8) ?? Data() // Allows WebAssembly compile-time eval — modern risk
+    // TODO: ??? Just DO IT
+    // Allosws hash expression for event handler : e.g. script-src 'unsafe-hashes' 'sha256-cd9827ad...': -> red flag
+    // If the hash value matches the hash of an inline event handler attribute value or of a style attribute value, then the code will be allowed to execute.
+    static let unsafeHashes: Data = "'unsafe-hashes'".data(using: .utf8) ?? Data()
     static let data: Data = "data:".data(using: .utf8) ?? Data() // Allows data: URLs — risky, often abused
     static let blob: Data = "blob:".data(using: .utf8) ?? Data() // Allows blob: URLs — often used for dynamic JS payloads
     static let wildcard: Data = "*".data(using: .utf8) ?? Data() // Wildcard — allows everything from everywhere // NO QUOTE ON WILDCARD!!!!

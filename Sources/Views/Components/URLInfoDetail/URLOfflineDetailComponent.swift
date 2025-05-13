@@ -38,7 +38,8 @@ struct URLOfflineDetailComponent: View {
             portRow,
             pathRow,
             queryRow,
-            fragmentRow
+            fragmentRow,
+            coreURLRow,
         ].compactMap { $0 }
     }
     
@@ -98,5 +99,9 @@ struct URLOfflineDetailComponent: View {
                     .onTapGesture { withAnimation { isFragmentExpanded.toggle() } }
             )
         }
+    }
+    
+    private var coreURLRow: AnyView? {
+        urlInfo.components.coreURL.map { AnyView(URLDetailRow(label: "Ressource Target", value: $0)) }
     }
 }

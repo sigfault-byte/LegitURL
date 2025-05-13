@@ -58,6 +58,7 @@ struct CookieListView: View {
     private func color(for severity: CookieSeverity) -> Color {
         switch severity {
         case .info: return .blue
+        case .good: return .green
         case .suspicious: return .orange
         case .tracking: return .purple
         case .dangerous: return .red

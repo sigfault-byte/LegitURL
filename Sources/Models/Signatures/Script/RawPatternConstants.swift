@@ -5,7 +5,7 @@ struct ScamByteSignatures {
     static let submitPattern: [UInt8] = Array(".submit".utf8)
     //    static let clientJS: [UInt8] = Array("ClientJS(".utf8)
     static let metaRefresh: [UInt8] = Array("<meta http-equiv=\"refresh\"".utf8)
-    // TODO Added for URL extraction but its a bit complicated. Lots of clocking can happen. We could catch explicit one. But lets just flag and bail depedning on other signals for now
+    // TODO: Added for URL extraction but its a bit complicated. Lots of clocking can happen. We could catch explicit one. But lets just flag and bail depedning on other signals for now
     static let metaRefreshURLStart: [UInt8] = Array("content=\"".utf8)
     
     static let evalCall: [UInt8] = Array("eval(".utf8)
@@ -28,7 +28,7 @@ struct HTMLEntities {
     static let scriptClose: [UInt8] = Array("</script>".utf8)
 }
 
-struct interestingPrefix {
+struct InterestingPrefix {
     static let http: [UInt8] = Array("http/".utf8)
     static let https: [UInt8] = Array("https/".utf8)
     static let slash: [UInt8] = Array("/".utf8)
@@ -39,6 +39,9 @@ struct interestingPrefix {
     static let title: [UInt8] = Array("title".utf8)
     static let meta: [UInt8] = Array("meta".utf8)
     static let httpEquivCSP: [UInt8] = Array("http-equiv=\"content-security-policy\"".utf8)
+    static let moduleKeyword: [UInt8] = Array("module".utf8)
+    static let jsonKeyword: [UInt8] = Array("application/json".utf8)
+    static let ldJsonKeyword: [UInt8] = Array("application/ld+json".utf8)
 }
 
 struct byteLetters {
@@ -68,3 +71,11 @@ func convertToDomainTldBytes(of urlString: String) -> Data? {
     }
     return nil
 }
+
+
+
+////TODO: study :
+//canvas.toDataURL() → fingerprinting
+//AudioContext().createAnalyser() → audio fingerprinting ???
+//setInterval(() => window.open(...)) → persistent popup tracking argg
+//MutationObserver → DOM-based tracking

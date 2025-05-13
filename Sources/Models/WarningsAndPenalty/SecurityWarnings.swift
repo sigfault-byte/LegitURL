@@ -29,6 +29,7 @@ struct SecurityWarning: Identifiable{
     /// **Represents severity levels for warnings**
     enum SeverityLevel: String {
         case info = "INFO"
+        case good = "GOOD"
         case tracking = "TRACKING"
         case suspicious = "SUSPICIOUS"
         case scam = "SCAM"
@@ -40,6 +41,7 @@ struct SecurityWarning: Identifiable{
         var color: Color {
             switch self {
             case .info: return Color.blue
+            case .good : return Color.green
             case .tracking: return Color.purple
             case .suspicious: return Color.orange
             case .scam: return Color(red: 0.6, green: 0, blue: 0.2)
@@ -68,7 +70,7 @@ struct SecurityWarning: Identifiable{
 // ✅ Update SeverityLevel to support sorting & icons
 extension SecurityWarning.SeverityLevel: CaseIterable {
     static var allWarnings: [SecurityWarning.SeverityLevel] {
-        return [.critical, .dangerous, .scam, .suspicious, .tracking, .info, .fetchError]
+        return [.critical, .fetchError, .dangerous, .scam, .suspicious, .tracking, .good, .info]
     }
 }
 
@@ -77,6 +79,8 @@ extension SecurityWarning.SeverityLevel {
         switch self {
         case .info:
             return "info.circle"
+        case .good:
+            return "checkmark.circle"
         case .tracking:
             return "dot.radiowaves.left.and.right"
         case .suspicious:

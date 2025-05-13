@@ -56,10 +56,10 @@ struct NonceAndExternalScript {
             ($0.origin == .inline || $0.origin == .dataURI) ? $0 : nil
         }.count
         let nonceScriptCount = script?.scripts.compactMap { $0.noncePos != nil ? $0 : nil }.count
-
+        
         var nonceValueFromDirective: [String] = []
         var srcValueFromDirective: Set<String> = []
-
+        
         // Flag the missing nonce script, no penalty
         if let inlineOrDataCount = inlineOrDataURICount,
            let nonceCount = nonceScriptCount,
@@ -75,7 +75,7 @@ struct NonceAndExternalScript {
                 }
             }
             warnings.append(SecurityWarning(
-                message: "Some inline or data URI scripts don't have a nonce value despite CSP nonce directive. They'll likely be ignored by the browser.",
+                message: "Some inline scripts don't have a nonce value despite CSP nonce directive. They'll likely be ignored by the browser.",
                 severity: .info,
                 penalty: 0,
                 url: urlOrigin,
@@ -103,18 +103,18 @@ struct NonceAndExternalScript {
                 ))
             }
         }
-//        DEBUG
-//        print("Directive: ", nonceValueFromDirective)
+        //        DEBUG
+        //        print("Directive: ", nonceValueFromDirective)
         var cleanedNonceFromDirective = Set(nonceValueFromDirective.map { $0.replacingOccurrences(of: "nonce-", with: "") })
         cleanedNonceFromDirective =  Set(cleanedNonceFromDirective.map { String($0.dropFirst().dropLast()) })
-//        DEBUG
-//        print("Cleaned directive: ", cleanedNonceFromDirective)
-//        print("Nonce value from scripts:", nonceValueFromScript)
+        //        DEBUG
+        //        print("Cleaned directive: ", cleanedNonceFromDirective)
+        //        print("Nonce value from scripts:", nonceValueFromScript)
         
         if cleanedNonceFromDirective.count == nonceValueFromScript.count {
             // Imba one liner to clean the comparison, thanks chatGPT <3
             let missingNonces = nonceValueFromScript.subtracting(cleanedNonceFromDirective)
-
+            
             if !missingNonces.isEmpty {
                 let displayList = CommonTools.formatLimitedList(missingNonces, limit : 5)
                 // There are some missing nonces
@@ -126,39 +126,48 @@ struct NonceAndExternalScript {
                     source: .header
                 ))
             }
-        } else {
-            warnings.append(SecurityWarning(
-                message: "Nonce values in CSP header and script do not match.",
-                severity: .suspicious,
-                penalty: -10,
-                url: urlOrigin,
-                source: .header
-            ))
+            else if nonceValueFromScript == cleanedNonceFromDirective && !nonceValueFromScript.isEmpty {
+                warnings.append(SecurityWarning(
+                    message: "All inline scripts are protected with matching CSP nonces.",
+                    severity: .good,
+                    penalty: 15,
+                    url: urlOrigin,
+                    source: .header,
+                ))
+            } else {
+                warnings.append(SecurityWarning(
+                    message: "Nonce values in CSP header and script do not match.",
+                    severity: .suspicious,
+                    penalty: -10,
+                    url: urlOrigin,
+                    source: .header
+                ))
+            }
         }
-//        waived of dataURI with nonce value -> still not good a SRI would be better.
-//        Doest work, nonce is only for inline
-//        if let script = script {
-//            let dataURIScripts = script.scripts.filter { $0.origin == .dataURI }
-//            
-//            let allDataURIsHaveNonce = dataURIScripts.allSatisfy { $0.nonceValue != nil }
-//            
-//            if allDataURIsHaveNonce && !dataURIScripts.isEmpty {
-//                warnings.append(SecurityWarning(
-//                    message: "All data URI scripts correctly have nonce verified values.",
-//                    severity: .info,
-//                    penalty: 30,
-//                    url: urlOrigin,
-//                    source: .header
-//                ))
-//            }
-//        }
+        //        waived of dataURI with nonce value -> still not good a SRI would be better.
+        //        Doest work, nonce is only for inline
+        //        if let script = script {
+        //            let dataURIScripts = script.scripts.filter { $0.origin == .dataURI }
+        //
+        //            let allDataURIsHaveNonce = dataURIScripts.allSatisfy { $0.nonceValue != nil }
+        //
+        //            if allDataURIsHaveNonce && !dataURIScripts.isEmpty {
+        //                warnings.append(SecurityWarning(
+        //                    message: "All data URI scripts correctly have nonce verified values.",
+        //                    severity: .info,
+        //                    penalty: 30,
+        //                    url: urlOrigin,
+        //                    source: .header
+        //                ))
+        //            }
+        //        }
         
         // Track how many scripts actually matched the CSP sources
         var usedScriptCount = 0
-//DEBUG
-//        for a in srcValueFromScript {
-//            print("url: ", a)
-//        }
+        //DEBUG
+        //        for a in srcValueFromScript {
+        //            print("url: ", a)
+        //        }
         
         for scriptSource in srcValueFromScript {
             if !isExternalScriptAllowed(scriptURL: scriptSource, allowedSources: srcValueFromDirective) {
@@ -173,11 +182,11 @@ struct NonceAndExternalScript {
                 usedScriptCount += 1
             }
         }
-
+        
         // After checking each external script
         let authorizedSourceCount = srcValueFromDirective.count
         let excessiveSourceCount = authorizedSourceCount - usedScriptCount
-
+        
         if excessiveSourceCount >= 2 {
             let softPenalty = max(excessiveSourceCount * -1, -20) // cap maximum penalty to -20
             warnings.append(SecurityWarning(
@@ -203,29 +212,29 @@ struct NonceAndExternalScript {
         }
         
         let scriptHost = scriptComponents.host ?? ""
-
+        
         for rawAllowedSource in allowedSources {
             var allowedSource = rawAllowedSource.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-
+            
             // Normalize allowedSource into a parseable URL
             if !allowedSource.hasPrefix("http") {
                 allowedSource = "https://" + allowedSource
             }
-//DEBUG
-//            print("allowedSource: \(allowedSource) vs scriptHost: \(scriptHost)")
-
+            //DEBUG
+            //            print("allowedSource: \(allowedSource) vs scriptHost: \(scriptHost)")
+            
             // 1. Wildcard "*"
             if allowedSource == "*" {
                 return true
             }
-
+            
             // 2. Allow any HTTPS
             if allowedSource == "https:" {
                 if scriptComponents.scheme == "https" {
                     return true
                 }
             }
-
+            
             // 3. Wildcard domain "*.example.com"
             if allowedSource.hasPrefix("https://*.") {
                 let baseDomain = allowedSource.replacingOccurrences(of: "https://*.", with: "")
@@ -233,7 +242,7 @@ struct NonceAndExternalScript {
                     return true
                 }
             }
-
+            
             // 4. Full host match
             if let allowedComponents = URL(string: allowedSource),
                let allowedHost = allowedComponents.host {

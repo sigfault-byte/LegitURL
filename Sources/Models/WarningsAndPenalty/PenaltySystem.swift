@@ -70,8 +70,8 @@ struct PenaltySystem {
         
         /////////////////////ONLINE ///////////////////////////////////////////
         ///Body
-        static let scriptIs80Percent                   = -30
         static let extHttpScriptSrc                    = -40
+        static let scriptIs80Percent                   = -30
         static let jsEvalInBody                        = -30
         static let badJSCallInline                     = -30
         static let jsFingerPrinting                    = -30
@@ -105,9 +105,11 @@ struct PenaltySystem {
         static let protocolRelativeScriptSRI           = -5
         
         //InlineSpecific & JS penalty
-        static let hightPenaltyForInlineJS             = -30
-        static let jsSetEditCookie                     = -20
+        static let hightPenaltyForInlineJS             = -20
+        static let jsSetEditCookie                     = -15
         static let mediumPenaltyForInlineJS            = -15
+        static let moduleCrossoriginUnknownValue       = -5 // Same penalty different reasons?
+        static let moduleCrossoriginMalformed          = -5 // Need a specific bitflag maybe... but for what??
         static let lowPenaltyForInlineJS               = -5
         static let jsReadsCookie                       = -5
         
@@ -133,29 +135,27 @@ struct PenaltySystem {
         
         //HEADERS
         static let missingHSTS                         = -50
-        static let fakeCSP                             = -30
+        static let fakeCSP                             = -45
         static let inccorectLogic                      = -5
         static let lowHSTSValue                        = -5
         static let weakReferrerPolicy                  = -5
         
         //CSP
         static let missingCSP                          = -50 //HARD LIMIT FOR CSP penalty! Missing CSP cannot be less than a missconfig CSP. Though a "fake" CSP might be worse
-        static let wildcardScriptSrc                   = -30
-        static let wildcardScriptSrcStrictDyn          = -20
+        static let wildcardScriptSrc                   = -20
+        static let wildcardScriptSrcStrictDyn          = -10
         
         //unsafe not "contained"
-        static let unsafeEvalScriptSrc                 = -30
-        static let unsafeInlineScriptSrc               = -20
+        static let unsafeEvalScriptSrc                 = -25 // higher than inlinescript used to be 30 and 20 ? make no sense between volontary unsafe and missing, max penalty cap at 40 when both are present
+        static let unsafeInlineScriptSrc               = -15
         
         //unsafe "nonce'd or hashed + dynamic"
-        static let unsafeEvalScriptContained           = -20 // Alwasys bad
-        static let unsafeInlineStrictDynAndNonce       = -12
+//        static let unsafeEvalScriptContained           = -30 // Alwasys bad
+//        static let unsafeInlineStrictDynAndNonce       = -12 // unused strict-dynamic nullifies unsafe-inline, for lvl3 browser
         
         //  unsafe-inline "containe'd"
-        static let unsafeInlineHash                    = -5 // most "secure" still bad because inline
-        
-        static let unsafeInlineStirctDyn               = -5
-        static let unsafeEvalScriptSrcDyn              = -5
+//        static let unsafeInlineHash                    = -20 // most "secure" still bad because inline, hash i
+
         static let serverLeakNameAndVersion            = -5
         static let malformedIncompleteCSP              = -5
             
@@ -399,6 +399,4 @@ struct PenaltySystem {
             return (-10, .suspicious)
         }
     }
-    
-    
 }

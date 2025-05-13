@@ -362,4 +362,21 @@ struct ScriptInlineAnalyzer {
         }
     }
     
+    //TEST function for window.opener
+    private static func detectOpenerNull(in soup: Data, byteRanges: [(range: Range<Int>, scriptIndex: Int)], into scripts: inout ScriptExtractionResult) -> Bool {
+        let openerBytes: [UInt8] = Array("opener".utf8)
+        let nullBytes: [UInt8] = Array("null".utf8)
+        
+        var found = false
+        
+        for (range, scriptIndex) in byteRanges {
+            let data = soup[range]
+            guard data.count > 12 else { continue }  // too small
+//            locate all '=' using extractAllTagMarkers
+            // either loop over or grab 10B aournd each side of it
+            
+            
+        }
+            return found
+        }
 }

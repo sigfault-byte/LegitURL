@@ -10,6 +10,7 @@ struct URLOnlineDetailComponent: View {
     
     var body: some View {
         Group {
+            
             if let responseCode = onlineInfo.serverResponseCode {
                 URLDetailRow(label: "Server Response Code", value: "\(responseCode)")
             }

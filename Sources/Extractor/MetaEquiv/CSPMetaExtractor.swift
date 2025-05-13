@@ -34,8 +34,8 @@ struct CSPMetaExtractor {
         var maxEnd: Int = 0
         
         for candidate in candidates {
-            if DataSignatures.matchesAsciiTag(at: candidate, in: html, asciiToCompare: interestingPrefix.meta),
-               DataSignatures.matchesAsciiTag(at: candidate + 5, in: html, asciiToCompare: interestingPrefix.httpEquivCSP, lookAheadWindow: 55) {
+            if DataSignatures.matchesAsciiTag(at: candidate, in: html, asciiToCompare: InterestingPrefix.meta),
+               DataSignatures.matchesAsciiTag(at: candidate + 5, in: html, asciiToCompare: InterestingPrefix.httpEquivCSP, lookAheadWindow: 55) {
                 
                 //Useless fun optimization
                 let start = DataSignatures.extractAllTagMarkers(in: html, within: candidate+40..<candidate+100, tag: byteLetters.equalSign)

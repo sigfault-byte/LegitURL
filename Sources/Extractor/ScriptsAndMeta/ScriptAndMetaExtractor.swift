@@ -153,11 +153,14 @@ struct ScriptAndMetaExtractor {
         #endif
         // look for src
         ScriptHelperFunction.scanScriptSrc(in: body, scripts: &confirmedScripts)
-        //filter out js application data!
-        ScriptHelperFunction.filterOutDataScripts(&confirmedScripts)
+        
+        ScriptHelperFunction.scanScriptType(in: body, scripts: &confirmedScripts)
+        
+        //filter out js application data! no use anymore
+//        ScriptHelperFunction.filterOutDataScripts(&confirmedScripts)
         #if DEBUG
         let t6 = Date()
-        print(" Step 5 - Src position scan took \(Int(t6.timeIntervalSince(t5) * 1000))ms")
+        print("Step 5 - Src position scan took \(Int(t6.timeIntervalSince(t5) * 1000))ms")
         #endif
         // sort the scripts to their origin
         ScriptHelperFunction.assignScriptSrcOrigin(in: body, scripts: &confirmedScripts)
@@ -166,10 +169,29 @@ struct ScriptAndMetaExtractor {
         let t7 = Date()
         print("Step 6 - Script origin classification took \(Int(t7.timeIntervalSince(t6) * 1000))ms")
         #endif
-        //find nonce script and value
-        ScriptHelperFunction.findNonceScript(in: body, scripts: &confirmedScripts)
+        
+        //find nonce script and value, data URI is useless nonce doesnt work on it, but many do the error?
+        if confirmedScripts.contains(where: {
+            $0.origin == .inline || $0.origin == .dataURI
+        }) {
+            ScriptHelperFunction.findNonceScript(in: body, scripts: &confirmedScripts)
+        }
+        
         //get integrityValue
-        ScriptHelperFunction.findIntegrityScript(in: body, scripts: &confirmedScripts)
+        if confirmedScripts.contains(where: {
+            $0.origin == .httpsExternal || $0.origin == .relative || $0.origin == .protocolRelative
+        }) {
+                ScriptHelperFunction.findIntegrityScript(in: body, scripts: &confirmedScripts)
+        }
+        
+//        get module crossoriginValue
+        if confirmedScripts.contains(where: { $0.isModule == true } ) {
+            var crossOriginWarnings: [SecurityWarning] = []
+            crossOriginWarnings = ScriptHelperFunction.findCrossOriginModuleValue(in: body, scripts: &confirmedScripts)
+            if !crossOriginWarnings.isEmpty {
+                warnings.append(contentsOf: crossOriginWarnings)
+            }
+        }
         
         #if DEBUG
         let t8 = Date()

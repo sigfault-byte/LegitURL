@@ -17,6 +17,8 @@ struct ScriptPreview: Identifiable {
     let extractedSrc: String?
     let nonce: String?
     let integrity: String?
+    let isModule: Bool?
+    let crossOriginValue: String?
 }
 
 struct ScriptToPreview {
@@ -64,16 +66,18 @@ struct ScriptToPreview {
                     severity: .info
                 ))
             }
-
+            
             let preview = ScriptPreview(
-                origin: script.origin,
+                origin: script.adjustedOrigin,
                 isInline: script.origin == .inline,
                 context: script.context,
                 contentPreview: decoded,
                 findings: findings,
                 extractedSrc: script.extractedSrc,
                 nonce: script.nonceValue,
-                integrity: script.integrityValue
+                integrity: script.integrityValue,
+                isModule: script.isModule,
+                crossOriginValue: script.crossOriginValue
             )
             previews.append(preview)
         }

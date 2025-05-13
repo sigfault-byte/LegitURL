@@ -30,14 +30,16 @@ struct ScriptAndDefaultDirective {
             warnings.append(SecurityWarning(
                 message: "'unsafe-inline' present in \(directiveName).\(specialWarning)",
                 severity: .dangerous,
-                penalty: source == "CSP" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
+                penalty: source == "CSP"
+                    ? PenaltySystem.Penalty.unsafeInlineScriptSrc
+                    : 0,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_CSP_UNSAFE_INLINE]
             ))
         } else if (bitFlagCSP.contains(.hasNonce) || bitFlagCSP.contains(.hasHash)) && bitFlagCSP.contains(.strictDynamic) {
             warnings.append(SecurityWarning(
-                message: "Inline script protection via nonce or hash detected in \(directiveName), alongside with strict-dynamic.",
+                message: "Inline script protection via nonce or hash detected in \(directiveName), alongside strict-dynamic.",
                 severity: .info,
                 penalty: PenaltySystem.Penalty.informational,
                 url: url,
@@ -49,9 +51,11 @@ struct ScriptAndDefaultDirective {
         // Unsafe Eval
         if bitFlagCSP.contains(.unsafeEval) {
             warnings.append(SecurityWarning(
-                message: "'unsafe-eval' present in \(directiveName) this allows dynamic JS execution and cannot be mitigated with nonce/hash.",
+                message: "'unsafe-eval' present in \(directiveName) allowing dynamic JS execution, which cannot be mitigated.",
                 severity: .dangerous,
-                penalty: source == "CSP" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
+                penalty: source == "CSP"
+                    ? PenaltySystem.Penalty.unsafeEvalScriptSrc
+                    : 0,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_CSP_UNSAFE_EVAL]
@@ -63,7 +67,7 @@ struct ScriptAndDefaultDirective {
             warnings.append(SecurityWarning(
                 message: "Wildcard (*) detected in directive: \(directiveName) — allows scripts from any origin.",
                 severity: .dangerous,
-                penalty: source == "CSP" ? PenaltySystem.Penalty.unsafeInlineScriptSrc : 0,
+                penalty: source == "CSP" ? PenaltySystem.Penalty.wildcardScriptSrc : 0,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_CSP_WILDCARD]
@@ -81,16 +85,25 @@ struct ScriptAndDefaultDirective {
         let hasObjectSrc = structuredCSP.keys.contains("object-src")
         let hasRequiredTrustedTypeFor = structuredCSP.keys.contains("require-trusted-types-for")
 
-        
-        //TODO: Poorly implemented. Refactor much needed
-        if (!hasDefaultSrc && (!hasScriptSrc || !hasObjectSrc)) && !hasRequiredTrustedTypeFor {
+        // Penalize completely missing script-src and default-src
+        if !hasDefaultSrc && !hasScriptSrc && !hasRequiredTrustedTypeFor{
             warnings.append(SecurityWarning(
-                message: "CSP is missing both 'default-src' and a critical combination of 'script-src' and 'object-src'.",
-                severity: .dangerous,
+                message: "CSP is missing both 'default-src' and 'script-src' or 'require-trusted-types-for'\n. This CSP offers no meaningful script protection.",
+                severity: .critical,
                 penalty: PenaltySystem.Penalty.fakeCSP,
                 url: url,
                 source: .header,
                 bitFlags: [.HEADERS_FAKE_CSP]
+            ))
+            
+        //TODO: If this is missing the fallback is default-src, so if default-src is not none this is "bad"
+        } else if !hasObjectSrc {
+            warnings.append(SecurityWarning(
+                message: "CSP is missing 'object-src'. This weakens protection against legacy plugin-based attacks.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.inccorectLogic,
+                url: url,
+                source: .header,
             ))
         } else if hasRequiredTrustedTypeFor {
             if let trustedTypesDirective = structuredCSP["require-trusted-types-for"] {

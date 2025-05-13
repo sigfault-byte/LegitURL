@@ -232,17 +232,19 @@ struct HeadersUtils {
         if let referrerPolicy = responseHeaders.first(where: { $0.key.caseInsensitiveCompare("Referrer-Policy") == .orderedSame })?.value.lowercased() {
             
             let goodPolicies = [
-                "no-referrer",
+                "no-referrer", // Best !
                 "strict-origin-when-cross-origin",
-                "origin",
-                "origin-when-cross-origin"
+                "strict-origin", // good
+                "origin", // good
+                "origin-when-cross-origin", // Mkay
+                "same-origin"
             ]
             
             if !goodPolicies.contains(referrerPolicy) {
                 warnings.append(SecurityWarning(
                     message: "Weak or risky Referrer-Policy detected: \(referrerPolicy).",
-                    severity: .suspicious,
-                    penalty: /*PenaltySystem.Penalty.weakReferrerPolicy*/ 0,
+                    severity: referrerPolicy == "unsafe-url" ? .dangerous : .suspicious,
+                    penalty: PenaltySystem.Penalty.weakReferrerPolicy,
                     url: urlOrigin,
                     source: .header,
                 ))
@@ -251,7 +253,7 @@ struct HeadersUtils {
             warnings.append(SecurityWarning(
                 message: "Missing Referrer-Policy header.",
                 severity: .suspicious,
-                penalty: /*PenaltySystem.Penalty.weakReferrerPolicy*/ 0,
+                penalty: PenaltySystem.Penalty.weakReferrerPolicy,
                 url: urlOrigin,
                 source: .header,
             ))

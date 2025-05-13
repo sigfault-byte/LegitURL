@@ -17,7 +17,7 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     
     var severity: CookieSeverity = .info
     var bitFlags: CookieFlagBits = []
-
+    
     let valueSize = cookie.value.utf8.count
     let (isHighEntropyValue, entropyScore) = CommonTools.isHighEntropy(cookie.value, 4.7)
     if isHighEntropyValue {
@@ -29,12 +29,12 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     }
     
     switch valueSize {
-    case 0...16:
-        bitFlags.insert(.smallValue)
-    case 17...64:
-        bitFlags.insert(.mediumValue)
-    default:
-        bitFlags.insert(.largeValue)
+        case 0...16:
+            bitFlags.insert(.smallValue)
+        case 17...64:
+            bitFlags.insert(.mediumValue)
+        default:
+            bitFlags.insert(.largeValue)
     }
     
     if valueSize > 100 && isHighEntropyValue { bitFlags.insert(.wayTooLarge) }
@@ -43,7 +43,7 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     // - If cookie is expired AND value is long/high-entropy → may be fingerprinting cleanup
     // - If expired on non-200 response → possibly used in cloaking logic
     // - For now, expired cookies are flagged as `.info` only
-//    print("Cookie: \(cookie.name) expires in \(cookie.expire) seconds")
+    //    print("Cookie: \(cookie.name) expires in \(cookie.expire) seconds")
     if let expiry = cookie.expire {
         let duration = expiry.timeIntervalSinceNow
         if duration <= 0 {
@@ -56,7 +56,7 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     } else {
         bitFlags.insert(.session)
     }
-
+    
     if cookie.sameSite.lowercased() == "none" {
         bitFlags.insert(.sameSiteNone)
     } else if cookie.sameSite.lowercased() == "lax" {
@@ -64,15 +64,15 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     } else if cookie.sameSite.lowercased() == "strict" {
         bitFlags.insert(.samesiteStrict)
     }
-
+    
     if cookie.secure == true {
         bitFlags.insert(.secure)
     }
-
+    
     if cookie.httpOnly == true {
         bitFlags.insert(.httpOnly)
     }
-
+    
     let domainParts = cookie.domain.components(separatedBy: ".").filter { !$0.isEmpty }
     let isDomainBroad = cookie.domain.hasPrefix(".") && domainParts.count >= 2
     let isPathBroad = cookie.path == "/"
@@ -80,14 +80,14 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         bitFlags.insert(.pathOverlyBroad)
     }
     
-
+    
     if isDomainBroad && isPathBroad {
         bitFlags.insert(.domainOverlyBroad)
     }
-
+    
     let isCrossSite = cookie.sameSite.lowercased() == "none"
     let isSecure = cookie.secure
-
+    
     // Severity determination logic:
     // - Any cookie accessible to JS and longer than 16B is considered tracking
     // - High-entropy, persistent, and wide-scope cookies escalate to tracking or dangerous
@@ -112,10 +112,12 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         severity = .tracking
     } else if bitFlags.contains(.highEntropyValue) || isCrossSite || (isSecure == false && !isCrossSite) {
         severity = .suspicious
+    } else if cookie.httpOnly == false {
+        severity = .tracking
     } else {
         severity = .info
     }
-
+    
     return CookieAnalysisResult(cookie: cookie, severity: severity, flags: bitFlags, entropy: entropyScore)
 }
 

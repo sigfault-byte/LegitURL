@@ -34,12 +34,6 @@ struct ComboAlert {
     
     static func inferMessage(for combo: inout ComboAlert) {
         let f = combo.flags
-
-        // Trusted website....
-//        if f & WarningFlags.DOMAIN_IS_WHITELISTED.rawValue != 0 {
-//            combo.message = "This website is on your / the list of trusted website."
-//            return
-//        }
         
         // 0. Basic security missing (short circuit critical)
         if f & WarningFlags.HEADERS_CSP_MISSING.rawValue != 0 {

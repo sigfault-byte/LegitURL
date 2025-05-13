@@ -13,6 +13,10 @@ enum ScriptOrigin: String, Hashable {
     case unknown = "Unknown"
     case malformed = "Malformed"
     case inline = "Inline"
+    case dataScript = "Data Script"
+    case moduleInline = "Module Inline"
+    case moduleExternal = "Module External"
+    case moduleRelative = "Module Relative"
 }
 
 struct ScriptScanTarget {
@@ -23,6 +27,7 @@ struct ScriptScanTarget {
     var findings: ScanFlag?
     var context: ScriptContext?
     var srcPos: Int?
+    var typePos: Int?
     var origin: ScriptOrigin?
     var extractedSrc: String? // Added property to store the full detected script source URL
     var isSelfClosing: Bool = false // Added property to determine if the script tag is self-closing
@@ -31,7 +36,19 @@ struct ScriptScanTarget {
     var findings4UI: [(message: String, severity: SecurityWarning.SeverityLevel)]? = nil
     var integrityPos: Int?
     var integrityValue: String?
+    var isModule: Bool = false //module script with their own sets of rules...
+    var crossOriginValue: String? = nil //crossorigin value, can be "anonymous" / "use-credentials" / ""
     
+    var adjustedOrigin: ScriptOrigin? {
+        guard isModule else { return origin }
+        switch origin {
+        case .inline: return .moduleInline
+        case .httpsExternal, .httpExternal, .protocolRelative: return .moduleExternal
+        case .relative: return .moduleRelative
+        default: return origin
+        }
+    }
+
     enum ScriptContext: String {
         case inHead = "In Head"
         case inBody = "In Body"
