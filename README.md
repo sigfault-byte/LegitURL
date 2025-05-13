@@ -1,5 +1,5 @@
 > **Work‑in‑progress.**  
-> LegitURL works today — and it’s strict on purpose — but new heuristics and UI polish land every week.
+> It works today and gets sharper every week with new heuristics and polish.
 
 ## LegitURL
 > Like a **nutrition label for links**  
@@ -20,8 +20,10 @@ After scanning you can inspect:
 * All findings
 * Full HTTP headers & CSP directive view  
 * Cookies summary  
-* HTML body (first 1.2 MB)  
-* Extracted `<script>` blocks (first 3 KB each)
+* HTML body (up to 1.2 MB)  
+* Each `<script>` block (up to 3 KB)
+
+
 
 ---
 
@@ -29,9 +31,9 @@ After scanning you can inspect:
 1. **Offline** – parse the link (look‑alikes, encodings, scam words).  
 2. **Online** – one sandboxed HTTPS request reads headers, certificate, cookies, inline JS.
 
-*All processing is local.  
+**All processing is local.**  
 The only network traffic is **one direct HTTPS request to the link itself.**  
-No data is sent to any third‑party service, and no scan results ever leave your phone.*
+**No cloud, no tracking, no third-party services. Ever.**
 
 ---
 

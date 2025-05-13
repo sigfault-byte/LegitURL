@@ -108,8 +108,9 @@ struct NonceAndExternalScript {
         var cleanedNonceFromDirective = Set(nonceValueFromDirective.map { $0.replacingOccurrences(of: "nonce-", with: "") })
         cleanedNonceFromDirective =  Set(cleanedNonceFromDirective.map { String($0.dropFirst().dropLast()) })
         //        DEBUG
-        //        print("Cleaned directive: ", cleanedNonceFromDirective)
-        //        print("Nonce value from scripts:", nonceValueFromScript)
+                print("Cleaned directive: ", cleanedNonceFromDirective)
+                print("Nonce value from scripts:", nonceValueFromScript)
+        
         
         if cleanedNonceFromDirective.count == nonceValueFromScript.count {
             // Imba one liner to clean the comparison, thanks chatGPT <3
@@ -134,7 +135,7 @@ struct NonceAndExternalScript {
                     url: urlOrigin,
                     source: .header,
                 ))
-            } else {
+            } else if cleanedNonceFromDirective != [] || nonceValueFromScript != [] {
                 warnings.append(SecurityWarning(
                     message: "Nonce values in CSP header and script do not match.",
                     severity: .suspicious,
