@@ -149,7 +149,7 @@ struct URLComponentExtractor {
         // Https check, before return so the offline extraction is done
         guard compInfo.scheme?.lowercased() == "https" else {
             warnings.append(SecurityWarning(
-                message: "URL: \(url) is not using TLS encryption. \nAnalysis aborded",
+                message: "URL: \(url) is not using TLS encryption. \nAnalysis aborted",
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
                 url: components.url?.absoluteString ?? "",
