@@ -943,3 +943,5 @@ This protects users and ensures the project remains open and honest.
 
 > See [LICENSE](LICENSE) for full terms.
 
+## How to Contribute
+I don’t expect forks or contributions, but feel free to open an issue or email me if you spot something weird or want to help.

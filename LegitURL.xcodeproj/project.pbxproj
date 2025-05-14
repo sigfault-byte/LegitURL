@@ -31,6 +31,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		24039BE72DD456C600BB93CB /* AppPreview */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AppPreview;
+			sourceTree = "<group>";
+		};
 		24E29A0B2DB7DC9C0036E457 /* Archive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Archive;
@@ -67,6 +72,7 @@
 		249557072D86D6EC0094E1D8 = {
 			isa = PBXGroup;
 			children = (
+				24039BE72DD456C600BB93CB /* AppPreview */,
 				24F49ED72DC329AF0028FC51 /* Assets.xcassets */,
 				249557112D86D6EC0094E1D8 /* Products */,
 				24E29A0B2DB7DC9C0036E457 /* Archive */,
