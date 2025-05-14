@@ -29,7 +29,7 @@ struct DestinationInfoComponent: View {
                                     showFullExplanation.toggle()
                                 }
                         } else {
-                            Text("Click to see a sumamry of the score.")
+                            Text("Click to see a summary of the score.")
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
