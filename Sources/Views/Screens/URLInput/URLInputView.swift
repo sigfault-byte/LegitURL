@@ -7,6 +7,7 @@
 import SwiftUI
 
 struct URLInputView: View {
+    let incomingURL: URL?
     @StateObject  private var viewModel = URLInputViewModel()
     @State private var showSettings = false
     @State private var showHelpPage = false
@@ -65,6 +66,14 @@ struct URLInputView: View {
             }
             .navigationDestination(isPresented: $showSettings) {
                 SettingView()
+            }
+            .onAppear {
+                if let url = incomingURL {
+                    viewModel.urlInput = url.absoluteString
+                    if viewModel.analyzeURL() {
+                        onAnalyze(viewModel.urlInput, viewModel.infoMessage)
+                    }
+                }
             }
         }
     }

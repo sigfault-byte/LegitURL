@@ -18,7 +18,7 @@ struct AppCoordinatorView: View {
     var body: some View {
         ZStack {
             if case .input = rootScreen {
-                URLInputView(onAnalyze: { urlInput, info in
+                URLInputView(incomingURL: nil, onAnalyze: { urlInput, info in
                     withAnimation(.easeInOut) {
                         rootScreen = .analysis(urlInput: urlInput, infoMessage: info)
                     }

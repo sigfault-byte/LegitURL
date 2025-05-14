@@ -13,6 +13,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		24039BF22DD5183800BB93CB /* LegitURL-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "LegitURL-Info.plist"; sourceTree = "<group>"; };
 		2406CE772DCA6B2D0029B046 /* TECHNICAL.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TECHNICAL.md; sourceTree = "<group>"; };
 		248D78AD2DD1A71C00BABB98 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		249557102D86D6EC0094E1D8 /* LegitURL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LegitURL.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -72,6 +73,7 @@
 		249557072D86D6EC0094E1D8 = {
 			isa = PBXGroup;
 			children = (
+				24039BF22DD5183800BB93CB /* LegitURL-Info.plist */,
 				24039BE72DD456C600BB93CB /* AppPreview */,
 				24F49ED72DC329AF0028FC51 /* Assets.xcassets */,
 				249557112D86D6EC0094E1D8 /* Products */,
@@ -308,12 +310,12 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250513;
+				CURRENT_PROJECT_VERSION = 20250514;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
+				INFOPLIST_FILE = "LegitURL-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan QR codes containing URLs.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -351,12 +353,12 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250513;
+				CURRENT_PROJECT_VERSION = 20250514;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
+				INFOPLIST_FILE = "LegitURL-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan QR codes containing URLs.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;

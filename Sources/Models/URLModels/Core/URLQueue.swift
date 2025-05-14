@@ -54,3 +54,4 @@ final class ScoreUpdateModel: ObservableObject {
         self.specialFlag = []
     }
 }
+
