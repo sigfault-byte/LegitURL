@@ -4,7 +4,7 @@
 
 ## LegitURL  
 
-- [1. Who is LegitURL for?](#1-who-is-legiturl-for)
+- [1. Who is LegitURL for?](#1-who-is-legiturl-for?)
 - [2. How it works](#2-how-it-works)
 - [3. Scoring system](#3-scoring-system)
 - [4. Core detection & heuristics](#4-core-detection--heuristics)

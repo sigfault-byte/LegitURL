@@ -45,7 +45,7 @@ Anyone thinking *“Should I trust this link?”*
 Ideal for casual users, privacy enthusiasts, and developers inspecting headers / CSP / TLS / JavaScript.
 
 ## 2. Quick start
-[Join the TestFlight beta](https://…) or clone and build with Xcode.
+[Join the TestFlight beta](https://testflight.apple.com/join/VESrumtr) or clone and build with Xcode.
 
 ---
 
