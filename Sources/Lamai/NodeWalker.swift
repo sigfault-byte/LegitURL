@@ -19,7 +19,7 @@ struct NodeWalker {
             //Warn in the view that lamai find some "things"
             if !didWarnForDepth && node.depth >= 1 {
                 urlInfo.warnings.append(SecurityWarning(
-                    message: "Decoded value detected by Lamai in \(comp) \(label). This was found through recursive decoding. Check the URLComponent tree for decoding layers.",
+                    message: "Decoded value detected by Lamai in \(comp) \(label). Check the URLComponent tree for the decoding layers.",
                     severity: .info,
                     penalty: 0,
                     url: urlOrigin,
@@ -148,7 +148,7 @@ struct NodeWalker {
                     case .brandExact(let brand):
                         urlInfo.warnings.append(SecurityWarning(
                             message: "Brand exact match in \(comp) \(label): \(brand)\(fromDecodedmessage.map { "\n\($0)" } ?? "")",
-                            severity: .dangerous,
+                            severity: .suspicious,
                             penalty: PenaltySystem.Penalty.exactBrandInQuery,
                             url: urlOrigin,
                             source: (comp == "path" ? .pathSub(label: label) : source),

@@ -46,10 +46,10 @@ struct PenaltySystem {
         static let phishingWordsInQuery                = -20
         static let IpAddressInQuery                    = -20
         static let emailInQuery                        = -20
-        static let exactBrandInQuery                   = -15
+        static let exactBrandInQuery                   = -10
         static let keyIsHighEntropy                    = -15
         static let queryContainsBrand                  = -10
-        static let brandLookAlikeInQuery               = -10
+        static let brandLookAlikeInQuery               = -5
         static let uuidInQuery                         = -10
         static let jsonInQuery                         = -10
         static let emptyQuery                          = -5
