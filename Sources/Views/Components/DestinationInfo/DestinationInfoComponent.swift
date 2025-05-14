@@ -17,8 +17,8 @@ struct DestinationInfoComponent: View {
                         .foregroundColor(viewModel.scoreColor)
                         .multilineTextAlignment(.center)
                     
-                    Group {
-                        if showFullExplanation {
+//                    Group {
+//                        if showFullExplanation {
                             Text(viewModel.summaryMessage)
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
@@ -28,19 +28,20 @@ struct DestinationInfoComponent: View {
                                 .onTapGesture {
                                     showFullExplanation.toggle()
                                 }
-                        } else {
-                            Text("Click to see a summary of the score.")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .onTapGesture {
-                                    showFullExplanation.toggle()
-                                }
-                        }
+//                        }
+//                            else {
+//                            Text("Click to see a summary of the score.")
+//                                .font(.footnote)
+//                                .foregroundColor(.secondary)
+//                                .multilineTextAlignment(.center)
+//                                .onTapGesture {
+//                                    showFullExplanation.toggle()
+//                                }
+//                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                     
-                }
+//                }
                 .padding()
                 .background(.ultraThinMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 12))

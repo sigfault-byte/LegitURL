@@ -14,19 +14,25 @@ struct WarningBannerComponent: View {
 
         if !severityCounts.isEmpty {
             VStack {
-                Spacer()
-                HStack(spacing: 8) {
-                    Text("Findings:")
-                        .fontWeight(.medium)
-                    ForEach(SecurityWarning.SeverityLevel.allWarnings, id: \.self) { severity in
-                        if let count = severityCounts[severity], count > 0 {
-                            HStack(spacing: 4) {
-                                Image(systemName: severity.iconName)
-                                    .foregroundColor(severity.iconColor)
-                                Text("\(count)")
-                                    .foregroundColor(.primary)
+                // ZStack to push the chevron without pushing the icons
+                ZStack {
+                    HStack(spacing: 8) {
+                        ForEach(SecurityWarning.SeverityLevel.allWarnings, id: \.self) { severity in
+                            if let count = severityCounts[severity], count > 0 {
+                                HStack(spacing: 4) {
+                                    Image(systemName: severity.iconName)
+                                        .foregroundColor(severity.iconColor)
+                                    Text("\(count)")
+                                        .foregroundColor(.primary)
+                                }
                             }
                         }
+                    }
+                    HStack {
+                        Spacer()
+                        Image(systemName: "chevron.up")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
                     }
                 }
                 .padding(.vertical, 12)
@@ -38,7 +44,10 @@ struct WarningBannerComponent: View {
                         .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
                 )
                 .onTapGesture {
-                    viewModel.showingWarningsSheet = true
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        viewModel.showingWarningsSheet = true
+                    }
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 }
                 .ignoresSafeArea(edges: .bottom)
             }

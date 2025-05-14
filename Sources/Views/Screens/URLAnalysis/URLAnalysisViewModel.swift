@@ -43,7 +43,7 @@ class URLAnalysisViewModel: ObservableObject {
         tldLabel: "",
         isAnalysisComplete: false,
         score: 0,
-        isTrusted: false
+        specialFlag: []
     )
     
     @Published var warningsVM = WarningsComponentModel(
@@ -117,6 +117,6 @@ class URLAnalysisViewModel: ObservableObject {
         self.destinationInfoVM.tldLabel = self.urlQueue.offlineQueue.last?.components.extractedTLD ?? ""
         self.destinationInfoVM.isAnalysisComplete = self.urlQueue.legitScore.analysisCompleted
         self.destinationInfoVM.score = self.urlQueue.legitScore.score
-        self.destinationInfoVM.isTrusted = self.urlQueue.legitScore.isTrusted
+        self.destinationInfoVM.specialFlag = self.urlQueue.legitScore.specialFlag
     }
 }

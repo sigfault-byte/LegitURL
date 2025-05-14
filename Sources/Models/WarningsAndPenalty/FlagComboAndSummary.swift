@@ -4,25 +4,38 @@
 //
 //  Created by Chief Hakka on 29/04/2025.
 //
+
+struct SpecialFlags: OptionSet {
+    let rawValue: UInt8
+
+    static let trustedDomain = SpecialFlags(rawValue: 1 << 0)
+    static let fetchFailure  = SpecialFlags(rawValue: 1 << 1)
+    // Reserve more here
+}
+
 struct ComboAlert {
-    var flags: UInt64
+    var flags: UInt128
     var message: String?
     
-    static func computeBitFlagAndInfer(from urlInfos: [URLInfo]) -> (ComboAlert, Bool) {
+    static func computeBitFlagAndInfer(from urlInfos: [URLInfo]) -> (ComboAlert, SpecialFlags) {
         let flags = fetchInt(from: urlInfos)
         var comboAlert = ComboAlert(flags: flags, message: nil)
         
-        let isEighthBitSet = (flags & (1 << 8)) != 0
+        var specialFlags: SpecialFlags = []
+
+        if (flags & (1 << 8)) != 0 {
+            specialFlags.insert(.trustedDomain)
+        }
         
         inferMessage(for: &comboAlert)
         
-        return (comboAlert, isEighthBitSet)
+        return (comboAlert, specialFlags)
     }
     
     
     
-    static func fetchInt(from urlInfos: [URLInfo]) -> UInt64 {
-        var combinedFlags: UInt64 = 0
+    static func fetchInt(from urlInfos: [URLInfo]) -> UInt128 {
+        var combinedFlags: UInt128 = 0
         
         for urlInfo in urlInfos {
             for warning in urlInfo.warnings {

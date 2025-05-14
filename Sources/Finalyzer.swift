@@ -23,19 +23,22 @@ struct Finalyzer {
         let criticalWarnings = URLQueue.shared.offlineQueue
             .flatMap { $0.warnings }
             .filter { $0.severity == .critical || $0.severity == .fetchError }
-        var isTrusted = false
+        var specialFlags: SpecialFlags = []
 
         if let firstCritical = criticalWarnings.first {
             URLQueue.shared.summary = firstCritical.message
+            if firstCritical.bitFlags.contains(.FETCH_FAILED_TO_CONNECT) {
+                specialFlags.insert(.fetchFailure)
+            }
         } else {
-            let (combo, trustFlag) = ComboAlert.computeBitFlagAndInfer(from: URLQueue.shared.offlineQueue)
-            isTrusted = trustFlag
+            let (combo, flags) = ComboAlert.computeBitFlagAndInfer(from: URLQueue.shared.offlineQueue)
+            specialFlags = flags
             if let message = combo.message, message != "" {
                 URLQueue.shared.summary = message
             }
         }
 
-        URLQueue.shared.legitScore.isTrusted = isTrusted
+        URLQueue.shared.legitScore.specialFlag = specialFlags
         
         let finalScore = computeFinalScore(for: URLQueue.shared.offlineQueue)
         URLQueue.shared.legitScore.score = finalScore

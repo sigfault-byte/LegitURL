@@ -46,11 +46,11 @@ class URLQueue: ObservableObject {
 final class ScoreUpdateModel: ObservableObject {
     @Published var score: Int
     @Published var analysisCompleted: Bool
-    @Published var isTrusted: Bool = false
+    @Published var specialFlag: SpecialFlags
 
     init(score: Int = 100, analysisCompleted: Bool = false) {
         self.score = score
         self.analysisCompleted = analysisCompleted
-        self.isTrusted = false
+        self.specialFlag = []
     }
 }

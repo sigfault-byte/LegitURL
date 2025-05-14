@@ -178,7 +178,8 @@ struct AnalysisEngine {
                 severity: .fetchError,
                 penalty: PenaltySystem.Penalty.critical,
                 url: currentURLInfo.components.coreURL ?? "",
-                source: .getError
+                source: .getError,
+                bitFlags: WarningFlags.FETCH_FAILED_TO_CONNECT
             )
             URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
             markURLInfoOnlineProcessed(for: currentURLInfo)

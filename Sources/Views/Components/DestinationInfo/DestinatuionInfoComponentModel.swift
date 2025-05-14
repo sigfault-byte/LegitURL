@@ -16,7 +16,7 @@ class DestinationInfoComponentModel: ObservableObject {
             self.punycodeMissmatch = self.finalHost.contains("xn--")
         }
     }
-    @Published var isTrusted: Bool
+    @Published var specialFlag: SpecialFlags
     
     @Published var summaryMessage: String
     @Published var hopCount: Int = 0
@@ -29,8 +29,13 @@ class DestinationInfoComponentModel: ObservableObject {
     var punycodeMissmatch: Bool = false
     var summaryTitle: String {
         let trustedMessage = "This website is on the list of trusted website."
+        let fetchFailureMessage = "Unable to fetch the destination"
         
-        if self.isTrusted {
+        if self.specialFlag.contains(.fetchFailure) {
+            return fetchFailureMessage
+        }
+        
+        if self.specialFlag.contains(.trustedDomain) {
             return trustedMessage
         }
         
@@ -67,7 +72,7 @@ class DestinationInfoComponentModel: ObservableObject {
         tldLabel: String,
         isAnalysisComplete: Bool = false,
         score: Int,
-        isTrusted: Bool = false
+        specialFlag: SpecialFlags
     )
     {
         self.loadingDots = "."
@@ -79,7 +84,7 @@ class DestinationInfoComponentModel: ObservableObject {
         self.tldLabel = tldLabel
         self.isAnalysisComplete = isAnalysisComplete
         self.score = score
-        self.isTrusted = isTrusted
+        self.specialFlag = specialFlag
         
         
         Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
@@ -97,7 +102,7 @@ class DestinationInfoComponentModel: ObservableObject {
     }
     
     var scoreColor: Color {
-        if self.isTrusted {
+        if self.specialFlag.contains(.trustedDomain) {
             return .green
         }
         
