@@ -179,7 +179,6 @@ struct NonceAndExternalScript {
                         let scriptItem = unwrapped.scripts[index]
                         if let scriptsSource = scriptItem.extractedSrc {
                             if scriptsSource == scriptSource {
-                                print("HALLLO _____________________")
                                 unwrapped.scripts[index].findings4UI = (unwrapped.scripts[index].findings4UI ?? []) + [("Source not covered by CSP", .info)]
                             }
                         }
@@ -198,14 +197,14 @@ struct NonceAndExternalScript {
             }
         }
         
-        #if DEBUG
-        if var script = script {
-            for index in script.scripts.indices {
-                let scriptItem = script.scripts[index]
-                print(scriptItem.findings4UI)
-            }
-        }
-        #endif
+//        #if DEBUG
+//        if var script = script {
+//            for index in script.scripts.indices {
+//                let scriptItem = script.scripts[index]
+//                print(scriptItem.findings4UI)
+//            }
+//        }
+//        #endif
         
         // After checking each external script
         let authorizedSourceCount = srcValueFromDirective.count
