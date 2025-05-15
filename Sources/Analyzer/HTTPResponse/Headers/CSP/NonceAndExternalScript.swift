@@ -66,13 +66,14 @@ struct NonceAndExternalScript {
            nonceCount > 0,
            inlineOrDataCount != nonceCount
         {
-            if var script = script {
-                for index in script.scripts.indices {
-                    let scriptItem = script.scripts[index]
-                    if scriptItem.nonceValue == nil && (scriptItem.origin == .inline || scriptItem.origin == .dataURI) {
-                        script.scripts[index].findings4UI = (script.scripts[index].findings4UI ?? []) + [("Missing nonce value", .info)]
+            if var unwrapped = script {
+                for index in unwrapped.scripts.indices {
+                    let scriptItem = unwrapped.scripts[index]
+                    if scriptItem.nonceValue == nil && scriptItem.origin == .inline {
+                        unwrapped.scripts[index].findings4UI = (unwrapped.scripts[index].findings4UI ?? []) + [("Missing nonce value", .info)]
                     }
                 }
+                script = unwrapped
             }
             warnings.append(SecurityWarning(
                 message: "Some inline scripts don't have a nonce value despite CSP nonce directive. They'll likely be ignored by the browser.",
@@ -103,14 +104,15 @@ struct NonceAndExternalScript {
                 ))
             }
         }
-        //        DEBUG
+        //        #if DEBUG
         //        print("Directive: ", nonceValueFromDirective)
+        //        #endif
         var cleanedNonceFromDirective = Set(nonceValueFromDirective.map { $0.replacingOccurrences(of: "nonce-", with: "") })
         cleanedNonceFromDirective =  Set(cleanedNonceFromDirective.map { String($0.dropFirst().dropLast()) })
-        //        DEBUG
-                print("Cleaned directive: ", cleanedNonceFromDirective)
-                print("Nonce value from scripts:", nonceValueFromScript)
-        
+        //                #if DEBUG
+        //                print("Cleaned directive: ", cleanedNonceFromDirective)
+        //                print("Nonce value from scripts:", nonceValueFromScript)
+        //                #endif
         
         if cleanedNonceFromDirective.count == nonceValueFromScript.count {
             // Imba one liner to clean the comparison, thanks chatGPT <3
@@ -172,6 +174,18 @@ struct NonceAndExternalScript {
         
         for scriptSource in srcValueFromScript {
             if !isExternalScriptAllowed(scriptURL: scriptSource, allowedSources: srcValueFromDirective) {
+                if var unwrapped = script {
+                    for index in unwrapped.scripts.indices {
+                        let scriptItem = unwrapped.scripts[index]
+                        if let scriptsSource = scriptItem.extractedSrc {
+                            if scriptsSource == scriptSource {
+                                print("HALLLO _____________________")
+                                unwrapped.scripts[index].findings4UI = (unwrapped.scripts[index].findings4UI ?? []) + [("Source not covered by CSP", .info)]
+                            }
+                        }
+                    }
+                    script = unwrapped
+                }
                 warnings.append(SecurityWarning(
                     message: "External script '\(scriptSource)' not covered by CSP policy.",
                     severity: .suspicious,
@@ -184,11 +198,20 @@ struct NonceAndExternalScript {
             }
         }
         
+        #if DEBUG
+        if var script = script {
+            for index in script.scripts.indices {
+                let scriptItem = script.scripts[index]
+                print(scriptItem.findings4UI)
+            }
+        }
+        #endif
+        
         // After checking each external script
         let authorizedSourceCount = srcValueFromDirective.count
         let excessiveSourceCount = authorizedSourceCount - usedScriptCount
         
-        if excessiveSourceCount >= 2 {
+        if excessiveSourceCount >= 2 || excessiveSourceCount < 0{
             let softPenalty = max(excessiveSourceCount * -1, -20) // cap maximum penalty to -20
             warnings.append(SecurityWarning(
                 message: "CSP script-src authorizes \(authorizedSourceCount) external sources, but only \(usedScriptCount) are used. Excessive permissions weaken the policy.",
@@ -202,9 +225,6 @@ struct NonceAndExternalScript {
         
         return warnings
     }
-    
-    
-    
     
     static func isExternalScriptAllowed(scriptURL: String, allowedSources: Set<String>) -> Bool {
         // Normalize the script URL
