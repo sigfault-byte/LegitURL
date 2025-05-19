@@ -142,6 +142,7 @@ struct PenaltySystem {
         
         //CSP
         static let missingCSP                          = -50 //HARD LIMIT FOR CSP penalty! Missing CSP cannot be less than a missconfig CSP. Though a "fake" CSP might be worse
+        static let CSPReportOnly                       = -40
         static let wildcardScriptSrc                   = -20
         static let wildcardScriptSrcStrictDyn          = -10
         

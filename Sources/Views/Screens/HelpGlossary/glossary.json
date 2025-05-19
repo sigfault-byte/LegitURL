@@ -2,7 +2,7 @@
   {
     "id": "howItWorks",
     "term": "How does LegitURL work?",
-    "description": "LegitURL analyzes a link in two steps. First, it checks the structure of the link to detect suspicious patterns. Then it performs a visit to the destination, without revealing user identity, to examine the website’s certificate, headers, cookies, and scripts. All analysis is done locally.",
+    "description": "LegitURL mimics key checks a browser performs when visiting a website, such as resolving the domain, verifying the TLS certificate, and processing headers, cookies, and scripts. However, it does not enforce these mechanisms — it uses them to evaluate how well a website protects its visitors and to flag potential risks.",
     "category": "basic"
   },
   {
@@ -38,13 +38,13 @@
   {
     "id": "header",
     "term": "Header",
-    "description": "Headers are metadata sent by the server to guide how the browser should handle the page. These can define script permissions, security rules, and content policies across tabs or network protocols.",
+    "description": "Headers are pieces of information sent by the server before the page content. They act like a contract between the website and the browser — specifying how the page should be handled. For example, they can define security rules (like which scripts are allowed), privacy behavior (like cookies or referrer policy), and content types. Weak or missing headers often indicate poor site hygiene or even malicious intent.",
     "category": "basic"
   },
   {
     "id": "cookie",
     "term": "Cookie",
-    "description": "Cookies are small pieces of data stored by websites to remember settings or actions. Some cookies serve essential purposes, while others are used for tracking activity across multiple sites.",
+    "description": "Cookies are data stored by websites to remember settings or actions. Some cookies serve essential purposes, while others are used for tracking activity across multiple sites.",
     "category": "basic"
   },
   {
@@ -62,7 +62,7 @@
   {
     "id": "csp",
     "term": "CSP",
-    "description": "CSP (Content Security Policy) is a security feature that defines which content sources are allowed on a webpage. A properly configured CSP helps reduce the risk of code injection attacks.",
+    "description": "CSP (Content Security Policy) is a security feature that defines which content sources are allowed on a webpage. A properly configured CSP helps prevent attackers from injecting malicious scripts — such as those that steal passwords or cookies. Without a CSP, a website is far more vulnerable to these attacks.",
     "category": "basic"
   }
 ]

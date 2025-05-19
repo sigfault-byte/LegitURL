@@ -8,10 +8,11 @@ import SwiftUI
 
 struct WarningBannerComponent: View {
     @ObservedObject var viewModel: WarningsComponentModel
+    @State private var navToGlossary = false
 
     var body: some View {
         let severityCounts = viewModel.severityCounts
-
+        
         if !severityCounts.isEmpty {
             VStack {
                 // ZStack to push the chevron without pushing the icons
@@ -53,10 +54,19 @@ struct WarningBannerComponent: View {
             }
             .sheet(isPresented: $viewModel.showingWarningsSheet) {
                 WarningsDetailComponent(
-                    viewModel: WarningsComponentModel(preGrouped: viewModel.grouped)
+                    viewModel: WarningsComponentModel(preGrouped: viewModel.grouped),
+                    onDismissAndNavigate: { _ in
+                        viewModel.showingWarningsSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            navToGlossary = true
+                        }
+                    }
                 )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+            }
+            .navigationDestination(isPresented: $navToGlossary) {
+                HelpPageView(scrollTarget: nil)
             }
         }
     }

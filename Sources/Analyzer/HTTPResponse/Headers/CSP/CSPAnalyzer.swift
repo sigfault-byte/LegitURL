@@ -23,7 +23,7 @@ struct CSPAnalyzer {
         var warnings: [SecurityWarning] = []
         var structuredCSP: [String: [Data: CSPValueType]] = [:]
         let scriptValueToCheckUnwrapped = scriptValueToCheck ?? nil
-        var source = "CSP"
+        var originCSP = "CSP"
 //        var SrcScriptConfig: [String: Int32] = [:]
         
         // Check if  CSP exists. OtherWise fall back to CSP-RO, but still flagged as a missign CSP.
@@ -35,12 +35,12 @@ struct CSPAnalyzer {
                 warnings.append(SecurityWarning(
                     message: "Only a Content-Security-Policy-Report-Only header was found. This policy does not enforce any security restrictions, it only reports violations.\nWe will still analyze its value, but it has no protective effect.",
                     severity: .dangerous,
-                    penalty: PenaltySystem.Penalty.missingCSP,
+                    penalty: PenaltySystem.Penalty.CSPReportOnly,
                     url: urlOrigin,
                     source: .header,
                     bitFlags: [.HEADERS_CSP_MISSING]
                 ))
-                source = "CSP-RO"
+                originCSP = "CSP-RO"
             }
         }
         // return early
@@ -98,7 +98,7 @@ struct CSPAnalyzer {
         }
         let warningsToAppend = ScriptAndDefaultDirective.analyze(directiveName: scriptSrc,
                                                                      bitFlagCSP: CSPBitFlag(rawValue: directiveBitFlags[scriptSrc] ?? 0),
-                                                                 url: urlOrigin, source: source)
+                                                                 url: urlOrigin, source: originCSP)
         
         warnings.append(contentsOf: warningsToAppend)
         
@@ -210,7 +210,7 @@ struct CSPAnalyzer {
                 structuredCSP: structuredCSP,
                 directiveBitFlags: directiveBitFlags,
                 directiveSourceTraits: directiveSourceTraits,
-                source: source
+                source: originCSP
             )
         )
     }

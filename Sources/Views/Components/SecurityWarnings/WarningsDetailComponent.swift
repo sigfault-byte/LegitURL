@@ -4,7 +4,6 @@ struct WarningsDetailComponent: View {
     @ObservedObject var viewModel: WarningsComponentModel
     @State private var expandedWarningIDs: Set<UUID> = []
     @State private var showInfoWarnings: Bool = false
-    
     var onDismissAndNavigate: ((String) -> Void)?
 
     var body: some View {
@@ -27,7 +26,16 @@ struct WarningsDetailComponent: View {
                             Text("Analysis complete")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                        }
+                            Button(action: {
+                                onDismissAndNavigate?("howItWorks")
+                            }) {
+                                Text("See glossary")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                }
+                                .foregroundColor(.blue)
+                                .padding(.vertical, 4)
+                            }
                         Spacer()
                         VStack(spacing: 4) {
                             Toggle("", isOn: $showInfoWarnings)
@@ -108,6 +116,12 @@ struct LegitURLReplyView: View {
                                     .fill(severity.iconColor)
                                     .frame(width: 4)
                                 VStack(alignment: .leading, spacing: 4) {
+                                    Text(sourceGroup.source.displayLabel)
+                                        .font(.caption)
+                                        .foregroundColor(severity.iconColor)
+                                        .onTapGesture {
+                                            toggleExpandedWarningID(warning.id)
+                                        }
                                     Text(expandedWarningIDs.contains(warning.id) || warning.message.count <= truncatedLimit
                                          ? warning.message
                                          : String(warning.message.prefix(truncatedLimit)) + "[...]")
@@ -116,15 +130,9 @@ struct LegitURLReplyView: View {
                                         .onTapGesture {
                                             toggleExpandedWarningID(warning.id)
                                         }
-                                    Text(sourceGroup.source.displayLabel)
-                                        .font(.caption)
-                                        .foregroundColor(.blue)
-                                        .onTapGesture {
-                                            toggleExpandedWarningID(warning.id)
-                                        }
-                                    if expandedWarningIDs.contains(warning.id) {
-                                        GlossaryBubbleView(source: sourceGroup.source)
-                                    }
+//                                    if expandedWarningIDs.contains(warning.id) {
+//                                        GlossaryBubbleView(source: sourceGroup.source)
+//                                    }
                                 }
                             }
                             .padding(10)

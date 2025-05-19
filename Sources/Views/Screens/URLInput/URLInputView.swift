@@ -6,11 +6,22 @@
 //
 import SwiftUI
 
+enum NavigationTarget: Identifiable {
+    case settings
+    case help
+
+    var id: Int {
+        switch self {
+        case .settings: return 1
+        case .help: return 2
+        }
+    }
+}
+
 struct URLInputView: View {
     let incomingURL: URL?
     @StateObject  private var viewModel = URLInputViewModel()
-    @State private var showSettings = false
-    @State private var showHelpPage = false
+    @State private var navTarget: NavigationTarget?
     
     var onAnalyze: (_ urlInput: String, _ infoMessage: String) -> Void
     
@@ -49,6 +60,19 @@ struct URLInputView: View {
                 .padding(.bottom)
                 
             Spacer()
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Curious how it all works?")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                    Link("GitHub Repository", destination: URL(string: "https://github.com/sigfault-byte/LegitURL")!)
+                        .font(.footnote)
+                        .foregroundColor(.blue)
+                    Link("A quick story about what happens when you visit a URL", destination: URL(string: "https://legiturl.fr")!)
+                        .font(.footnote)
+                        .foregroundColor(.blue)
+                }
+                .padding([.horizontal, .bottom])
                 }
             }
         .background(Color(uiColor: .systemBackground))
@@ -57,15 +81,20 @@ struct URLInputView: View {
                     BottomToolbar(
                         lButtonIcon: "⚙️",
                         lButtonText: "Settings",
-                        lButtonAction: { showSettings = true}
-                        ,
+                        lButtonAction: { navTarget = .settings },
                         rButtonIcon: "❓",
                         rButtonText: "Help",
-                        rButtonAction: {showHelpPage = true})
+                        rButtonAction: { navTarget = .help }
+                    )
                 }
             }
-            .navigationDestination(isPresented: $showSettings) {
-                SettingView()
+            .navigationDestination(item: $navTarget) { target in
+                switch target {
+                case .settings:
+                    SettingView()
+                case .help:
+                    HelpPageView(scrollTarget: nil)
+                }
             }
             .onAppear {
                 if let url = incomingURL {
