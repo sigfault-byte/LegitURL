@@ -77,7 +77,7 @@ struct HTTPRespAnalyzer {
         
         
         // Analyze body response Body first, returns "script" found in the html, if it's perfect
-        // TODO : multi check the final url, there can be only one! -> we do not extract final url from the body for now... But we should!
+        // TODO: multi check the final url, there can be only one! -> we do not extract final url from the body for now... But we should!
         var findings: ScriptExtractionResult?
         var csp: Data?
         if let rawbody = onlineInfo.rawBody,

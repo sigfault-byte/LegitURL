@@ -14,6 +14,7 @@
 
 /* Begin PBXFileReference section */
 		24039BF22DD5183800BB93CB /* LegitURL-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "LegitURL-Info.plist"; sourceTree = "<group>"; };
+		24039BF52DDB49F900BB93CB /* PRIVACY.MD */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.MD; sourceTree = "<group>"; };
 		2406CE772DCA6B2D0029B046 /* TECHNICAL.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TECHNICAL.md; sourceTree = "<group>"; };
 		248D78AD2DD1A71C00BABB98 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		249557102D86D6EC0094E1D8 /* LegitURL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LegitURL.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -81,6 +82,7 @@
 				24E29A9F2DB7DCA20036E457 /* Sources */,
 				24E29B0E2DB7DCA70036E457 /* Tools */,
 				2406CE772DCA6B2D0029B046 /* TECHNICAL.md */,
+				24039BF52DDB49F900BB93CB /* PRIVACY.MD */,
 				24FA8B542DCF80D10037DAAC /* LICENSE.md */,
 				248D78AD2DD1A71C00BABB98 /* README.md */,
 			);
