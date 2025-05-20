@@ -145,6 +145,8 @@ struct PenaltySystem {
         static let CSPReportOnly                       = -40
         static let wildcardScriptSrc                   = -20
         static let wildcardScriptSrcStrictDyn          = -10
+        static let nonceInCSPNoInline                  = -5
+        static let nonceValueIsWeak                    = -5
         
         //unsafe not "contained"
         static let unsafeEvalScriptSrc                 = -25 // higher than inlinescript used to be 30 and 20 ? make no sense between volontary unsafe and missing, max penalty cap at 40 when both are present

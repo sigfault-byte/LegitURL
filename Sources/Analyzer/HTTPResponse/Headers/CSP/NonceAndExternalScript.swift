@@ -33,7 +33,8 @@ struct NonceAndExternalScript {
                          script: inout ScriptExtractionResult?) -> [SecurityWarning] {
         
         var warnings:[SecurityWarning] = []
-        
+//        print("nonceList:", scriptValueToCheck?.nonceList ?? "")
+//        print("externalSources:", scriptValueToCheck?.externalSources ?? "")
         guard let scriptValueToCheck = scriptValueToCheck,
               (!scriptValueToCheck.nonceList.isEmpty || !scriptValueToCheck.externalSources.isEmpty) else {
             warnings.append(SecurityWarning(
@@ -60,30 +61,6 @@ struct NonceAndExternalScript {
         var nonceValueFromDirective: [String] = []
         var srcValueFromDirective: Set<String> = []
         
-        // Flag the missing nonce script, no penalty
-        if let inlineOrDataCount = inlineOrDataURICount,
-           let nonceCount = nonceScriptCount,
-           nonceCount > 0,
-           inlineOrDataCount != nonceCount
-        {
-            if var unwrapped = script {
-                for index in unwrapped.scripts.indices {
-                    let scriptItem = unwrapped.scripts[index]
-                    if scriptItem.nonceValue == nil && scriptItem.origin == .inline {
-                        unwrapped.scripts[index].findings4UI = (unwrapped.scripts[index].findings4UI ?? []) + [("Missing nonce value", .info)]
-                    }
-                }
-                script = unwrapped
-            }
-            warnings.append(SecurityWarning(
-                message: "Some inline scripts don't have a nonce value despite CSP nonce directive. They'll likely be ignored by the browser.",
-                severity: .info,
-                penalty: 0,
-                url: urlOrigin,
-                source: .header
-            ))
-        }
-        
         for (data, valueType) in scriptDirective {
             if let stringValue = String(data: data, encoding: .utf8) {
                 if stringValue.contains("nonce") {
@@ -104,15 +81,52 @@ struct NonceAndExternalScript {
                 ))
             }
         }
+        
         //        #if DEBUG
         //        print("Directive: ", nonceValueFromDirective)
         //        #endif
         var cleanedNonceFromDirective = Set(nonceValueFromDirective.map { $0.replacingOccurrences(of: "nonce-", with: "") })
         cleanedNonceFromDirective =  Set(cleanedNonceFromDirective.map { String($0.dropFirst().dropLast()) })
+        var (isValid, warning): (Bool, [SecurityWarning]) = (true, [])
+        if let firstNonce = cleanedNonceFromDirective.first {
+            (isValid, warning) = checkNonceValue(firstNonce, urlOrigin: urlOrigin)
+            if !isValid {
+                warnings.append(contentsOf: warning)
+            }
+        }
+        
         //                #if DEBUG
         //                print("Cleaned directive: ", cleanedNonceFromDirective)
         //                print("Nonce value from scripts:", nonceValueFromScript)
         //                #endif
+        
+        
+        // Flag the missing nonce script, no penalty
+//        print("inlineOrDataURICount:", inlineOrDataURICount ?? -1)
+//        print("nonceScriptCount:", nonceScriptCount ?? -1)
+//        print("nonceValueFromDirective:", nonceValueFromDirective)
+        if let inlineOrDataCount = inlineOrDataURICount,
+           inlineOrDataCount > 0,
+           nonceScriptCount == 0,
+           !nonceValueFromDirective.isEmpty
+        {
+            if var unwrapped = script {
+                for index in unwrapped.scripts.indices {
+                    let scriptItem = unwrapped.scripts[index]
+                    if scriptItem.origin == .inline && scriptItem.nonceValue == nil {
+                        unwrapped.scripts[index].findings4UI = (unwrapped.scripts[index].findings4UI ?? []) + [("Missing nonce (none used despite CSP)", .info)]
+                    }
+                }
+                script = unwrapped
+            }
+            warnings.append(SecurityWarning(
+                message: "Inline scripts found but none use a nonce, even though a CSP nonce directive is present.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.nonceInCSPNoInline,
+                url: urlOrigin,
+                source: .header
+            ))
+        }
         
         if cleanedNonceFromDirective.count == nonceValueFromScript.count {
             // Imba one liner to clean the comparison, thanks chatGPT <3
@@ -222,6 +236,10 @@ struct NonceAndExternalScript {
             ))
         }
         
+//        print("Total warnings generated:", warnings.count)
+//        for w in warnings {
+//            print("Warning:", w.message)
+//        }
         return warnings
     }
     
@@ -274,4 +292,27 @@ struct NonceAndExternalScript {
         
         return false
     }
+    
+    private static func checkNonceValue(_ nonce: String, urlOrigin: String) -> (Bool, [SecurityWarning]) {
+        var warnings: [SecurityWarning] = []
+        var isValid: Bool = false
+        
+        let (realNonce, entrValue) = CommonTools.isHighEntropy(nonce, 3.6)
+        if !realNonce {
+            let entropyValue = entrValue ?? 0
+            warnings.append(SecurityWarning(
+                message: "The nonce value `\(nonce)` has a low `\(entropyValue )` entropy.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.nonceValueIsWeak,
+                url: urlOrigin,
+                source: .header,
+                bitFlags: [.HEADERS_CSP_TOO_MANY_URL_SOURCES]
+            ))
+        } else {
+            isValid = true
+        }
+        
+        return (isValid, warnings)
+    }
+    
 }
