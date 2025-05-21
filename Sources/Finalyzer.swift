@@ -46,6 +46,7 @@ struct Finalyzer {
         let grouped = groupWarningsByDomainAndSource(from: URLQueue.shared.offlineQueue.flatMap { $0.warnings })
         URLQueue.shared.groupedWarnings = grouped
         URLQueue.shared.legitScore.analysisCompleted = true
+        let _ = URLQueue.shared.generateAndStoreHTMLReport()
     }
     
     

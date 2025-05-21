@@ -42,10 +42,13 @@ struct ScriptScanTarget {
     var adjustedOrigin: ScriptOrigin? {
         guard isModule else { return origin }
         switch origin {
-        case .inline: return .moduleInline
-        case .httpsExternal, .httpExternal, .protocolRelative: return .moduleExternal
-        case .relative: return .moduleRelative
-        default: return origin
+            case .inline: return .moduleInline
+            case .httpsExternal, .httpExternal, .protocolRelative:
+                return .moduleExternal
+            case .relative:
+                return .moduleRelative
+            default:
+                return origin
         }
     }
 

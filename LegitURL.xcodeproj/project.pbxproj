@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		244BFDFF2D8830D20060DA50 /* ASN1Decoder in Frameworks */ = {isa = PBXBuildFile; productRef = 244BFDFE2D8830D20060DA50 /* ASN1Decoder */; };
 		244BFE022D8830DB0060DA50 /* Punycode in Frameworks */ = {isa = PBXBuildFile; productRef = 244BFE012D8830DB0060DA50 /* Punycode */; };
+		2481AD1C2DDE48870069ADB8 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2481AD1B2DDE48870069ADB8 /* WebKit.framework */; };
 		24F49ED82DC329AF0028FC51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24F49ED72DC329AF0028FC51 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -16,6 +17,7 @@
 		24039BF22DD5183800BB93CB /* LegitURL-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "LegitURL-Info.plist"; sourceTree = "<group>"; };
 		24039BF52DDB49F900BB93CB /* PRIVACY.MD */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.MD; sourceTree = "<group>"; };
 		2406CE772DCA6B2D0029B046 /* TECHNICAL.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TECHNICAL.md; sourceTree = "<group>"; };
+		2481AD1B2DDE48870069ADB8 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.4.sdk/System/Library/Frameworks/WebKit.framework; sourceTree = DEVELOPER_DIR; };
 		248D78AD2DD1A71C00BABB98 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		249557102D86D6EC0094E1D8 /* LegitURL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LegitURL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		24F49ED72DC329AF0028FC51 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -63,6 +65,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2481AD1C2DDE48870069ADB8 /* WebKit.framework in Frameworks */,
 				244BFDFF2D8830D20060DA50 /* ASN1Decoder in Frameworks */,
 				244BFE022D8830DB0060DA50 /* Punycode in Frameworks */,
 			);
@@ -71,6 +74,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2481AD1A2DDE48870069ADB8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2481AD1B2DDE48870069ADB8 /* WebKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		249557072D86D6EC0094E1D8 = {
 			isa = PBXGroup;
 			children = (
@@ -85,6 +96,7 @@
 				24039BF52DDB49F900BB93CB /* PRIVACY.MD */,
 				24FA8B542DCF80D10037DAAC /* LICENSE.md */,
 				248D78AD2DD1A71C00BABB98 /* README.md */,
+				2481AD1A2DDE48870069ADB8 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};

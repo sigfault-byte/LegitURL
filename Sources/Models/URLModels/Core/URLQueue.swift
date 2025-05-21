@@ -14,6 +14,8 @@ class URLQueue: ObservableObject {
     @Published var groupedWarnings: [WarningDomainGroup] = []
     @Published var summary: String = ""
     
+    var lastGeneratedHTML: String? = nil
+    
     
     
     //    seen cookies set to not double penalyze same cookie keys because we have a fresh get each time

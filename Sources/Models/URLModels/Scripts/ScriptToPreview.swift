@@ -19,6 +19,7 @@ struct ScriptPreview: Identifiable {
     let integrity: String?
     let isModule: Bool?
     let crossOriginValue: String?
+    let size: Int
 }
 
 struct ScriptToPreview {
@@ -26,15 +27,15 @@ struct ScriptToPreview {
         var previews: [ScriptPreview] = []
 
         // Step 1: Collect the bytes
-        var byteSlices: [(index: Int, data: Data, script: ScriptScanTarget, wasTruncated: Bool)] = []
-
+        var byteSlices: [(index: Int, data: Data, script: ScriptScanTarget, wasTruncated: Bool, size: Int)] = []
+        
         for (i, script) in scripts.enumerated() {
             guard let end = script.endTagPos else { continue }
             let start = script.start
             guard end > start else { continue }
-            
 
             let rawSlice = body[start..<end]
+            let scriptSize = rawSlice.count
             let truncated: Data
             let wasTruncated: Bool
             if rawSlice.count > 3072 {
@@ -47,7 +48,7 @@ struct ScriptToPreview {
                 wasTruncated = false
             }
 
-            byteSlices.append((i, truncated, script, wasTruncated))
+            byteSlices.append((i, truncated, script, wasTruncated, scriptSize))
         }
 
         // Step 2: Decde the bytes
@@ -77,7 +78,8 @@ struct ScriptToPreview {
                 nonce: script.nonceValue,
                 integrity: script.integrityValue,
                 isModule: script.isModule,
-                crossOriginValue: script.crossOriginValue
+                crossOriginValue: script.crossOriginValue,
+                size: byteSlices[i].size
             )
             previews.append(preview)
         }

@@ -285,7 +285,7 @@ struct ScriptInlineAnalyzer {
                         //   - May also check for presence of `;` (cookie chunk split) in the forward window ??
                         setcookie = true
                         warnings.append(SecurityWarning(
-                            message: "JavaScript is editing or creating a cookie using `document.cookie = ...`. There are only but a few legit reasons to do this. (e.g., fingerprinting, reload, or cookie clearing or to silently track user behavior).",
+                            message: "JavaScript is editing or creating a cookie using `document.cookie = ...`. There are very few legitimate reasons to do this. (e.g., fingerprinting, reload, or cookie clearing or to silently track user behavior).",
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.jsSetEditCookie,
                             url: origin,

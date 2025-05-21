@@ -85,7 +85,7 @@ struct ScriptSecurityAnalyzer {
             case .dataURI:
                     scripts.scripts[index].findings4UI = [("Data URI script detected", .dangerous)]
                     if let nonce = script.nonceValue, !nonce.isEmpty {
-                        scripts.scripts[index].findings4UI = [("'nonce' attribute is for Inline Scripts", .suspicious)]
+                        scripts.scripts[index].findings4UI = [("'nonce' attribute does not work for DATA URI it is for Inline Scripts", .suspicious)]
                     }
                     dataUriCounter += 1
             case .unknown:
@@ -252,7 +252,7 @@ struct ScriptSecurityAnalyzer {
         var internalCount = 0
 
         for script in scripts {
-            if let nonce = script.nonceValue {
+            if let nonce = script.nonceValue, script.origin == .inline {
                 nonceList.append(nonce)
             }
             if let src = script.extractedSrc, script.origin == .httpsExternal {

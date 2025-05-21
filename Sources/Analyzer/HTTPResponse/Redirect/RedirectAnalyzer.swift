@@ -36,7 +36,7 @@ struct RedirectAnalyzer {
 
         if originalDomain.lowercased() != targetDomain.lowercased() {
             fromInfo.warnings.append(SecurityWarning(
-                message: "🚨 Redirect goes to a different domain: was \(originalDomain) now is \(targetDomain)",
+                message: "Redirect goes to a different domain: was \(originalDomain) now is \(targetDomain)",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.redirectToDifferentDomain,
                 url: urlOrigin,
@@ -45,7 +45,7 @@ struct RedirectAnalyzer {
             
         } else if originalTLD != targetTLD && originalDomain == targetDomain {
             fromInfo.warnings.append(SecurityWarning(
-                message: "🚨 Redirect to a different TLD, was \(originalTLD) now is:\(targetTLD)",
+                message: "Redirect to a different TLD, was \(originalTLD) now is:\(targetTLD)",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.redirectToDifferentTLD,
                 url: urlOrigin,
@@ -54,7 +54,7 @@ struct RedirectAnalyzer {
             
         } else if originalHost != targetHost && originalDomain == targetDomain {
             fromInfo.warnings.append(SecurityWarning(
-                message: "🔄 Internal redirect to different subdomain: \(targetHost)",
+                message: "Internal redirect to different subdomain: \(targetHost)",
                 severity: .info,
                 penalty: 0,
                 url: urlOrigin,
@@ -63,7 +63,7 @@ struct RedirectAnalyzer {
         }
         else {
             fromInfo.warnings.append(SecurityWarning(
-                message: "🔄 Internal redirect to same domain: \(targetHost)",
+                message: "Internal redirect to same domain: \(targetHost)",
                 severity: .info,
                 penalty: 0,
                 url: urlOrigin,

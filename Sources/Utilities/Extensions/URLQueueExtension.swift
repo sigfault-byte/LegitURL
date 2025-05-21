@@ -17,22 +17,28 @@ extension URLQueue {
         if let index = self.offlineQueue.firstIndex(where: { $0.id == urlID }) {
             self.offlineQueue[index].warnings.append(warning)
         } else {
-            #if DEBUG
+    #if DEBUG
             print(" Could not find URLInfo with ID \(urlID) to add warning")
-            #endif
+    #endif
         }
     }
     
     func allWarnings() -> [SecurityWarning] {
         return offlineQueue.flatMap { $0.warnings }
     }
-
+    
     func hasWarning(withFlag flag: WarningFlags) -> Bool {
         return allWarnings().contains { $0.bitFlags.contains(flag) }
     }
-
+    
     func countWarnings(withFlag flag: WarningFlags) -> Int {
         return allWarnings().filter { $0.bitFlags.contains(flag) }.count
+    }
+    
+    func generateAndStoreHTMLReport() -> String {
+        let html = generateHTML(from: self)
+        self.lastGeneratedHTML = html
+        return html
     }
 }
 

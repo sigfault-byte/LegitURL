@@ -36,6 +36,34 @@ struct URLAnalysisView: View {
                     DestinationInfoComponent(viewModel: viewModel.destinationInfoVM)
                     
                     RedirectChainSection(viewModel: viewModel.urlComponentsVM)
+                    
+                    #if DEBUG
+//                    if let html = viewModel.urlQueue.lastGeneratedHTML{
+//                        NavigationLink("DEbugReport") {
+//                            HTMLDebugPreview(htmlContent: html)
+//                        }
+//                    }
+                    #endif
+                    
+                    if let html = viewModel.urlQueue.lastGeneratedHTML {
+                        Button("Export to PDF") {
+                            let generator = PDFReportGenerator()
+                            generator.generatePDF(from: html) { data in
+                                if let data = data {
+                                    let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("LegitURL_Report.pdf")
+                                    do {
+                                        try data.write(to: tmpURL)
+                                        generator.sharePDF(url: tmpURL)
+                                    } catch {
+                                        print("Failed to write PDF: \(error)")
+                                    }
+                                } else {
+                                    print("PDF generation failed.")
+                                }
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
                 }
                 else {
                     HStack {
@@ -52,6 +80,9 @@ struct URLAnalysisView: View {
                         Spacer()
                     }
                 }
+                
+                
+                
                 // Spacer for warning banner if needed
                 if !viewModel.warningsVM.grouped.isEmpty {
                     Section {

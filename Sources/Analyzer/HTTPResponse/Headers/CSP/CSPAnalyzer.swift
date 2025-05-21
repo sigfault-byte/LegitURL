@@ -46,7 +46,7 @@ struct CSPAnalyzer {
         // return early
         guard !babylonCSP.isEmpty else {
             warnings.append(SecurityWarning(
-                message: "Headers do not contain a Content-Security-Policy",
+                message: "Headers do not include a Content-Security-Policy.",
                 severity: .dangerous,
                 penalty: PenaltySystem.Penalty.missingCSP,
                 url: urlOrigin,

@@ -13,6 +13,7 @@ struct URLComponentsInfo {
     var userinfo: String?
     var userPassword: String?
     var host: String?
+    var subdomain: String?
     var punycodeHostDecoded: String? // Punycode → Unicode
     var punycodeHostEncoded: String? // ASCII → Punycode
     var port: String?
@@ -33,7 +34,7 @@ struct URLComponentsInfo {
     var idnaDecodedExtractedDomain: String?
     var extractedTLD: String?
     var punycodeEncodedExtractedTLD: String?
-    var subdomain: String?
+    
     
     
     var lamaiTrees: [TreeType: [DecodedNode]] = [:]

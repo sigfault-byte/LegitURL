@@ -306,4 +306,11 @@ struct CommonTools {
         
         return result
     }
+    
+    static func humanReadableBytes(_ bytes: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = " "
+        return "\(formatter.string(from: NSNumber(value: bytes)) ?? "\(bytes)") bytes"
+    }
 }

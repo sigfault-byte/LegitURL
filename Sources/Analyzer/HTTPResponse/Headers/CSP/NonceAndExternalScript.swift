@@ -51,12 +51,13 @@ struct NonceAndExternalScript {
         let nonceValueFromScript = Set(scriptValueToCheck.nonceList)
         let srcValueFromScript = scriptValueToCheck.externalSources
         
-        // The compact map is eaiser to understand than using .some syntax ->
-        // get number of nonce and inline or dataURI script
+        // Only count inline scripts (not data URI) for nonceScriptCount
         let inlineOrDataURICount = script?.scripts.compactMap {
-            ($0.origin == .inline || $0.origin == .dataURI) ? $0 : nil
+            ($0.origin == .inline /*|| $0.origin == .dataURI*/) ? $0 : nil
         }.count
-        let nonceScriptCount = script?.scripts.compactMap { $0.noncePos != nil ? $0 : nil }.count
+        let nonceScriptCount = script?.scripts.compactMap {
+            ($0.origin == .inline && $0.noncePos != nil) ? $0 : nil
+        }.count
         
         var nonceValueFromDirective: [String] = []
         var srcValueFromDirective: Set<String> = []
@@ -297,11 +298,12 @@ struct NonceAndExternalScript {
         var warnings: [SecurityWarning] = []
         var isValid: Bool = false
         
-        let (realNonce, entrValue) = CommonTools.isHighEntropy(nonce, 3.6)
+        //TODO: Need multiple test regarding entropy. Usually 2~3 is english workds so i guess a nonce must be higher ?
+        let (realNonce, entrValue) = CommonTools.isHighEntropy(nonce, 3.2)
         if !realNonce {
             let entropyValue = entrValue ?? 0
             warnings.append(SecurityWarning(
-                message: "The nonce value `\(nonce)` has a low `\(entropyValue )` entropy.",
+                message: "nonce value `\(nonce)` has a low entropy \(entropyValue).",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.nonceValueIsWeak,
                 url: urlOrigin,

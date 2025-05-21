@@ -41,7 +41,7 @@ struct DataSignatures {
                     break                          // found it – stop scanning prefix
                 }
             }
-            i &+= 1
+            i &+= 1 // <- because you never know
         }
         guard let start = openStart else { return nil }
 

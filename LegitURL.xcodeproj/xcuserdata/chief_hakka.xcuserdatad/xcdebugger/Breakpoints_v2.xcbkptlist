@@ -3,4 +3,22 @@
    uuid = "ADD4464C-2C71-45A7-B652-7D5453243262"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "63ECC786-7918-42B3-B65A-4AD979B31C09"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Sources/Analyzer/HTTPResponse/HTML/Scripts/ScriptInlineAnalyzer.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "186"
+            endingLineNumber = "186"
+            landmarkName = "matchConfirmedBadJSCalls(in:positions:origin:into:setterDetected:scripts:byteRangesByScript:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

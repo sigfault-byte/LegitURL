@@ -261,7 +261,7 @@ struct ScriptHelperFunction {
     
     static func findNonceScript(in body: Data, scripts: inout [ScriptScanTarget], lookAhead: Int = 64, respectTagEnd: Bool = true) -> Void {
         for i in 0..<scripts.count {
-            //TODO:  data uri is sometimes a nonce even thought it is useless ????? -> wat to do
+            //TODO:  data uri is sometimes a nonce even thought it is useless ????? -> wat to do ???????
             guard scripts[i].findings == .inlineJS || scripts[i].origin == .dataURI else { continue }
             guard let tagEnd = scripts[i].end else { continue }
             
