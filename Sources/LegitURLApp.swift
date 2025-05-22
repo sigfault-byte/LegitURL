@@ -32,15 +32,14 @@ struct LegitURLApp: App {
             //  pick up the hand-off every time
             .onChange(of: scenePhase) { phase, _ in
                 if phase == .inactive || phase == .active {
-                    //Race disk condition or whatever ?
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    DispatchQueue.main.async {
                         Task { await consumeHandoff() }
                     }
                 }
             }
             .task {
                 // Cold launch hook
-                try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3s delay ? you get 0.3 you get 0.3 everybody gets 0.3
+//                try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3s delay ? you get 0.3 you get 0.3 everybody gets 0.3
                 await consumeHandoff()
             }
         }

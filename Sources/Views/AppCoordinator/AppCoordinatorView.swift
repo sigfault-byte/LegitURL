@@ -6,12 +6,6 @@
 //
 import SwiftUI
 
-//Root view cases
-enum RootScreen: Equatable {
-    case input
-    case analysis(urlInput: String, infoMessage: String)
-}
-
 struct AppCoordinatorView: View {
     @ObservedObject var model: AppCoordinatorModel
 
@@ -27,6 +21,7 @@ struct AppCoordinatorView: View {
                         }
                     }
                 )
+                .id(incomingURL?.absoluteString ?? "null")
             case .analysis(let input, let info):
                 URLAnalysisView(
                     urlInput: input,
