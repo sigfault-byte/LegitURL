@@ -7,33 +7,11 @@
 
 import SwiftUI
 
-//@main
-//struct LegitURLApp: App {
-//    @State private var sharedURL: URL? = nil
-//
-//    var body: some Scene {
-//        WindowGroup {
-//            NavigationStack {
-//                AppCoordinatorView(initialURL: sharedURL,
-//                                   onResetURL: { sharedURL = nil })}
-//            .onOpenURL { url in
-//                print("💡 Opened with URL: \(url)")
-//                if url.scheme == "legiturl",
-//                   let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-//                   components.host == "analyze",
-//                   let query = components.queryItems?.first(where: { $0.name == "url" })?.value,
-//                   let decoded = URL(string: query) {
-//                    sharedURL = decoded
-//                }
-//            }
-//        }
-//    }
-//}
-
 @main
 struct LegitURLApp: App {
     @State private var sharedURL: URL?
     @Environment(\.scenePhase) private var scenePhase   // ← new
+    @StateObject private var coordinatorModel = AppCoordinatorModel()
 
 //    init() {
 //        consumeHandoff()        // cold-launch pickup, trick does not work
@@ -41,8 +19,7 @@ struct LegitURLApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AppCoordinatorView(initialURL: sharedURL,
-                               onResetURL: { sharedURL = nil })
+            AppCoordinatorView(model: coordinatorModel)
             .onOpenURL { url in                       // still handle legiturl:// scheme ... ! why ? Who fucking knows
                 if url.scheme == "legiturl",
                    url.host == "analyze",
@@ -57,15 +34,22 @@ struct LegitURLApp: App {
                 if phase == .inactive || phase == .active {
                     //Race disk condition or whatever ?
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        consumeHandoff()
+                        Task { await consumeHandoff() }
                     }
                 }
+            }
+            .task {
+                // Cold launch hook
+                try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3s delay ? you get 0.3 you get 0.3 everybody gets 0.3
+                await consumeHandoff()
             }
         }
     }
 
     /// Reads & clears any URL left by the share extension.
-    private func consumeHandoff() {
+    /// This needs mainActor and an async to be sure the race is in legiturl favor
+    @MainActor
+    private func consumeHandoff() async {
         let defaults = UserDefaults(suiteName: "group.IJTWTML.LegitURL.shared")
 
 //        if let snapshot = defaults?.dictionaryRepresentation() {
@@ -75,7 +59,8 @@ struct LegitURLApp: App {
         
         if let str = defaults?.string(forKey: "SharedURL"),
            let url = URL(string: str) {
-            sharedURL = url
+            coordinatorModel.showInput(with: url)
+            sharedURL = nil
             defaults?.removeObject(forKey: "SharedURL")
         }
     }

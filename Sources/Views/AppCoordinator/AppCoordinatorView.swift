@@ -13,39 +13,30 @@ enum RootScreen: Equatable {
 }
 
 struct AppCoordinatorView: View {
-    var initialURL: URL? = nil
-    var onResetURL: () -> Void = {}      // callback to clear sharedURL
-    
-    @State private var rootScreen: RootScreen = .input
+    @ObservedObject var model: AppCoordinatorModel
 
     var body: some View {
         ZStack {
-            if case .input = rootScreen {
-                URLInputView(incomingURL: initialURL, onAnalyze: { urlInput, info in
-                    withAnimation(.easeInOut) {
-                        rootScreen = .analysis(urlInput: urlInput, infoMessage: info)
-                    }
-                })
-                .id(initialURL)
-                .transition(.asymmetric(insertion: .move(edge: .trailing),
-                                        removal: .move(edge: .leading)))
-            }
-            if case .analysis(let urlInput, let infoMessage) = rootScreen {
-                URLAnalysisView(
-                    urlInput: urlInput,
-                    infoMessage: infoMessage,
-                    onExit: {
+            switch model.screen {
+            case .input(let incomingURL):
+                URLInputView(
+                    incomingURL: incomingURL,
+                    onAnalyze: { urlInput, info in
                         withAnimation(.easeInOut) {
-                            rootScreen = .input
-                        }
-                        // TODO: This is still not wokring and bypassing the transition...
-                        DispatchQueue.main.async {
-                            onResetURL()
+                            model.showAnalysis(from: urlInput, info: info)
                         }
                     }
                 )
-                .transition(.asymmetric(insertion: .move(edge: .leading),
-                                        removal: .move(edge: .trailing)))
+            case .analysis(let input, let info):
+                URLAnalysisView(
+                    urlInput: input,
+                    infoMessage: info,
+                    onExit: {
+                        withAnimation(.easeInOut) {
+                            model.showInput(with: nil)
+                        }
+                    }
+                )
             }
         }
     }

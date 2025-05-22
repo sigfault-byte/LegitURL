@@ -4,7 +4,7 @@ struct Finalyzer {
         
         let totalPenalty = warnings.map { $0.penalty }.reduce(0, +)
         #if DEBUG
-        let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty)" }
+        let penaltyDetails = warnings.map { "Source: \($0.source) - Penalty: \($0.penalty) - Message: \($0.message)" }
         penaltyDetails.forEach { print($0) }
         #endif
         let currentScore = URLQueue.shared.legitScore.score
