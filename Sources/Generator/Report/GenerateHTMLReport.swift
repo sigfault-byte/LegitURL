@@ -23,7 +23,7 @@ func generateHTML(from queue: URLQueue) -> String {
     let score = queue.legitScore.score
     let scoreClass = score < 40 ? "critical" : score < 70 ? "suspicious" : "ok"
     var html = """
-
+    
     <!DOCTYPE html>
     <html>
     <head>
@@ -268,24 +268,24 @@ func generateHTML(from queue: URLQueue) -> String {
             
             if !online.cookiesForUI.isEmpty {
                 html += "<h3>Cookies</h3>"
-
+                
                 for cookie in online.cookiesForUI.compactMap({ $0 }) {
                     html += "<h4>Cookie Key: \(cookie.cookie.name)</h4>"
                     html += "<table>"
-
+                    
                     html += "<tr><th>Severity</th><td class=\"\(cookie.severity.rawValue.lowercased())\">\(cookie.severity.rawValue.capitalized)</td></tr>"
                     html += "<tr><th>Value Size</th><td>\(cookie.cookie.value.count) bytes</td></tr>"
-
+                    
                     let expiryDescription = cookie.cookie.expire == nil ? "Session" : "Persistent"
                     html += "<tr><th>Expires In</th><td>\(expiryDescription)</td></tr>"
-
+                    
                     html += "<tr><th>SameSite Policy</th><td>\(cookie.cookie.sameSite)</td></tr>"
                     html += "<tr><th>Secure</th><td>\(cookie.cookie.secure ? "Yes" : "No")</td></tr>"
                     html += "<tr><th>HttpOnly</th><td>\(cookie.cookie.httpOnly ? "Yes" : "No")</td></tr>"
                     html += "<tr><th>Path</th><td>\(cookie.cookie.path)</td></tr>"
                     html += "<tr><th>Domain</th><td>\(cookie.cookie.domain)</td></tr>"
                     html += "<tr><th>Value</th><td><code>\(cookie.cookie.value)</code></td></tr>"
-
+                    
                     html += "</table>"
                 }
             }
@@ -312,7 +312,7 @@ func generateHTML(from queue: URLQueue) -> String {
                         html += "</table>"
                     }
                 }
-
+                
                 html += "<h3>Response Headers</h3>"
                 renderHeaderGroup(title: "Security Headers", headers: headers.securityHeaders)
                 renderHeaderGroup(title: "Tracking Headers", headers: headers.trackingHeaders)
@@ -325,25 +325,25 @@ func generateHTML(from queue: URLQueue) -> String {
                 html += "<h3>\(CSPSource)</h3>"
                 html += "<table>"
                 html += "<tr><th>Total Directives</th><td>\(csp.directiveBitFlags.count)</td></tr>"
-
+                
                 let selfOnlyCount = csp.directiveSourceTraits.values.filter { $0.onlySelf }.count
                 let withHTTPCount = csp.directiveSourceTraits.values.filter { $0.hasHTTP }.count
                 let hasWildcard = csp.directiveSourceTraits.values.contains { $0.hasWildcard }
-
+                
                 html += "<tr><th>Directives with 'self' only</th><td>\(selfOnlyCount)</td></tr>"
                 html += "<tr><th>Directives with HTTP</th><td>\(withHTTPCount)</td></tr>"
                 html += "<tr><th>Wildcards Found</th><td>\(hasWildcard ? "Yes" : "No")</td></tr>"
                 html += "</table>"
-
+                
                 html += "<h4>Directive Breakdown</h4>"
                 html += "<table><tr><th>Directive</th><th>Values</th></tr>"
-
+                
                 for (directive, valueMap) in csp.structuredCSP {
                     let values = valueMap.keys.compactMap { String(data: $0, encoding: .utf8) }
                     let formatted = values.isEmpty ? "-" : values.joined(separator: ", ")
                     html += "<tr><td>\(directive)</td><td>\(formatted)</td></tr>"
                 }
-
+                
                 html += "</table>"
             }
             let relevantHeaders: [SecurityWarning.SourceType] = [.header]
@@ -363,7 +363,7 @@ func generateHTML(from queue: URLQueue) -> String {
             
             if !scripts.isEmpty {
                 html += "<h3>JavaScript Summary</h3>"
-
+                
                 let totalCount = scripts.count
                 let inlineCount = scripts.filter { $0.origin == .inline || $0.origin == .moduleInline }.count
                 let dataCount = scripts.filter { $0.origin == .dataURI }.count
@@ -372,7 +372,7 @@ func generateHTML(from queue: URLQueue) -> String {
                 let moduleExternalCount = scripts.filter { $0.origin == .moduleExternal || $0.origin == .moduleRelative }.count
                 let dataScriptCount = scripts.filter { $0.origin == .dataScript }.count
                 let unknownCount = scripts.filter { $0.origin == .unknown || $0.origin == .malformed }.count
-
+                
                 html += "<table>"
                 html += "<tr><th>Total Scripts</th><td>\(totalCount)</td></tr>"
                 if inlineCount > 0 {
@@ -397,11 +397,11 @@ func generateHTML(from queue: URLQueue) -> String {
                     html += "<tr><th>Unknown or Malformed Scripts</th><td>\(unknownCount)</td></tr>"
                 }
                 html += "</table>"
-
+                
                 let scriptsInHead = scripts.filter { $0.context == .inHead }
                 let scriptsInBody = scripts.filter { $0.context == .inBody }
                 let scriptsUnknown = scripts.filter { $0.context == .unknown}
-
+                
                 var counter: Int = 1
                 // --- REPLACEMENT: Scripts in <head> ---
                 if !scriptsInHead.isEmpty {
@@ -440,19 +440,30 @@ func generateHTML(from queue: URLQueue) -> String {
                             html += "<strong>\(origin?.rawValue ?? "Unknown") Script</strong><ul>"
                         }
                         html += "<li class=\"\(sizeClass)\"><strong>Size:</strong> \(size)</li>"
-                        if let findings = script.findings, !findings.isEmpty {
+                        
+                        if script.isInline, let findings = script.findings {
+                            var snippetIndex = 0
+                            html += "<ul>"
                             for finding in findings {
-                                if finding.message.starts(with: "Truncated") { continue } // <-- cé tré moche
                                 let severityClass = finding.severity.rawValue.lowercased()
                                 html += "<li class=\"\(severityClass)\">[\(finding.severity.rawValue.uppercased())] \(finding.message)</li>"
+                                
+                                if finding.pos != 0,
+                                   let snippets = script.focusedSnippets,
+                                   snippetIndex < snippets.count {
+                                    let snippetEscaped = htmlEscape(snippets[snippetIndex])
+                                    html += "<li><code>\(snippetEscaped)</code></li>"
+                                    snippetIndex += 1
+                                }
                             }
+                            html += "</ul>"
                         }
                         counter += 1
                         html += "</ul></li>"
                     }
                     html += "</ul>"
                 }
-
+                
                 // --- REPLACEMENT: Scripts in <body> ---
                 if !scriptsInBody.isEmpty {
                     html += "<h4>Scripts in &lt;body&gt;</h4><ul>"
@@ -491,19 +502,29 @@ func generateHTML(from queue: URLQueue) -> String {
                             html += "<strong>\(origin?.rawValue ?? "Unknown") Script</strong><ul>"
                         }
                         html += "<li class=\"\(sizeClass)\"><strong>Size:</strong> \(size)</li>"
-                        if let findings = script.findings, !findings.isEmpty {
+                        if script.isInline, let findings = script.findings {
+                            var snippetIndex = 0
+                            html += "<ul>"
                             for finding in findings {
-                                if finding.message.starts(with: "Truncated") { continue } // <-- cé tré moche
                                 let severityClass = finding.severity.rawValue.lowercased()
                                 html += "<li class=\"\(severityClass)\">[\(finding.severity.rawValue.uppercased())] \(finding.message)</li>"
+                                
+                                if finding.pos != 0,
+                                   let snippets = script.focusedSnippets,
+                                   snippetIndex < snippets.count {
+                                    let snippetEscaped = htmlEscape(snippets[snippetIndex])
+                                    html += "<li><code>\(snippetEscaped)</code></li>"
+                                    snippetIndex += 1
+                                }
                             }
+                            html += "</ul>"
                         }
                         counter += 1
                         html += "</ul></li>"
                     }
                     html += "</ul>"
                 }
-
+                
                 // Keep handling unknown context
                 if !scriptsUnknown.isEmpty {
                     html += "<h4>Unknown context Scripts</h4><ul>"
@@ -516,7 +537,7 @@ func generateHTML(from queue: URLQueue) -> String {
                     }
                     html += "</ul>"
                 }
-
+                
                 let relevantBody: [SecurityWarning.SourceType] = [.body]
                 let sectionWarningsBody = report.warnings.filter { relevantBody.contains($0.source) }
                 if !sectionWarningsBody.isEmpty {
@@ -537,7 +558,7 @@ func generateHTML(from queue: URLQueue) -> String {
     </body>
     </html>
     """
-
+    
     return html
     
     
@@ -546,19 +567,19 @@ func generateHTML(from queue: URLQueue) -> String {
         let method = node.method ?? "raw"
         let value = node.value
         let indentString = String(repeating: "&nbsp;&nbsp;&nbsp;&nbsp;", count: indent)
-
+        
         var output = "<li>\(indentString)<strong>[\(method)]</strong> \(value)"
-
+        
         if !node.findings.isEmpty {
             output += " <span class=\"critical\">[\(node.findings.map { $0.shortLabel }.joined(separator: ", "))]</span>"
         }
-
+        
         output += "</li>"
-
+        
         for child in node.children {
             output += renderNode(child, indent: indent + 1)
         }
-
+        
         return output
     }
     
@@ -590,4 +611,13 @@ func generateHTML(from queue: URLQueue) -> String {
         """
     }
     
+    // Bit late to the party
+    func htmlEscape(_ input: String) -> String {
+        input
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
+    }
 }

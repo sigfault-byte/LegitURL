@@ -98,10 +98,16 @@ struct URLInputView: View {
             }
             .onAppear {
                 if let url = incomingURL {
+                    
                     viewModel.urlInput = url.absoluteString
-                    if viewModel.analyzeURL() {
-                        onAnalyze(viewModel.urlInput, viewModel.infoMessage)
-                    }
+                    viewModel.isInputValid = !url.absoluteString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                }
+            }
+            .onChange(of: incomingURL) { newValue, _ in
+                if let url = newValue {
+                    
+                    viewModel.urlInput = url.absoluteString
+                    viewModel.isInputValid = !url.absoluteString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 }
             }
         }

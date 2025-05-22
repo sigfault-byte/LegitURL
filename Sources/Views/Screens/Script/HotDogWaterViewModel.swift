@@ -13,7 +13,7 @@ struct FindingSummary {
     let color: Color
 }
 
-func summarizeFindings(_ findings: [(message: String, severity: SecurityWarning.SeverityLevel)]) -> [FindingSummary] {
+func summarizeFindings(_ findings: [(message: String, severity: SecurityWarning.SeverityLevel, pos: Int?)]) -> [FindingSummary] {
     var summaryDict: [String: (count: Int, color: Color)] = [:]
 
     for finding in findings {

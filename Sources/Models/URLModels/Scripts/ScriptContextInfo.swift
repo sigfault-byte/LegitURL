@@ -33,7 +33,7 @@ struct ScriptScanTarget {
     var isSelfClosing: Bool = false // Added property to determine if the script tag is self-closing
     var noncePos: Int? // Changed property to store the position of the nonce attribute
     var nonceValue: String? // Store the nonce value
-    var findings4UI: [(message: String, severity: SecurityWarning.SeverityLevel)]? = nil
+    var findings4UI: [(message: String, severity: SecurityWarning.SeverityLevel, pos: Int?)]? = nil
     var integrityPos: Int?
     var integrityValue: String?
     var isModule: Bool = false //module script with their own sets of rules...

@@ -115,7 +115,7 @@ struct NonceAndExternalScript {
                 for index in unwrapped.scripts.indices {
                     let scriptItem = unwrapped.scripts[index]
                     if scriptItem.origin == .inline && scriptItem.nonceValue == nil {
-                        unwrapped.scripts[index].findings4UI = (unwrapped.scripts[index].findings4UI ?? []) + [("Missing nonce (none used despite CSP)", .info)]
+                        unwrapped.scripts[index].findings4UI = (unwrapped.scripts[index].findings4UI ?? []) + [("Missing nonce (none used despite CSP)", .info, 0)]
                     }
                 }
                 script = unwrapped
@@ -194,7 +194,7 @@ struct NonceAndExternalScript {
                         let scriptItem = unwrapped.scripts[index]
                         if let scriptsSource = scriptItem.extractedSrc {
                             if scriptsSource == scriptSource {
-                                unwrapped.scripts[index].findings4UI = (unwrapped.scripts[index].findings4UI ?? []) + [("Source not covered by CSP", .info)]
+                                unwrapped.scripts[index].findings4UI = (unwrapped.scripts[index].findings4UI ?? []) + [("Source not covered by CSP", .info, 0)]
                             }
                         }
                     }

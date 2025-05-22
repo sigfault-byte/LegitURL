@@ -65,7 +65,7 @@ struct ScriptSecurityAnalyzer {
 
             switch origin {
             case .httpExternal:
-                scripts.scripts[index].findings4UI = [("HTTP script detected", SecurityWarning.SeverityLevel.critical)]
+                scripts.scripts[index].findings4UI = [("HTTP script detected", SecurityWarning.SeverityLevel.critical, 0)]
                 warnings.append(SecurityWarning(
                     message: "External script loaded over HTTP. This is insecure and exposes users to injection risks.",
                     severity: .critical,
@@ -76,20 +76,20 @@ struct ScriptSecurityAnalyzer {
             case .protocolRelative:
                     
                     if let integrity = script.integrityValue, !integrity.isEmpty {
-                        scripts.scripts[index].findings4UI = [("Protocol relative (with SRI)", .info)]
+                        scripts.scripts[index].findings4UI = [("Protocol relative (with SRI)", .info, 0)]
                         protocolRelativeCounterWithIntegrity += 1
                     } else {
-                        scripts.scripts[index].findings4UI = [("Protocol relative", .suspicious)]
+                        scripts.scripts[index].findings4UI = [("Protocol relative", .suspicious, 0)]
                         protocolRelativeCounter += 1
                     }
             case .dataURI:
-                    scripts.scripts[index].findings4UI = [("Data URI script detected", .dangerous)]
+                    scripts.scripts[index].findings4UI = [("Data URI script detected", .dangerous, 0)]
                     if let nonce = script.nonceValue, !nonce.isEmpty {
-                        scripts.scripts[index].findings4UI = [("'nonce' attribute does not work for DATA URI it is for Inline Scripts", .suspicious)]
+                        scripts.scripts[index].findings4UI = [("'nonce' attribute does not work for DATA URI it is for Inline Scripts", .suspicious, 0)]
                     }
                     dataUriCounter += 1
             case .unknown:
-                scripts.scripts[index].findings4UI = [("Script origin unknown", SecurityWarning.SeverityLevel.dangerous)]
+                scripts.scripts[index].findings4UI = [("Script origin unknown", SecurityWarning.SeverityLevel.dangerous, 0)]
                 warnings.append(SecurityWarning(
                     message: "Script origin could not be determined. This may indicate cloaking or malformed attributes.",
                     severity: .dangerous,
@@ -99,7 +99,7 @@ struct ScriptSecurityAnalyzer {
                     bitFlags: WarningFlags.BODY_SCRIPT_UNKNOWN_ORIGIN
                 ))
             case .malformed:
-                scripts.scripts[index].findings4UI = [("Script is malformed", SecurityWarning.SeverityLevel.suspicious)]
+                scripts.scripts[index].findings4UI = [("Script is malformed", SecurityWarning.SeverityLevel.suspicious, 0)]
                 warnings.append(SecurityWarning(
                     message: "Malformed script tag or broken src attribute detected.",
                     severity: .suspicious,

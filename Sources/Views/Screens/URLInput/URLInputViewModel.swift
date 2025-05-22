@@ -18,7 +18,7 @@ class URLInputViewModel: ObservableObject{
         pasteAvailable = UIPasteboard.general.hasStrings
     }
 
-    var urlInput: String = "" {
+    @Published var urlInput: String = "" {
         didSet {
             isInputValid = !urlInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
@@ -26,7 +26,6 @@ class URLInputViewModel: ObservableObject{
 
     func analyzeURL() -> Bool {
         let (finalURL, message) = CommonTools.sanitizeInputURL(urlInput)
-
         if let finalURL = finalURL {
             urlInput = finalURL
             infoMessage = message ?? ""

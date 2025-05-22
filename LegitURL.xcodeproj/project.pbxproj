@@ -10,14 +10,42 @@
 		244BFDFF2D8830D20060DA50 /* ASN1Decoder in Frameworks */ = {isa = PBXBuildFile; productRef = 244BFDFE2D8830D20060DA50 /* ASN1Decoder */; };
 		244BFE022D8830DB0060DA50 /* Punycode in Frameworks */ = {isa = PBXBuildFile; productRef = 244BFE012D8830DB0060DA50 /* Punycode */; };
 		2481AD1C2DDE48870069ADB8 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2481AD1B2DDE48870069ADB8 /* WebKit.framework */; };
+		2481AD2C2DDEFE820069ADB8 /* LegitURLShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2481AD222DDEFE820069ADB8 /* LegitURLShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		24F49ED82DC329AF0028FC51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 24F49ED72DC329AF0028FC51 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		2481AD2A2DDEFE820069ADB8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 249557082D86D6EC0094E1D8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2481AD212DDEFE820069ADB8;
+			remoteInfo = LegitURLShare;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		2481AD312DDEFE820069ADB8 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				2481AD2C2DDEFE820069ADB8 /* LegitURLShare.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		24039BF22DD5183800BB93CB /* LegitURL-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "LegitURL-Info.plist"; sourceTree = "<group>"; };
 		24039BF52DDB49F900BB93CB /* PRIVACY.MD */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.MD; sourceTree = "<group>"; };
 		2406CE772DCA6B2D0029B046 /* TECHNICAL.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TECHNICAL.md; sourceTree = "<group>"; };
 		2481AD1B2DDE48870069ADB8 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.4.sdk/System/Library/Frameworks/WebKit.framework; sourceTree = DEVELOPER_DIR; };
+		2481AD1D2DDEF0510069ADB8 /* Notes.TXT */ = {isa = PBXFileReference; lastKnownFileType = text; path = Notes.TXT; sourceTree = "<group>"; };
+		2481AD222DDEFE820069ADB8 /* LegitURLShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LegitURLShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		2481AD322DDF101B0069ADB8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2481AD342DDF32CB0069ADB8 /* LegitURL.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LegitURL.entitlements; sourceTree = "<group>"; };
 		248D78AD2DD1A71C00BABB98 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		249557102D86D6EC0094E1D8 /* LegitURL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LegitURL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		24F49ED72DC329AF0028FC51 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -25,6 +53,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2481AD2D2DDEFE820069ADB8 /* Exceptions for "LegitURLShare" folder in "LegitURLShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2481AD212DDEFE820069ADB8 /* LegitURLShare */;
+		};
 		24E29B2B2DB829B20036E457 /* Exceptions for "Sources" folder in "LegitURL" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -38,6 +73,14 @@
 		24039BE72DD456C600BB93CB /* AppPreview */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = AppPreview;
+			sourceTree = "<group>";
+		};
+		2481AD232DDEFE820069ADB8 /* LegitURLShare */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2481AD2D2DDEFE820069ADB8 /* Exceptions for "LegitURLShare" folder in "LegitURLShare" target */,
+			);
+			path = LegitURLShare;
 			sourceTree = "<group>";
 		};
 		24E29A0B2DB7DC9C0036E457 /* Archive */ = {
@@ -61,6 +104,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		2481AD1F2DDEFE820069ADB8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2495570D2D86D6EC0094E1D8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -85,9 +135,12 @@
 		249557072D86D6EC0094E1D8 = {
 			isa = PBXGroup;
 			children = (
-				24039BF22DD5183800BB93CB /* LegitURL-Info.plist */,
+				2481AD342DDF32CB0069ADB8 /* LegitURL.entitlements */,
+				2481AD322DDF101B0069ADB8 /* Info.plist */,
+				2481AD1D2DDEF0510069ADB8 /* Notes.TXT */,
 				24039BE72DD456C600BB93CB /* AppPreview */,
 				24F49ED72DC329AF0028FC51 /* Assets.xcassets */,
+				2481AD232DDEFE820069ADB8 /* LegitURLShare */,
 				249557112D86D6EC0094E1D8 /* Products */,
 				24E29A0B2DB7DC9C0036E457 /* Archive */,
 				24E29A9F2DB7DCA20036E457 /* Sources */,
@@ -104,6 +157,7 @@
 			isa = PBXGroup;
 			children = (
 				249557102D86D6EC0094E1D8 /* LegitURL.app */,
+				2481AD222DDEFE820069ADB8 /* LegitURLShare.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -111,6 +165,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		2481AD212DDEFE820069ADB8 /* LegitURLShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2481AD2E2DDEFE820069ADB8 /* Build configuration list for PBXNativeTarget "LegitURLShare" */;
+			buildPhases = (
+				2481AD1E2DDEFE820069ADB8 /* Sources */,
+				2481AD1F2DDEFE820069ADB8 /* Frameworks */,
+				2481AD202DDEFE820069ADB8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				2481AD232DDEFE820069ADB8 /* LegitURLShare */,
+			);
+			name = LegitURLShare;
+			packageProductDependencies = (
+			);
+			productName = LegitURLShare;
+			productReference = 2481AD222DDEFE820069ADB8 /* LegitURLShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		2495570F2D86D6EC0094E1D8 /* LegitURL */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2495571F2D86D6ED0094E1D8 /* Build configuration list for PBXNativeTarget "LegitURL" */;
@@ -118,10 +194,12 @@
 				2495570C2D86D6EC0094E1D8 /* Sources */,
 				2495570D2D86D6EC0094E1D8 /* Frameworks */,
 				2495570E2D86D6EC0094E1D8 /* Resources */,
+				2481AD312DDEFE820069ADB8 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				2481AD2B2DDEFE820069ADB8 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				24E29A9F2DB7DCA20036E457 /* Sources */,
@@ -142,9 +220,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
+				LastSwiftUpdateCheck = 1630;
 				LastUpgradeCheck = 1630;
 				TargetAttributes = {
+					2481AD212DDEFE820069ADB8 = {
+						CreatedOnToolsVersion = 16.3;
+					};
 					2495570F2D86D6EC0094E1D8 = {
 						CreatedOnToolsVersion = 16.2;
 					};
@@ -169,11 +250,19 @@
 			projectRoot = "";
 			targets = (
 				2495570F2D86D6EC0094E1D8 /* LegitURL */,
+				2481AD212DDEFE820069ADB8 /* LegitURLShare */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		2481AD202DDEFE820069ADB8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2495570E2D86D6EC0094E1D8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -185,6 +274,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2481AD1E2DDEFE820069ADB8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2495570C2D86D6EC0094E1D8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -194,7 +290,72 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		2481AD2B2DDEFE820069ADB8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2481AD212DDEFE820069ADB8 /* LegitURLShare */;
+			targetProxy = 2481AD2A2DDEFE820069ADB8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		2481AD2F2DDEFE820069ADB8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LegitURLShare/LegitURLShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LegitURLShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = LegitURLShare;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 20250519.0;
+				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL.LegitURLShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		2481AD302DDEFE820069ADB8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = LegitURLShare/LegitURLShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LegitURLShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = LegitURLShare;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 20250519.0;
+				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL.LegitURLShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		2495571D2D86D6ED0094E1D8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -322,14 +483,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_ENTITLEMENTS = LegitURL.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 20250519.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "LegitURL-Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan QR codes containing URLs.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -365,14 +526,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_ENTITLEMENTS = LegitURL.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 20250519.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "LegitURL-Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan QR codes containing URLs.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -405,6 +566,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		2481AD2E2DDEFE820069ADB8 /* Build configuration list for PBXNativeTarget "LegitURLShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2481AD2F2DDEFE820069ADB8 /* Debug */,
+				2481AD302DDEFE820069ADB8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		2495570B2D86D6EC0094E1D8 /* Build configuration list for PBXProject "LegitURL" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

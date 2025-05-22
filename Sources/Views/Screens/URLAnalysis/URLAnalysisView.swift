@@ -35,35 +35,16 @@ struct URLAnalysisView: View {
                 if viewModel.isAnalysisComplete {
                     DestinationInfoComponent(viewModel: viewModel.destinationInfoVM)
                     
-                    RedirectChainSection(viewModel: viewModel.urlComponentsVM)
-                    
-                    #if DEBUG
-//                    if let html = viewModel.urlQueue.lastGeneratedHTML{
-//                        NavigationLink("DEbugReport") {
-//                            HTMLDebugPreview(htmlContent: html)
-//                        }
-//                    }
-                    #endif
-                    
-                    if let html = viewModel.urlQueue.lastGeneratedHTML {
-                        Button("Export to PDF") {
-                            let generator = PDFReportGenerator()
-                            generator.generatePDF(from: html) { data in
-                                if let data = data {
-                                    let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("LegitURL_Report.pdf")
-                                    do {
-                                        try data.write(to: tmpURL)
-                                        generator.sharePDF(url: tmpURL)
-                                    } catch {
-                                        print("Failed to write PDF: \(error)")
-                                    }
-                                } else {
-                                    print("PDF generation failed.")
-                                }
+                    Section(header: Text("report")) {
+                        if let html = viewModel.urlQueue.lastGeneratedHTML{
+                            NavigationLink("View full Report") {
+                                HTMLReportPreview(htmlContent: html, domain: viewModel.urlQueue.offlineQueue.last?.components.extractedDomain ?? "")
                             }
                         }
-                        .buttonStyle(.borderedProminent)
                     }
+
+                    RedirectChainSection(viewModel: viewModel.urlComponentsVM)
+
                 }
                 else {
                     HStack {

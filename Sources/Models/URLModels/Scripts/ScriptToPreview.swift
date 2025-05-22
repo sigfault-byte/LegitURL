@@ -13,13 +13,14 @@ struct ScriptPreview: Identifiable {
     let isInline: Bool
     let context: ScriptScanTarget.ScriptContext?
     let contentPreview: String
-    let findings: [(message: String, severity: SecurityWarning.SeverityLevel)]?
+    let findings: [(message: String, severity: SecurityWarning.SeverityLevel, pos: Int?)]?
     let extractedSrc: String?
     let nonce: String?
     let integrity: String?
     let isModule: Bool?
     let crossOriginValue: String?
     let size: Int
+    let focusedSnippets: [String]?
 }
 
 struct ScriptToPreview {
@@ -59,15 +60,29 @@ struct ScriptToPreview {
         // Step 3: create preview
         for (i, decoded) in decodedStrings.enumerated() {
             let script = byteSlices[i].script
-            var findings = script.findings4UI ?? []
+            var findings = script.findings4UI?.map { (message, severity, pos) in (message: message, severity: severity, pos) } ?? []
 
             if script.origin == .inline && byteSlices[i].wasTruncated {
                 findings.append((
                     message: "Truncated (>3072 bytes)",
-                    severity: .info
+                    severity: .info,
+                    pos: 0
                 ))
             }
             
+            var snippets: [String] = []
+            if let findings4UI = script.findings4UI {
+                for (_, _, position) in findings4UI {
+                    if let pos = position, pos != 0 {
+                        let startIndex = max(script.start + pos - 200, 0)
+                        let endIndex = min(script.start + pos + 200, body.count)
+                        let snippetData = body[startIndex..<endIndex]
+                        let snippetString = String(data: snippetData, encoding: .utf8) ?? "⚠️ Unable to decode snippet."
+                        snippets.append(snippetString)
+                    }
+                }
+            }
+
             let preview = ScriptPreview(
                 origin: script.adjustedOrigin,
                 isInline: script.origin == .inline,
@@ -79,7 +94,8 @@ struct ScriptToPreview {
                 integrity: script.integrityValue,
                 isModule: script.isModule,
                 crossOriginValue: script.crossOriginValue,
-                size: byteSlices[i].size
+                size: byteSlices[i].size,
+                focusedSnippets: snippets.isEmpty ? nil : snippets
             )
             previews.append(preview)
         }

@@ -25,14 +25,20 @@ class PDFReportGenerator: NSObject, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         let config = WKPDFConfiguration()
-        webView.createPDF(configuration: config) { result in
-            switch result {
-            case .success(let data):
-                self.completion?(data)
-            case .failure:
-                self.completion?(nil)
+        // Known WKWebView.createPDF log:
+        // RBSServiceErrorDomain "Client not entitled"
+        // This is expected and safe to ignore.
+        // Can't do anything about it....
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            webView.createPDF(configuration: config) { result in
+                switch result {
+                    case .success(let data):
+                        self.completion?(data)
+                    case .failure:
+                        self.completion?(nil)
+                }
+                self.cleanup()
             }
-            self.cleanup()
         }
     }
 

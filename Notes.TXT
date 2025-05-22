@@ -1,0 +1,4 @@
+// NOTE: Google.com may silently fail in Simulator due to QUIC/TLS handshake errors.
+// Verified on real device and curl — issue is Simulator-only.
+
+CHHapticEngine.capabilitiesForHardware

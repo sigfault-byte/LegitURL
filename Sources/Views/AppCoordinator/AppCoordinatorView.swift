@@ -7,22 +7,26 @@
 import SwiftUI
 
 //Root view cases
-enum RootScreen {
+enum RootScreen: Equatable {
     case input
     case analysis(urlInput: String, infoMessage: String)
 }
 
 struct AppCoordinatorView: View {
+    var initialURL: URL? = nil
+    var onResetURL: () -> Void = {}      // callback to clear sharedURL
+    
     @State private var rootScreen: RootScreen = .input
 
     var body: some View {
         ZStack {
             if case .input = rootScreen {
-                URLInputView(incomingURL: nil, onAnalyze: { urlInput, info in
+                URLInputView(incomingURL: initialURL, onAnalyze: { urlInput, info in
                     withAnimation(.easeInOut) {
                         rootScreen = .analysis(urlInput: urlInput, infoMessage: info)
                     }
                 })
+                .id(initialURL)
                 .transition(.asymmetric(insertion: .move(edge: .trailing),
                                         removal: .move(edge: .leading)))
             }
@@ -33,6 +37,10 @@ struct AppCoordinatorView: View {
                     onExit: {
                         withAnimation(.easeInOut) {
                             rootScreen = .input
+                        }
+                        // TODO: This is still not wokring and bypassing the transition...
+                        DispatchQueue.main.async {
+                            onResetURL()
                         }
                     }
                 )
@@ -119,7 +127,7 @@ struct AppCoordinatorView: View {
 //            width: 2 * currentRadius,
 //            height: 2 * currentRadius
 //        )
-//        
+//
 //        var path = Path()
 //        path.addEllipse(in: circleRect)
 //        return path
