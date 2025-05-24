@@ -126,13 +126,13 @@ final class ShareViewController: UIViewController {
     private func openInLegitURL() {
         guard let url = sharedURL else { finish(); return }
 
-        // Hand‑off: save and exit - extension is not allowed to open the app ..... <333
+        // Hand‑off: save and exit - extension is not allowed to open the app ?..... <333
         stashForLater(url)
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { granted, _ in
             guard granted else { return }
             let content = UNMutableNotificationContent()
             content.title = "Link saved to LegitURL"
-            content.body  = "Open LegitURL to analyse the shared link."
+            content.body  = "Tap here or open LegitURL to check the shared link."
             let request = UNNotificationRequest(identifier: UUID().uuidString,
                                                 content: content,
                                                 trigger: nil)
@@ -168,23 +168,46 @@ private struct ShareSheet: View {
     let onCancel:  () -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Analyse this link in LegitURL?")
-                .font(.headline)
+        VStack(spacing: 16) {
+            Image(systemName: "link.circle.fill")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 50, height: 50)
+                .foregroundColor(.accentColor)
+
+            Text("Analyze this Link in Legit URL?")
+                .font(.title2)
+                .fontWeight(.semibold)
+
             Text(url.absoluteString)
-                .font(.footnote)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .truncationMode(.middle)
                 .padding(.horizontal)
 
-            HStack {
-                Button("Cancel", action: onCancel)
-                Spacer()
-                Button("Open in LegitURL", action: onOpenApp)
-                    .bold()
+            HStack(spacing: 20) {
+                Button(action: onCancel) {
+                    Text("Cancel")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button(action: onOpenApp) {
+                    Text("Continue")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 10)
         }
         .padding()
-        .frame(minWidth: 280)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(UIColor.secondarySystemBackground))
+                .shadow(radius: 5)
+        )
+        .padding(.horizontal, 20)
     }
 }

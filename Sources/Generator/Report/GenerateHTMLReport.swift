@@ -116,6 +116,7 @@ func generateHTML(from queue: URLQueue) -> String {
               background-color: #f9f9f9;
             }
             .url-title {
+              word-break: break-word;
               background-color: #f0f4f8;
               padding: 10px;
               border-left: 5px solid #0066cc;
@@ -149,12 +150,34 @@ func generateHTML(from queue: URLQueue) -> String {
               page-break-inside: avoid;
               break-inside: avoid;
             }
+            .report-title {
+              font-size: 2em;
+              font-weight: bold;
+              border-bottom: 3px solid #0066cc;
+              padding-bottom: 6px;
+              margin-bottom: 4px;
+              color: #222;
+            }
+            .report-date {
+              text-align: right;
+              font-size: 1em;
+              color: #666;
+              margin-bottom: 4px;
+              font-style: italic;
+            }
+            .report-disclaimer {
+              font-size: 0.95em;
+              color: #555;
+              margin-top: -10px;
+            }
         </style>
     </head>
     <body>
     <div class="container">
-        <h1>LegitURL Security Report</h1>
-        <p>Generated on \(formatter.string(from: Date()))</p>
+        <h1 class="report-title">LegitURL Report</h1>
+        <p class="report-date">Generated on \(formatter.string(from: Date()))</p>
+        <p class="report-disclaimer">This report uses heuristics.</p>
+        <p class="report-disclaimer">A low score does not imply the URL is malicious, only that it lacks strong security hygiene.</p>
     <hr class="rounded">
     """
     
@@ -218,12 +241,13 @@ func generateHTML(from queue: URLQueue) -> String {
         if !components.lamaiTrees.isEmpty {
             html += "<h3>Decoded Data</h3>"
             for (tree, values) in components.lamaiTrees {
-                html += "<h4>\(tree)</h4>"
+                html += "<h4>Origin: \(tree)</h4>"
                 html += "<ul>"
                 for node in values {
                     html += renderNode(node)
                 }
                 html += "</ul>"
+                html += "<hr class=\"rounded\">"
             }
         }
         
