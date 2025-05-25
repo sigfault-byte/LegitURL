@@ -51,7 +51,7 @@ If you’re new to all this and want a 2 minute story that explains what happens
 [Once upon a TLS](https://legiturl.fr)
 
 ## 2. Quick start
-[Join the TestFlight beta](https://testflight.apple.com/join/VESrumtr) or clone and build with Xcode.
+[Download on the appStore](https://apps.apple.com/fr/app/legiturl/id6745583794?l=en-GB) or clone and build with Xcode.
 
 ---
 
