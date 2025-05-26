@@ -50,6 +50,19 @@ struct HTTPRespAnalyzer {
         if (300...399).contains(onlineInfo.serverResponseCode ?? 0),
            let redirectTarget = onlineInfo.finalRedirectURL {
             finalURL = redirectTarget
+            
+            // Detect query-only redirect attempts (e.g., ?m=1 added to the same path)
+            let originalURLStripped = urlInfo.components.coreURL?.lowercased() ?? ""
+            let redirectURLStripped = redirectTarget
+            if originalURLStripped == redirectURLStripped && originalURL != redirectTarget {
+                urlInfo.warnings.append(SecurityWarning(
+                    message: "Suspicious redirect with query-only difference.\nThe server may be withholding content unless specific query parameters are used.",
+                    severity: .critical,
+                    penalty: -100,
+                    url: urlOrigin,
+                    source: .redirect
+                ))
+            }
         }
         
         // Handle relative redirects: follow them, but flag as suspicious
@@ -64,8 +77,21 @@ struct HTTPRespAnalyzer {
                 url: urlOrigin,
                 source: .redirect
             ))
+            onlineInfo.finalRedirectURL = resolvedRelative
         }
         
+        // Double check for query-only redirection tricks (e.g., same domain, only ?m=1 added)
+        let final = onlineInfo.finalRedirectURL
+        let original = urlInfo.components.fullURL
+        if final == original {
+            urlInfo.warnings.append(SecurityWarning(
+                message: "Repeated redirect with only query-string changes.\nThis looks like a cloaking pattern used by scam kits to withhold payload unless specific query parameters are present.",
+                severity: .critical,
+                penalty: -100,
+                url: urlOrigin,
+                source: .redirect
+            ))
+        }
         //Http response handler
         
         HandleHTTPResponse.cases(responseCode: responseCode, urlInfo: &urlInfo)

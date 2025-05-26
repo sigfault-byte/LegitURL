@@ -64,18 +64,29 @@ struct ScriptToPreview {
 
             if script.origin == .inline && byteSlices[i].wasTruncated {
                 findings.append((
-                    message: "Truncated (>3072 bytes)",
+                    message: "Truncated preview (3072 bytes)",
                     severity: .info,
                     pos: 0
                 ))
             }
-            
+            //MARK: LAST CRASH ON SCRIPT FOR CROSSORIGIN ATTR IN MODULE SCRIPT
             var snippets: [String] = []
             if let findings4UI = script.findings4UI {
                 for (_, _, position) in findings4UI {
                     if let pos = position, pos != 0 {
-                        let startIndex = max(script.start + pos - 200, 0)
-                        let endIndex = min(script.start + pos + 200, body.count)
+                        let proposedStart = script.start + pos - 200
+                        let startIndex = proposedStart >= script.start ? proposedStart : script.start
+
+                        let proposedEnd = script.start + pos + 200
+                        let endIndex: Int
+                        if let endTagPos = script.endTagPos, proposedEnd > endTagPos {
+                            endIndex = endTagPos
+                        } else {
+                            endIndex = min(proposedEnd, body.count)
+                        }
+
+                        guard startIndex < endIndex else { continue }
+
                         let snippetData = body[startIndex..<endIndex]
                         let snippetString = String(data: snippetData, encoding: .utf8) ?? "⚠️ Unable to decode snippet."
                         snippets.append(snippetString)

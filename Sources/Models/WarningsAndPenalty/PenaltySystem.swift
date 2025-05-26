@@ -108,6 +108,7 @@ struct PenaltySystem {
         static let hightPenaltyForInlineJS             = -20
         static let jsSetEditCookie                     = -15
         static let mediumPenaltyForInlineJS            = -15
+        static let inlineMore100kB                     = -15
         static let moduleCrossoriginUnknownValue       = -5 // Same penalty different reasons?
         static let moduleCrossoriginMalformed          = -5 // Need a specific bitflag maybe... but for what??
         static let lowPenaltyForInlineJS               = -5
@@ -129,9 +130,9 @@ struct PenaltySystem {
         //RESPONSE HEADER ISSUE
         static let blockedByFirewall                   = -100
         static let serverError                         = -100
+        static let missConfiguredOrScam                = -35
+        static let suspiciousStatusCode                = -35
         static let hidden200Redirect                   = -20
-        static let missConfiguredOrScam                = -20
-        static let suspiciousStatusCode                = -15
         
         //HEADERS
         static let missingHSTS                         = -50
@@ -378,7 +379,7 @@ struct PenaltySystem {
     
     static func getPenaltyAndSeverity(name: String) -> (penalty: Int, severity: SecurityWarning.SeverityLevel) {
         switch name {
-        case "eval", "window[\"eval\"]":
+        case "eval", "window[\"eval\"]", "Function":
             return (PenaltySystem.Penalty.critical, .critical)
         case "atob", "btoa", "fetch", "xmlhttprequest", "window.open", "document.write":
             return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)

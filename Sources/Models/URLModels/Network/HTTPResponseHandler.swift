@@ -78,7 +78,7 @@ struct HandleHTTPResponse {
 
         case 404:
             urlInfo.warnings.append(SecurityWarning(
-                message: "404 Not Found: The requested core path doesn't exist. Possibly a disposable page.",
+                message: "404 Not Found: The requested core path doesn't exist.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.missConfiguredOrScam,
                 url: urlOrigin,

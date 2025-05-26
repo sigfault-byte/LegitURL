@@ -10,6 +10,7 @@ import Foundation
 struct BadJSFunctions {
     static let suspiciousJsFunction: Set<String> = [
         "eval",
+        "Function",
         "atob",
         "btoa",
         "document.write",
@@ -33,6 +34,7 @@ struct BadJSFunctions {
     ]
     
     static let eval: [UInt8] = Array("eval".utf8)
+    static let jsFunction: [UInt8] = Array("Function".utf8)
     static let atob: [UInt8] = Array("atob".utf8)
     static let btoa: [UInt8] = Array("btoa".utf8)
     static let documentWrite: [UInt8] = Array("document.write".utf8)
@@ -58,6 +60,7 @@ struct BadJSFunctions {
     static var suspiciousLastBytes: Set<UInt8> {
         return [
             eval,
+            jsFunction,
             atob,
             btoa,
             documentWrite,
@@ -80,14 +83,20 @@ struct BadJSFunctions {
             getELementById,
         ].compactMap { $0.last }.reduce(into: Set<UInt8>()) { $0.insert($1) }
     }
-    /// Pre‑computed ttuples 
+    /// Pre‑computed ttuples
     static let suspiciousJsFunctionBytes: [(name: String, bytes: [UInt8])] = {
-        suspiciousJsFunction.map { ($0, Array($0.utf8)) }
+        suspiciousJsFunction.map { name in
+            if name == "Function" {
+                return ("Function", jsFunction)
+            }
+            return (name, Array(name.utf8))
+        }
     }()
     
     static var suspiciousSecondLastBytes: Set<UInt8> {
         return [
             eval,
+            jsFunction,
             atob,
             btoa,
             documentWrite,
@@ -157,7 +166,7 @@ struct SuspiciousJSAccessors {
 //        "md5", "sha1", "sha256", "crc32", "hmac", "ciphertext",
 //        "pkcs7", "pbkdf2", "bcrypt", "scrypt", "jwt="
 //    ]
-//    
+//
 //    static let trackingAndMonitoring: Set<String> = [
 //        "ga(", "fbq(", "ym(", "insightly(", "mixpanel(", "amplitude(",
 //        "keen(", "matomo(", "clickid", "hotjar(", "clarity(", "snowplow(",
@@ -170,4 +179,3 @@ struct SuspiciousJSAccessors {
 //        "optimizely(", "braze(", "webtrends(", "quantcast(", "pardot("
 //    ]
 }
-

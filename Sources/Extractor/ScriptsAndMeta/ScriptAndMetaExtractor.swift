@@ -187,7 +187,7 @@ struct ScriptAndMetaExtractor {
 //        get module crossoriginValue
         if confirmedScripts.contains(where: { $0.isModule == true } ) {
             var crossOriginWarnings: [SecurityWarning] = []
-            crossOriginWarnings = ScriptHelperFunction.findCrossOriginModuleValue(in: body, scripts: &confirmedScripts)
+            crossOriginWarnings = ScriptHelperFunction.findCrossOriginModuleValue(in: body, scripts: &confirmedScripts, origin: origin)
             if !crossOriginWarnings.isEmpty {
                 warnings.append(contentsOf: crossOriginWarnings)
             }

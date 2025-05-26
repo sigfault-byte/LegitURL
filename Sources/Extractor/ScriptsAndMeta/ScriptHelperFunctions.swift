@@ -474,7 +474,9 @@ struct ScriptHelperFunction {
             }
             
             // Case 1: Conventional JS file extensions
-            if pathOnly.suffix(3) == Array(".js".utf8) || pathOnly.suffix(4) == Array(".mjs".utf8) {
+//        TODO: Dig this more. Cannot hardcode every extension. There must be some logic.
+//            if pathOnly.suffix(3) == Array(".js".utf8) || pathOnly.suffix(4) == Array(".mjs".utf8) {
+            if pathOnly.contains(UInt8(ascii: ".")) {
                 return true
             }
             
@@ -491,7 +493,7 @@ struct ScriptHelperFunction {
     }
     
     
-    public static func findCrossOriginModuleValue(in body: Data, scripts: inout [ScriptScanTarget]) -> [SecurityWarning] {
+    public static func findCrossOriginModuleValue(in body: Data, scripts: inout [ScriptScanTarget], origin: String) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
 
         for i in 0..<scripts.count {
@@ -501,7 +503,7 @@ struct ScriptHelperFunction {
             let attributeSlice = body[scanRange]
 
             let attributes = attributeSlice.split(separator: UInt8(ascii: " "))
-
+            
             for attr in attributes {
 //                fkcnin cRoSoRiGin
                 var lowered = safeAsciiLowercase(Array(attr))
@@ -522,9 +524,16 @@ struct ScriptHelperFunction {
                                 message: "Script module has unrecognized crossorigin value: '\(value)'",
                                 severity: .suspicious,
                                 penalty: PenaltySystem.Penalty.moduleCrossoriginUnknownValue,
-                                url: scripts[i].extractedSrc ?? "unknown",
+                                url: origin,
                                 source: .body
                             ))
+                            var current = scripts[i].findings4UI ?? []
+                            current.append((
+                                message: "Unrecognized crossorigin value: '\(value)'",
+                                severity: SecurityWarning.SeverityLevel.suspicious,
+                                pos: scripts[i].end
+                            ))
+                            scripts[i].findings4UI = current
                         }
                         break
                     } else {
@@ -532,9 +541,16 @@ struct ScriptHelperFunction {
                             message: "Malformed crossorigin attribute (no `=` or invalid format).",
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.moduleCrossoriginMalformed,
-                            url: scripts[i].extractedSrc ?? "unknown",
+                            url: origin,
                             source: .body
                         ))
+                        var current = scripts[i].findings4UI ?? []
+                        current.append((
+                            message: "Malformed crossorigin attribute (no `=` or invalid format).",
+                            severity: SecurityWarning.SeverityLevel.suspicious,
+                            pos: scripts[i].end
+                        ))
+                        scripts[i].findings4UI = current
                     }
                 }
             }

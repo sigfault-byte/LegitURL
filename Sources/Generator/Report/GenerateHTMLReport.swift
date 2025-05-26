@@ -178,6 +178,7 @@ func generateHTML(from queue: URLQueue) -> String {
         <p class="report-date">Generated on \(formatter.string(from: Date()))</p>
         <p class="report-disclaimer">This report uses heuristics.</p>
         <p class="report-disclaimer">A low score does not imply the URL is malicious, only that it lacks strong security hygiene.</p>
+        <p class="report-disclaimer">This analysis is based on clean HTTP requests, made <strong>without query parameters or fragments</strong>, to simulate a first-time access.</p> 
     <hr class="rounded">
     """
     
@@ -291,7 +292,8 @@ func generateHTML(from queue: URLQueue) -> String {
             
             
             if !online.cookiesForUI.isEmpty {
-                html += "<h3>Cookies</h3>"
+                let numberOfCookie = online.cookiesForUI.count
+                html += "<h3>Cookies: `\(numberOfCookie)`</h3>"
                 
                 for cookie in online.cookiesForUI.compactMap({ $0 }) {
                     html += "<h4>Cookie Key: \(cookie.cookie.name)</h4>"

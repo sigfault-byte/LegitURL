@@ -14,20 +14,20 @@ struct ScriptInlineAnalyzer {
         //        let start = Date()
         var setterDetected = false
         //        Debug
-//        Too early !
-//        let isNonce = scripts.scripts.contains(where: { $0.nonceValue != nil })
-//        if isNonce {
-//            for i in scripts.scripts.indices {
-//                if scripts.scripts[i].origin == .inline && scripts.scripts[i].nonceValue == nil {
-//                    scripts.scripts[i].findings4UI = (scripts.scripts[i].findings4UI ?? []) + [("Inline Script Missing nonce Value", .info)]
-//                }
-//            }
-//        }
+        //        Too early !
+        //        let isNonce = scripts.scripts.contains(where: { $0.nonceValue != nil })
+        //        if isNonce {
+        //            for i in scripts.scripts.indices {
+        //                if scripts.scripts[i].origin == .inline && scripts.scripts[i].nonceValue == nil {
+        //                    scripts.scripts[i].findings4UI = (scripts.scripts[i].findings4UI ?? []) + [("Inline Script Missing nonce Value", .info)]
+        //                }
+        //            }
+        //        }
         
         // Build one contiguous Data buffer that contains every inline script.
         let (soupData, byteRangesByScript) = generateInlineSoup(from: scripts.scripts, in: body)
         guard !soupData.isEmpty else { return }
-
+        
         // Locate suspicious byte patterns
         let parenPositions = DataSignatures.extractAllTagMarkers(in: soupData, within: 0..<soupData.count, tag: UInt8(ascii: "("))
         let dotPositions = DataSignatures.extractAllTagMarkers(in: soupData, within: 0..<soupData.count, tag: UInt8(ascii: "."))
@@ -88,11 +88,42 @@ struct ScriptInlineAnalyzer {
                                   scripts: &scripts,
                                   byteRangesByScript: byteRangesByScript)
         
+        checkInlineScriptSize(scripts: &scripts, into: &warnings, origin: origin)
+        
+        
         
         //        let timing = Date().timeIntervalSince(start1)
         //        let duration = Date().timeIntervalSince(start)
         //        print("gather the data took: ", duration, "filtering took: ", timing)
     }
+    
+    private static func checkInlineScriptSize(scripts: inout ScriptExtractionResult, into: inout [SecurityWarning], origin: String) {
+        var countOverThreshold = 0
+        for (index, script) in scripts.scripts.enumerated() {
+            guard script.origin == .inline else { continue }
+            let start = script.start
+            let end = script.endTagPos ?? 0
+            if end != 0 {
+                let size = end - start
+                if size >= 100_000 {
+                    countOverThreshold += 1
+                    let current = scripts.scripts[index].findings4UI ?? []
+                    scripts.scripts[index].findings4UI = current + [("Inline script exceeds 100kB", .suspicious, 0)]
+                }
+            }
+        }
+
+        if countOverThreshold > 0 {
+            into.append(SecurityWarning(
+                message: "\(countOverThreshold) inline script(s) exceed 100kB, which is unusually large.",
+                severity: .suspicious,
+                penalty: PenaltySystem.Penalty.inlineMore100kB * countOverThreshold,
+                url: origin,
+                source: .body
+            ))
+        }
+    }
+    
     
     /// Concatenates all inline `<script>` blocks into a single `Data` buffer, separated by '\n'.
     /// Also returns the byte ranges of each inline block *within that buffer* for later mapping.
@@ -101,23 +132,23 @@ struct ScriptInlineAnalyzer {
         var ranges: [(range: Range<Int>, scriptIndex: Int)] = []
         var soup = Data()
         var currentStart = 0
-
+        
         for (index, script) in scripts.enumerated() {
             guard script.origin == .inline,
                   let start = script.end,
                   let end = script.endTagPos,
                   start < end, end <= body.count else { continue }
-
+            
             let slice = body[start..<end]
             soup.append(slice)
             soup.append(contentsOf: [0x0A])          // newline separator
-
+            
             let length = slice.count + 1
             let range = currentStart ..< (currentStart + length)
             ranges.append((range, index))
             currentStart += length
         }
-
+        
         return (soup, ranges)
     }
     
@@ -163,7 +194,7 @@ struct ScriptInlineAnalyzer {
                 let start = pos - bytes.count
                 let end = pos
                 guard start >= 0, end <= soupData.count else { continue }
-
+                
                 let slice = soupData[start..<end]
                 if slice.elementsEqual(bytes) {
                     if name == "atob" {
@@ -171,13 +202,13 @@ struct ScriptInlineAnalyzer {
                         let contextSlice = soupData[leadStart..<end]
                         if let contextStr = String(data: contextSlice, encoding: .utf8),
                            contextStr.contains("JSON.parse") {
-//                            if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
-//                                let index = match.scriptIndex
-//                                let scriptRange = match.range
-//                                let posInScript = pos - scriptRange.lowerBound
-//                                let current = scripts.scripts[index].findings4UI ?? []
-//                                scripts.scripts[index].findings4UI = current + [("JSON decoding via atob", .dangerous, posInScript)]
-//                            }
+                            //                            if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
+                            //                                let index = match.scriptIndex
+                            //                                let scriptRange = match.range
+                            //                                let posInScript = pos - scriptRange.lowerBound
+                            //                                let current = scripts.scripts[index].findings4UI ?? []
+                            //                                scripts.scripts[index].findings4UI = current + [("JSON decoding via atob", .dangerous, posInScript)]
+                            //                            }
                             warnings.append(SecurityWarning(
                                 message: "Inline JavaScript is decoding a base64 blob with `atob()` directly after `JSON.parse(...)`. This is highly suspicious.",
                                 severity: .dangerous,
@@ -188,7 +219,7 @@ struct ScriptInlineAnalyzer {
                             ))
                         }
                     }
-                    if ["eval", "atob", "setItem", "btoa"].contains(name) {
+                    if ["eval", "atob", "setItem", "btoa", "Function"].contains(name) {
                         setterDetected = true
                     }
                     if name == "getElementById" {
@@ -211,7 +242,7 @@ struct ScriptInlineAnalyzer {
                         }
                         continue
                     }
-
+                    
                     matchCounts[name, default: 0] += 1
                     let (_, severity) = PenaltySystem.getPenaltyAndSeverity(name: name)
                     if let match = byteRangesByScript.first(where: { $0.range.contains(pos) }) {
@@ -271,16 +302,16 @@ struct ScriptInlineAnalyzer {
                         //                        print(" Detected document.cookie context:\n\(preview)\n")
                         //                    }
                         
-//                        // Print debugging for document.cookie=
-//                        if name == "cookie" {
-//                            let contextStart = max(0, pos - 40)
-//                            let contextEnd = min(soupData.count, pos + 60)
-//                            if let contextStr = String(data: soupData[contextStart..<contextEnd], encoding: .utf8) {
-//                                print("Cookie context near position \(pos):\n\(contextStr)")
-//                                print("isAssignment:", isAssignment)
-//                            }
-//                        }
-
+                        //                        // Print debugging for document.cookie=
+                        //                        if name == "cookie" {
+                        //                            let contextStart = max(0, pos - 40)
+                        //                            let contextEnd = min(soupData.count, pos + 60)
+                        //                            if let contextStr = String(data: soupData[contextStart..<contextEnd], encoding: .utf8) {
+                        //                                print("Cookie context near position \(pos):\n\(contextStr)")
+                        //                                print("isAssignment:", isAssignment)
+                        //                            }
+                        //                        }
+                        
                         let isSetter = name == "cookie" && isAssignment
                         
                         if name == "cookie" && isAssignment && !setcookie {
@@ -367,21 +398,21 @@ struct ScriptInlineAnalyzer {
         }
     }
     
-    //TEST function for window.opener
-    private static func detectOpenerNull(in soup: Data, byteRanges: [(range: Range<Int>, scriptIndex: Int)], into scripts: inout ScriptExtractionResult) -> Bool {
-        let openerBytes: [UInt8] = Array("opener".utf8)
-        let nullBytes: [UInt8] = Array("null".utf8)
-        
-        var found = false
-        
-        for (range, scriptIndex) in byteRanges {
-            let data = soup[range]
-            guard data.count > 12 else { continue }  // too small
-//            locate all '=' using extractAllTagMarkers
-            // either loop over or grab 10B aournd each side of it
-            
-            
-        }
-            return found
-        }
+    //    //TODO: TEST function for window.opener
+    //    private static func detectOpenerNull(in soup: Data, byteRanges: [(range: Range<Int>, scriptIndex: Int)], into scripts: inout ScriptExtractionResult) -> Bool {
+    //        let openerBytes: [UInt8] = Array("opener".utf8)
+    //        let nullBytes: [UInt8] = Array("null".utf8)
+    //
+    //        var found = false
+    //
+    //        for (range, scriptIndex) in byteRanges {
+    //            let data = soup[range]
+    //            guard data.count > 12 else { continue }  // too small
+    ////            locate all '=' using extractAllTagMarkers
+    //            // either loop over or grab 10B aournd each side of it
+    //
+    //
+    //        }
+    //            return found
+    //        }
 }

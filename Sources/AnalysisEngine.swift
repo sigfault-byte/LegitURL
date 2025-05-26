@@ -227,13 +227,17 @@ struct AnalysisEngine {
             Finalyzer.finalizeAnalysis()
             hasManuallyStopped = true
             return true
-        }
+        } /*else if urlInfo.onlineInfo?.serverResponseCode == 200 {*/
+//            return true
+//        }
         return false
     }
     
     private static func handleFinalRedirect(from currentURLInfo: URLInfo, finalRedirect: String, responseCode: Int) async {
         guard let originalURL = currentURLInfo.components.fullURL else { return }
-        if finalRedirect.lowercased() == originalURL.lowercased() { return }
+        if finalRedirect.lowercased() == originalURL.lowercased() {
+            
+            return }
         
         let alreadyQueued = URLQueue.shared.offlineQueue.contains {
             $0.components.coreURL?.lowercased() == finalRedirect.lowercased()
