@@ -47,6 +47,21 @@ struct Finalyzer {
         URLQueue.shared.groupedWarnings = grouped
         URLQueue.shared.legitScore.analysisCompleted = true
         let _ = URLQueue.shared.generateAndStoreHTMLReport()
+        do {
+            let jsonData = try generateLLMJson(from: URLQueue.shared)
+            // You can print, store, or debug it here
+            for json in jsonData {
+                
+                if let jsonString = String(data: json, encoding: .utf8) {
+                    print(jsonString)
+                } else {
+                    print("Failed to decode JSON data to string")
+                }
+                print("JSON SIZE: \(json.count) bytes (approx. \(json.count / 4) tokens)")
+            }
+        } catch {
+            print("error generating compact JSON: \(error)")
+        }
     }
     
     

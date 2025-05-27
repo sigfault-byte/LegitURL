@@ -429,7 +429,7 @@ func generateHTML(from queue: URLQueue) -> String {
                 let scriptsUnknown = scripts.filter { $0.context == .unknown}
                 
                 var counter: Int = 1
-                // --- REPLACEMENT: Scripts in <head> ---
+                //Scripts in <head>
                 if !scriptsInHead.isEmpty {
                     html += "<h4>Scripts in &lt;head&gt;</h4><ul>"
                     for script in scriptsInHead {
@@ -490,7 +490,7 @@ func generateHTML(from queue: URLQueue) -> String {
                     html += "</ul>"
                 }
                 
-                // --- REPLACEMENT: Scripts in <body> ---
+                // Scripts in <bod>
                 if !scriptsInBody.isEmpty {
                     html += "<h4>Scripts in &lt;body&gt;</h4><ul>"
                     for script in scriptsInBody {
