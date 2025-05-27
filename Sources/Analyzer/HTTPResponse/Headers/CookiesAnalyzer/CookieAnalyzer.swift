@@ -80,7 +80,6 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         bitFlags.insert(.pathOverlyBroad)
     }
     
-    
     if isDomainBroad && isPathBroad {
         bitFlags.insert(.domainOverlyBroad)
     }
@@ -102,8 +101,10 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
         severity = .tracking
     } else if bitFlags.contains([.highEntropyValue, .persistent, .sameSiteNone]) {
         severity = .dangerous
-    } else if bitFlags.contains(.smallValue) {
+    } else if bitFlags.contains(.smallValue) && !bitFlags.contains(.sameSiteNone) {
         severity = .info
+    } else if bitFlags.contains(.smallValue) && bitFlags.contains(.sameSiteNone) {
+        severity = .tracking
     } else if bitFlags.contains(.expired) && cookie.httpOnly == true {
         severity = .info
     }else if bitFlags.contains(.expired) && isHighEntropyValue && cookie.httpOnly == false {

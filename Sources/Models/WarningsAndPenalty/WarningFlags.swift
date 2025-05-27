@@ -92,4 +92,5 @@ struct WarningFlags: OptionSet {
     static let HEADERS_CSP_WILDCARD                 = WarningFlags(rawValue: 1 << 107)
 
     // Reserved: 108–127
+    static let SLOPPY_DEVELOPMENT                  = WarningFlags(rawValue: 1 << 125)
 }

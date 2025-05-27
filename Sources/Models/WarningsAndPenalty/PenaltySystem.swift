@@ -89,7 +89,7 @@ struct PenaltySystem {
         static let extScriptSrc                        = -20
         static let highScriptDensity20                 = -20
         static let scriptDataURI                       = -40
-        static let missingMalformedBodyTag             = -15
+        static let missingMalformedBodyTag             = -5
         static let scriptIs70Percent                   = -10
         static let smallHTMLless896                    = -10
         static let highScriptDensity                   = -10
@@ -108,7 +108,7 @@ struct PenaltySystem {
         static let hightPenaltyForInlineJS             = -20
         static let jsSetEditCookie                     = -15
         static let mediumPenaltyForInlineJS            = -15
-        static let inlineMore100kB                     = -15
+        static let inlineMore100kB                     = -30
         static let moduleCrossoriginUnknownValue       = -5 // Same penalty different reasons?
         static let moduleCrossoriginMalformed          = -5 // Need a specific bitflag maybe... but for what??
         static let lowPenaltyForInlineJS               = -5
@@ -275,6 +275,11 @@ struct PenaltySystem {
         if flags.contains(.verySmall) {return 0}
         
         
+        // Suspicious misuse: session + SameSite=None small value
+        if flags.contains(.session) && flags.contains(.sameSiteNone) && flags.contains(.smallValue) {
+            return -5  // Indicates tracking intent with fake session scope
+        }
+        
         // Suspicious misuse: session + SameSite=None
         if flags.contains(.session) && flags.contains(.sameSiteNone) {
             return -10  // Indicates tracking intent with fake session scope
@@ -381,8 +386,12 @@ struct PenaltySystem {
         switch name {
         case "eval", "window[\"eval\"]", "Function":
             return (PenaltySystem.Penalty.critical, .critical)
+        case "cookie":
+            return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
+        case "WebAssembly":
+            return (PenaltySystem.Penalty.jsWebAssembly, .dangerous)
         case "atob", "btoa", "fetch", "xmlhttprequest", "window.open", "document.write":
-            return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)
+            return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
         case "location.href":
             return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)
         case "location.replace", "location.assign", "getElementById":
@@ -391,14 +400,10 @@ struct PenaltySystem {
             return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
         case "console.log":
             return (PenaltySystem.Penalty.lowPenaltyForInlineJS, .info)
-        case "cookie":
-            return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
         case "localStorage":
             return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)
         case "setItem":
             return (PenaltySystem.Penalty.jsSetItemAccess, .suspicious)
-        case "WebAssembly":
-            return (PenaltySystem.Penalty.jsWebAssembly, .dangerous)
         default:
             return (-10, .suspicious)
         }

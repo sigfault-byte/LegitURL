@@ -13,7 +13,8 @@ struct ScriptSecurityAnalyzer {
         
         let totalInlineScriptBytes = computeInlineScriptBytes(scripts.scripts)
         //Cpmpute html to script ratio
-        computeScriptsToHtmlRation(scriptSize: totalInlineScriptBytes, htmlRange: htmlRange, originURL: origin, into: &warnings)
+        var jsHTMLRatio: Int = 0
+        jsHTMLRatio = computeScriptsToHtmlRation(scriptSize: totalInlineScriptBytes, htmlRange: htmlRange, originURL: origin, into: &warnings)
         
         #if DEBUG
 //        for script in scripts {
@@ -47,7 +48,7 @@ struct ScriptSecurityAnalyzer {
         
         checkScriptDensity(internalCount: internalCount, externalCount: srcList.count, htmlSize: htmlRange.count, originURL: origin, into: &warnings)
         
-        ScriptInlineAnalyzer.analyze(scripts: &scripts, body: body, origin: origin, into: &warnings)
+        ScriptInlineAnalyzer.analyze(scripts: &scripts, body: body, origin: origin, into: &warnings, jsHTMLRatio: jsHTMLRatio)
 
         
         return ScriptSourceToMatchCSP(nonceList: nonceList, externalSources: srcList)
@@ -125,9 +126,9 @@ struct ScriptSecurityAnalyzer {
         }
     }
     
-    private static func computeScriptsToHtmlRation(scriptSize: Int, htmlRange: Range<Int>, originURL: String, into warnings: inout [SecurityWarning]) {
+    private static func computeScriptsToHtmlRation(scriptSize: Int, htmlRange: Range<Int>, originURL: String, into warnings: inout [SecurityWarning]) -> Int {
         let htmlSize = htmlRange.count
-        guard htmlSize > 0 else { return }
+        guard htmlSize > 0 else { return 0 }
         var smallHTMLBonus: Int
 
         // Need to consider that the higher the in a small html is suspicious
@@ -152,7 +153,7 @@ struct ScriptSecurityAnalyzer {
                 url: originURL,
                 source: .body,
             ))
-            return
+            return percent
         }
 
         switch percent {
@@ -189,6 +190,8 @@ struct ScriptSecurityAnalyzer {
         default:
             break
         }
+        
+        return percent
     }
     
     private static func checkScriptDensity(internalCount: Int, externalCount: Int, htmlSize: Int, originURL: String, into warnings: inout [SecurityWarning]) {

@@ -44,7 +44,8 @@ struct ScriptAndMetaExtractor {
                 severity: .critical,
                 penalty: PenaltySystem.Penalty.critical,
                 url: origin,
-                source: .body
+                source: .body,
+                bitFlags: WarningFlags.SLOPPY_DEVELOPMENT
             ))
             return (nil, nil)
         }
@@ -62,7 +63,7 @@ struct ScriptAndMetaExtractor {
                 penalty: PenaltySystem.Penalty.missingMalformedBodyTag,
                 url: origin,
                 source: .body,
-                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO
+                bitFlags: WarningFlags.SLOPPY_DEVELOPMENT
             ))
             // The next guard will safely exit. Still this should be enough to bail
 //            return (nil, nil)

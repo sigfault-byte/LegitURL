@@ -4,13 +4,16 @@
 //  Created by Chief Hakka on ??/04/2025.
 //
 //TODO: Refactor the whole loop especially the findings / findings for UI logic, separate the functions, stop using let every 3 lines. Soup should be a struct, and carries the range of the script, to easily attached the findings
-//TODO: All inline unprotected script => bad
+// TODO: If script contains document.write and scriptIs80Percent → escalate to critical
+// TODO: Track setItem() behavior across redirect hops → score as tracking
+// TODO: Extract URL from window.open(...) → check domain reputation and target TLD
+
 import Foundation
 
 //TODO: d.innerHTML = "window.__CF$cv$params={ ->  fake cloudfare challenge injectedin inline js
 struct ScriptInlineAnalyzer {
     
-    static func analyze(scripts: inout ScriptExtractionResult, body: Data, origin: String, into warnings: inout [SecurityWarning]) {
+    static func analyze(scripts: inout ScriptExtractionResult, body: Data, origin: String, into warnings: inout [SecurityWarning], jsHTMLRatio: Int) {
         //        let start = Date()
         var setterDetected = false
         //        Debug
@@ -78,7 +81,8 @@ struct ScriptInlineAnalyzer {
                                  into: &warnings,
                                  setterDetected: &setterDetected,
                                  scripts: &scripts,
-                                 byteRangesByScript: byteRangesByScript)
+                                 byteRangesByScript: byteRangesByScript,
+                                 jsHTMLRatio: jsHTMLRatio)
         
         matchConfirmedJsAccessors(in: soupData,
                                   position: suspiciousAncestors3,
@@ -184,7 +188,8 @@ struct ScriptInlineAnalyzer {
                                                  into warnings: inout [SecurityWarning],
                                                  setterDetected: inout Bool,
                                                  scripts: inout ScriptExtractionResult,
-                                                 byteRangesByScript: [(range: Range<Int>, scriptIndex: Int)]) {
+                                                 byteRangesByScript: [(range: Range<Int>, scriptIndex: Int)],
+                                                 jsHTMLRatio: Int) {
         
         let knownPatterns = BadJSFunctions.suspiciousJsFunctionBytes
         var matchCounts: [String: Int] = [:]
@@ -261,7 +266,18 @@ struct ScriptInlineAnalyzer {
         }
         
         for (name, count) in matchCounts {
+            
             let (penalty, severity) = PenaltySystem.getPenaltyAndSeverity(name: name)
+            if name == "document.write" && jsHTMLRatio > 70 {
+                warnings.append(SecurityWarning(
+                    message: "High script density inline block using `document.write()` suggests dynamic document manipulation — high risk of cloaked behavior.",
+                    severity: .critical,
+                    penalty: PenaltySystem.Penalty.critical,
+                    url: origin,
+                    source: .body
+                ))
+                continue
+            }
             warnings.append(SecurityWarning(
                 message: "Suspicious JS function: \(name)(...) detected inline \(count) time(s).",
                 severity: severity,
