@@ -1,16 +1,22 @@
+
+import Foundation
 public struct LLMPriming {
     public static var instructions: [String: Any] {
         return [
             "01_from": "analyzeLegitURLBatch",
-            "02_task": "help the user assess the trustworthiness of the input URL, using the structured findings and security indicators",
-            "03_HTTP request Type": "Each HTTP GET request is made from a clean client: no cookies, no local/session storage, no query parameters or fragments. This simulates a fresh user visiting the page for the first time, and applies equally to every request in the batch.",
-            "04_scoreGuideline": [
-                "safe": 100,
+            "02_task": "evaluateURLHygiene",
+            "03_request_model": "Each HTTP GET simulates a clean first-time visit: no cookies, storage, query, or fragment.",
+            "04_score_guide": [
+                "safe": "100",
                 "suspicious": "< 60",
                 "untrusted": "< 40"
             ],
-            "05_scoreInterpretation": "The score is based on security heuristics and structural signals, not on blacklists or user reports. A high score suggests strong hygiene, not guaranteed safety. A low score means caution is advised, but does not confirm malicious intent. The model should explain the reasons behind the score to help the user decide."
-        ]
+            "05_interpretation": "Scores reflect web hygiene signals - not blocklists or user votes. High = strong practices. Low = possible risks. Always explain what influenced the score.",
+            "06_model_behavior": "Reason analytically with web security knowledge. Avoid inflating minor issues. If findings seem odd for known sites, verify certs, cookies (key, entropy, length), and redirects. Be clear, objective, and accessible. No verdicts — explain the why.",
+            "07_behavioral_context": "This tool performs behavioral pattern analysis of websites using security hygiene signals as heuristics for trustworthiness. It measures what websites actually do, not what they claim to be or their reputation.",
+            "08_consumer_protection_lens": "Interpret findings through the lens of 'What behavioral signals would help a non-technical user assess an unknown link?' Focus on patterns that distinguish well-maintained sites from hastily-built or potentially deceptive ones.",
+            "09_scoring_philosophy": "Scores reflect behavioral trustworthiness signals, not definitive security verdicts. High scores indicate sites that 'behave' like they're well-maintained and transparent. Low scores indicate sites exhibiting patterns common in poorly-maintained or potentially deceptive websites.",
+            ]
     }
 }
 //    public static let priming: String = """
@@ -76,3 +82,68 @@ public struct LLMPriming {
 //  }
 //}
 //"""
+
+
+//"10_key_map": [
+//    "meta": [
+//        "url": "Input URL",
+//        "final": "Final URL",
+//        "score": "Overall Score",
+//        "hops": "Redirect Hops",
+//        "f":"findings",
+//        "p": "penlaty",
+//        "curl" : "URL get requested"
+//    ],
+//    "domain": [
+//        "d": "Domain",
+//        "sd": "Subdomain",
+//        "tld": "Top-Level Domain",
+//        "pc": "Punycode Host",
+//        "pt": "Path",
+//        "q": "Query String",
+//        "fr": "Fragment",
+//        "c" : "count"
+//    ],
+//    "online": [
+//        "rc" : "response code",
+//        "st" : "status text",
+//        "rt" : "redirected to"
+//    ],
+//    "cert": [
+//        "cn": "Certificate Common Name",
+//        "san": "Subject Alternative Names",
+//        "pol": "Certificate Policies",
+//        "nb": "Valid From",
+//        "na": "Valid Until",
+//        "iss": "Issuer Common Name"
+//    ],
+//    "cookie": [
+//        "k": "Cookie Name",
+//        "el": "Entropy Level",
+//        "vl": "Value Length",
+//        "ss": "SameSite Policy",
+//        "sc": "Secure",
+//        "ho": "HttpOnly",
+//        "exp": "Expires In",
+//        "s" : "session",
+//    ],
+//    "js": [
+//        "t": "Total Scripts",
+//        "i": "Inline Scripts",
+//        "s": "External Scripts",
+//        "n": "Nonce Count",
+//        "sz": "Total Inline Size",
+//        "dURI": "DataURI c",
+//        "he": "external c",
+//        "r" : "relative c",
+//        "me": "module External c",
+//        "ds": "dataScript c",
+//        "u" : "unknown",
+//    ],
+//    "headers": [
+//        "sec": "Security Headers",
+//        "trk": "Tracking Headers",
+//        "srv": "Server Metadata"
+//    ]
+//]
+//]

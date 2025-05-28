@@ -60,7 +60,7 @@ struct URLInputView: View {
                 .padding(.bottom)
                 
             Spacer()
-                
+                //TODO: This is mainly invisible to users. This needs to be either in a button or something...
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Curious how it all works?")
                         .font(.footnote)

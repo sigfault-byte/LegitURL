@@ -4,6 +4,8 @@
 //
 //  Created by Chief Hakka on 25/04/2025.
 //
+//TODO: incomplete, need more thinkering mister.
+// Ok uncommenting to show it, leaving the disclamer !
 import Foundation
 
 struct GenerateCSP {

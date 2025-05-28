@@ -25,9 +25,9 @@ struct DestinationInfoComponent: View {
                                 .multilineTextAlignment(.center)
                                 .lineLimit(nil)
                                 .fixedSize(horizontal: false, vertical: true)
-                                .onTapGesture {
-                                    showFullExplanation.toggle()
-                                }
+//                                .onTapGesture {
+//                                    showFullExplanation.toggle()
+//                                }
 //                        }
 //                            else {
 //                            Text("Click to see a summary of the score.")

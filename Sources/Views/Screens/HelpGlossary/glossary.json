@@ -1,7 +1,7 @@
 [
   {
     "id": "howItWorks",
-    "term": "How does LegitURL work?",
+    "term": "What does legit URL do?",
     "description": "LegitURL mimics key checks a browser performs when visiting a website, such as resolving the domain, verifying the TLS certificate, and processing headers, cookies, and scripts. However, it does not enforce these mechanisms — it uses them to evaluate how well a website protects its visitors and to flag potential risks.",
     "category": "basic"
   },

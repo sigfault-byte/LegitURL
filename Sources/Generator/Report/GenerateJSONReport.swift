@@ -28,8 +28,10 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
     var finalOutput: [[String: Any]] = []
     
     //priming the model
-    let prime: [String: Any] = ["Instructions": LLMPriming.instructions]
+finalOutput.append(["00_priming" : "This is a machine-generated report of a URL's behavior for AI interpretation. Do not give verdicts. Instead, explain why certain findings matter, focusing on possible risks or strengths."])
+    let prime: [String: Any] = ["01_Instructions": LLMPriming.instructions]
     finalOutput.append(prime)
+finalOutput.append(["02_Model_Note": "Highlight ambiguous or conflicting technical signals. The score is a guide, not proof — justify it using the available data."])
     
     //summary of the following JSON
     let inputURL = first.components.fullURL ?? "-"
@@ -41,11 +43,11 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
         .filter { $0.severity == .critical || $0.severity == .fetchError }
     
     let summary: [String : Any] = ["Summary" : [
-        "01_input url" : inputURL,
-        "02_final url" : finalURL,
+        "01_input_url" : inputURL,
+        "02_final_url" : finalURL,
         "03_score" : score,
         "04_number_of_redirect" : hopCount, //This needs to be prime that its the number of urls report
-        "05_critical_warnings" : criticalWarnings.isEmpty ? criticalWarnings : "none"
+        "05_critical_warnings" : criticalWarnings.isEmpty ? criticalWarnings : ""
     ]]
     finalOutput.append(summary)
     
@@ -85,7 +87,7 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
             "06_query" : query,
             "07_fragment" : fragment,
             "08_punycoded_host" : punycode,
-            "09_findings" : findings.isEmpty ? "none" : findings
+            "09_findings" : findings.isEmpty ? "" : findings
         ]
         
         // Online Var
@@ -103,9 +105,10 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
                 reportContent["13_final_redirect"] = finalRedirect
             }
             //TLS
+            //TODO: Skip when redirect chain is using the same tls
             if let cert = online.parsedCertificate {
-                if let issuerCommonName = cert.issuerCommonName {
-                    reportContent["14_issuer_common_name"] = issuerCommonName
+                if let issuerCommonName = cert.issuerCommonName, let subjectCommonName = cert.commonName {
+                    reportContent["14_issuerName_CommonName"] = issuerCommonName + " , " + subjectCommonName
                 }
                 if let certificatePolicyOIDs = cert.certificatePolicyOIDs {
                     reportContent["15_certificate_policy_oids"] = certificatePolicyOIDs
@@ -128,10 +131,11 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
                         findings.append(["finding-\(index) in \(warning.source)" : ["\(warning.severity), \(warning.message)", "penalty: \(warning.penalty)"]])
                     }
                 }
-                reportContent["19_tls_responsecode_findings"] = findings.isEmpty ? "none" : findings
+                reportContent["19_tls_responsecode_findings"] = findings.isEmpty ? "" : findings
             } // end TLS
             
             //Cookies
+            //TODO: Maybe skip cookies that al ready appeared ?
             let cookies = online.cookiesForUI
             reportContent["20_number_of_cookies"] = cookies.count
             if !cookies.isEmpty {
@@ -143,7 +147,7 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
                     let httponlyDescription = cookie?.cookie.httpOnly != nil ? "YES" : "NO"
                     
                     var cookieEntry: [String: Any] = [:]
-                    cookieEntry["01_\(cookie?.cookie.name ?? "")"] = cookie?.cookie.value ?? ""
+                    cookieEntry["01_key"] = cookie?.cookie.name ?? ""
                     cookieEntry["02_value_entropy"] = entropyValueString
                     cookieEntry["03_value_len"] = cookie?.cookie.value.count ?? 0
                     cookieEntry["04_sameSitePolicy"] = cookie?.cookie.sameSite ?? ""
@@ -173,7 +177,7 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
                     
                     cookieDetail.append(cookieEntry)
                 }
-                reportContent["21_cookie_detail"] = cookieDetail.isEmpty ? "none" : cookieDetail
+                reportContent["21_cookie_detail"] = cookieDetail.isEmpty ? "" : cookieDetail
                 
                 //findings for cookies
                 let relevantCookie: [SecurityWarning.SourceType] = [.cookie]
@@ -184,17 +188,18 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
                         findings.append(["finding-\(index) in \(warning.source)" : ["\(warning.severity), \(warning.message)", "penalty: \(warning.penalty)"]])
                     }
                 }
-                reportContent["22_cookie_findings"] = findings.isEmpty ? "none" : findings
+                reportContent["22_cookie_findings"] = findings.isEmpty ? "" : findings
             } // if cookie end
             
             //headers
             if let headers = online.parsedHeaders {
                 var groupedHeaders: [String: [String: String]] = [:]
                 
-                groupedHeaders["Security_headers"] = headers.securityHeaders
-                groupedHeaders["Tracking_headers"] = headers.trackingHeaders.filter { $0.key.lowercased() != "set-cookie" }
-                groupedHeaders["Server_metadata"] = headers.serverHeaders
-                groupedHeaders["Other_headers"] = headers.otherHeaders
+                groupedHeaders["01_Security_headers"] = headers.securityHeaders
+                groupedHeaders["02_Tracking_headers"] = headers.trackingHeaders.filter { $0.key.lowercased() != "set-cookie" }
+                //TODO: think about what matters and what matters less. To assess, the thrust by the model, maybe security header and server is enough?
+                groupedHeaders["03_Server_metadata"] = headers.serverHeaders
+                //                groupedHeaders["Other_headers"] = headers.otherHeaders
                 
                 reportContent["23_headers"] = groupedHeaders
                 
@@ -207,7 +212,7 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
                         findings.append(["finding-\(index) in \(warning.source)" : ["\(warning.severity), \(warning.message)", "penalty: \(warning.penalty)"]])
                     }
                 }
-                reportContent["24_header_findings"] = findings.isEmpty ? "none" : findings
+                reportContent["24_header_findings"] = findings.isEmpty ? "" : findings
             } // if header end
             
             //body / script ...
@@ -224,14 +229,24 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
                 let dataScriptCount = scripts.filter { $0.origin == .dataScript }.count
                 let unknownCount = scripts.filter { $0.origin == .unknown || $0.origin == .malformed }.count
                 
-                reportContent["25_scripts_count"] = ["total": totalCount,
-                                                     "inline": inlineCount,
-                                                     "dataURI": dataCount,
-                                                     "httpExternal": httpCount,
-                                                     "relative": relativeCount,
-                                                     "moduleExternal": moduleExternalCount,
-                                                     "dataScript": dataScriptCount,
-                                                     "unknown": unknownCount]
+                let inlineNonceCount = scripts.filter {
+                    ($0.origin == .inline || $0.origin == .moduleInline) && ($0.nonce?.isEmpty == false)
+                }.count
+                
+                let totalInlineSize = scripts.filter { $0.origin == .inline || $0.origin == .moduleInline }.reduce(0) { $0 + $1.size }
+                
+                reportContent["25_scripts_count"] = [
+                    "01_total": totalCount,
+                    "inline": inlineCount,
+                    "inline_nonce": inlineNonceCount,
+                    "inline_total_size": totalInlineSize,
+                    "dataURI": dataCount,
+                    "httpExternal": httpCount,
+                    "relative": relativeCount,
+                    "moduleExternal": moduleExternalCount,
+                    "dataScript": dataScriptCount,
+                    "unknown": unknownCount
+                ]
                 
                 var inlineScripts: [Any] = []
                 var externalScripts: [Any] = []
@@ -240,22 +255,35 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
                 for (index, script) in scripts.enumerated() {
                     if script.isInline {
                         let previewNeeded = script.findings?.contains(where: { $0.pos != nil && $0.pos != 0 }) ?? false
-                        if previewNeeded { scriptsPreviews.append(index) }
-                        inlineScripts.append([
-                            "id": "script#\(index)",
-                            "size": "\(script.size)B",
-                            "context": script.context?.rawValue ?? "unknown",
-                            "nonce": script.nonce ?? "none",
-                            "is_module": script.isModule ?? "false",
-                            "preview": previewNeeded ? "see object: ScriptPreviews : inlineScript_\(index)" : "none"
-                        ])
+                        if !previewNeeded == false {
+                            
+                            if previewNeeded { scriptsPreviews.append(index) }
+                            var findingsValue: [Any]
+                            if previewNeeded {
+                                // do NOT compress messages, because 1 message -> one snippet. Could theorically ask model " show snippet of keyword 3" or w/e
+                                let messages = script.findings?.compactMap { $0.message }.joined(separator: ", ") ?? "unknown"
+                                findingsValue = [["\(messages)"], "see Appendix object: ScriptPreviews → inlineScript_\(index)"]
+                            } else {
+                                findingsValue = [[""]]
+                            }
+                            inlineScripts.append([
+                                "01_id": "script#\(index)",
+                                "02_size": "\(script.size)B",
+                                "03_context": script.context?.rawValue ?? "unknown",
+                                "04_nonce": script.nonce ?? "",
+                                "05_is_module": script.isModule ?? "false",
+                                "06_findings": findingsValue
+                            ])
+                        }
                     } else {
-                        externalScripts.append([
-                            "src": script.extractedSrc ?? "unknown",
-                            "origin": script.origin?.rawValue ?? "unknown",
-                            "integrity": script.integrity ?? "none",
-                            "crossorigin": script.crossOriginValue ?? "none"
-                        ])
+                        if script.findings?.count ?? 0 > 0 {
+                            externalScripts.append([
+                                "01_src": script.extractedSrc ?? "unknown",
+                                "02_origin": script.origin?.rawValue ?? "unknown",
+                                "03_integrity": script.integrity ?? "",
+                                "04_crossorigin": script.crossOriginValue ?? ""
+                            ])
+                        }
                     }
                 }
                 reportContent["26_script_summary"] = [
@@ -274,45 +302,63 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
                 }
                 reportContent["27_findings_body"] = findings
             }
-        
+            
         } // if Online end
-        
-        
         
         
         let report: [String: Any] = ["Report_\(index)" : reportContent]
         finalOutput.append(report)
-
+        
         // Generate appendices for inline script focused snippets
-        // Only if scripts variable is in scope
+        // TODO: Using findings pos, or by editing the snippet object, so an indication can be given to the model about what is "suspicious" here
         if let online = Dictionary(uniqueKeysWithValues: queue.onlineQueue.map { ($0.id, $0) })[urlReport.id] {
             let scripts = online.script4daUI
             for (scriptIdx, script) in scripts.enumerated() {
                 if script.isInline, let snippets = script.focusedSnippets {
                     if snippets.allSatisfy({ type(of: $0) == String.self }) {
+                        let labeledSnippets = Dictionary(uniqueKeysWithValues:
+                                                            snippets.enumerated().map { ("snippet_\($0.offset)", $0.element) }
+                        )
                         let scriptEntry: [String: Any] = [
-                            "inlineScript_\(scriptIdx)": snippets
+                            "inlineScript_\(scriptIdx)": labeledSnippets
                         ]
                         scriptAppendices.append(scriptEntry)
                     } else {
-                        print("⚠️ Non-string found in focusedSnippets at index \(scriptIdx)")
+                        throw NSError(domain: "Non-string found in focusedSnippets at index \(scriptIdx)", code: -1)
                     }
                 }
             }
         }
     }
-
+    
     // After all reports, append script previews if any
     if !scriptAppendices.isEmpty {
         let appendixWrapper: [String: Any] = ["ScriptPreviews": scriptAppendices]
         finalOutput.append(appendixWrapper)
     }
     
+    // Serialize the array of dictionaries to JSON data without sorting keys (preserves insertion order)
+    let jsonData = try JSONSerialization.data(
+        withJSONObject: finalOutput.map { NSDictionary(dictionary: $0) },
+        options: [.withoutEscapingSlashes, .prettyPrinted, .sortedKeys]
+    )
     
-    // Preserve key order by converting each dictionary into a Foundation NSDictionary before serialization
-    let jsonCompatibleOutput = finalOutput.map { entry in
-        return NSDictionary(dictionary: Dictionary(uniqueKeysWithValues: entry.map { ($0.key, $0.value) }))
+    // Convert JSON data to a string for prefix removal
+    guard var jsonString = String(data: jsonData, encoding: .utf8) else {
+        throw NSError(domain: "SerializationError", code: -1, userInfo: nil)
     }
-    let jsonData = try JSONSerialization.data(withJSONObject: jsonCompatibleOutput, options: [/*.prettyPrinted,*/ .withoutEscapingSlashes, .sortedKeys])
-    return [jsonData]
+    
+// HORRIBLE TODO: create two parrallel arrays or tuple holding value and key. And process in order?? ?? ? ? ?  ? ??
+    let prefixesToRemove = ["\"00_","\"01_","\"02_","\"03_","\"04_","\"05_","\"06_","\"07_","\"08_","\"09_",
+                            "\"10_","\"11_","\"12_","\"13_","\"14_","\"15_","\"16_","\"17_","\"18_",
+                            "\"19_","\"20_","\"21_","\"22_","\"23_","\"24_","\"25_","\"26_","\"27_"]
+    for prefix in prefixesToRemove {
+        jsonString = jsonString.replacingOccurrences(of: prefix, with: "\"")
+    }
+
+    guard let cleanedData = jsonString.data(using: .utf8) else {
+        throw NSError(domain: "SerializationError", code: -1, userInfo: nil)
+    }
+    
+    return [cleanedData]
 }

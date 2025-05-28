@@ -130,8 +130,12 @@ struct NonceAndExternalScript {
                 
                 // Store special sources (http:, https:, *, 'self') for fast checks
                 if lowercased == "http:" || lowercased == "https:" || lowercased == "*" || lowercased.contains("'self'") {
-                    specialSources.insert(lowercased)
-                    continue
+                    if lowercased == "'self'" {
+                        specialSources.insert("https://\(urlOrigin)")
+                    } else {
+                        specialSources.insert(lowercased)
+                        continue
+                    }
                 }
                 
                 // Normalize value for path-based source check and handle wildcards
@@ -147,12 +151,11 @@ struct NonceAndExternalScript {
                 if let url = URL(string: normalizedValue), url.path != "" && url.path != "/" {
                     warnings.append(SecurityWarning(
                         message: "CSP directive includes path '\(lowercased)', which is invalid. CSP only accepts origins, not paths.",
-                        severity: .suspicious,
-                        penalty: -5,
+                        severity: .info,
+                        penalty: 0,
                         url: urlOrigin,
                         source: .header
                     ))
-                    continue
                 }
                 
                 rawSourcesFromDirective.append(normalizedValue)
@@ -267,7 +270,9 @@ struct NonceAndExternalScript {
         
         
         //MARK: Checking scrit src agains csp
+        //already penalyzed in the csp analyzer
         var openBar: Bool = false
+        
         if specialSources.contains("https") || specialSources.contains("*") {
             openBar = true
         }
@@ -285,6 +290,7 @@ struct NonceAndExternalScript {
                         }
                         script = unwrapped
                     }
+                    
                     warnings.append(SecurityWarning(
                         message: "External script '\(originPair.original)' not covered by CSP policy.",
                         severity: .suspicious,
@@ -310,6 +316,8 @@ struct NonceAndExternalScript {
         // After checking each external script
         if !openBar {
             var matchedSources = Set<String>()
+            print("---------------")
+            print("matchedSources: \(matchedSources)")
             for originPair in normalizedScriptOrigins {
                 for directive in srcValueFromDirective {
                     if isExternalScriptAllowed(scriptURL: originPair.original, allowedSources: [directive]) {
@@ -360,9 +368,9 @@ struct NonceAndExternalScript {
         let scriptPort = scriptComponents.port ?? (scriptScheme == "https" ? 443 : 80)
         let scriptOrigin = "\(scriptScheme)://\(scriptHost):\(scriptPort)"
 
-        // Debug print for tracing
-//        print("🔍 Checking script:", scriptURL)
-//        print("🔍 Normalized origin:", scriptOrigin)
+//         Debug print for tracing
+//        print("----------Checking script:", scriptURL)
+//        print("----------Normalized origin:", scriptOrigin)
 
         for rawAllowedSource in allowedSources {
             var allowedSource = rawAllowedSource.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "/"))

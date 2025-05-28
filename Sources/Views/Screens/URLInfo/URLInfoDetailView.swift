@@ -34,13 +34,13 @@ struct URLInfoDetailView: View {
                 onlineSection
             }
             // LATER
-//            if let recommendation = onlineInfo?.cspRecommendation {
-//                Section(header: Text("Security Recommendations")) {
-//                    NavigationLink(destination: CSPRecommendationView(recommendation: recommendation)) {
-//                        Text("Exemple of script-src recommendation")
-//                    }
-//                }
-//            }
+            if let recommendation = onlineInfo?.cspRecommendation {
+                Section(header: Text("Security Recommendations")) {
+                    NavigationLink(destination: CSPRecommendationView(recommendation: recommendation)) {
+                        Text("Exemple of script-src recommendation")
+                    }
+                }
+            }
         }
     }
 }

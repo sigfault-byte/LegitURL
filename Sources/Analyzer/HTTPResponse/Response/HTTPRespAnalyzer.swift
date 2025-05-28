@@ -237,10 +237,10 @@ struct HTTPRespAnalyzer {
         
         
         
-        //This could work for the script-src?
-//        if let findings = findings, let rawBody = onlineInfo.rawBody {
-//            onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings, rawBody: rawBody)
-//        }
+        //TODO: This could work for the script-src, leeave disclaimer see if some people like it?
+        if let findings = findings, let rawBody = onlineInfo.rawBody {
+            onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings, rawBody: rawBody)
+        }
         
         //Rebuild headers for the view:
         HeaderRebuild.build(from: headers, cookies: cookies, StructuredCSP: structureCSP, onlineInfo: &onlineInfo)

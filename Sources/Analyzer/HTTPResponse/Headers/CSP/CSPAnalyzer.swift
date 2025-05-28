@@ -103,6 +103,7 @@ struct CSPAnalyzer {
         warnings.append(contentsOf: warningsToAppend)
         
         //TODO: Finish this !!!!!!!
+        //TODO: if external url allowed is flood but 0 are used, you missed it !
         // compare the script source and nonce only if the CSP directive script-src has urls except self or nonce value
         if let scriptDirective = structuredCSP["script-src"] ?? structuredCSP["default-src"] {
             var hasNonce = false

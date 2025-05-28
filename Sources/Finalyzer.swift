@@ -49,18 +49,22 @@ struct Finalyzer {
         let _ = URLQueue.shared.generateAndStoreHTMLReport()
         do {
             let jsonData = try generateLLMJson(from: URLQueue.shared)
-            // You can print, store, or debug it here
+            // jason
             for json in jsonData {
                 
                 if let jsonString = String(data: json, encoding: .utf8) {
-                    print(jsonString)
+//                    print(jsonString)
+                    URLQueue.shared.jsonDataForUserModel = jsonString
+                    URLQueue.shared.jsonLenTokenEstimate = (json.count, json.count / 4)
                 } else {
-                    print("Failed to decode JSON data to string")
+//                    print("flied to decode JSON data to string")
+                    URLQueue.shared.internalErrorMessages.append("Failed to convert JSON data to UTF-8 string.")
                 }
-                print("JSON SIZE: \(json.count) bytes (approx. \(json.count / 4) tokens)")
             }
         } catch {
-            print("error generating compact JSON: \(error)")
+            let errorMessage = "Internal error during JSON generation: \(error.localizedDescription)"
+//            print(errorMessage)
+            URLQueue.shared.internalErrorMessages.append(errorMessage)
         }
     }
     

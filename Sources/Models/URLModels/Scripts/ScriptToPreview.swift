@@ -54,7 +54,7 @@ struct ScriptToPreview {
 
         // Step 2: Decde the bytes
         let decodedStrings = byteSlices.map { slice -> String in
-            String(data: slice.data, encoding: .utf8) ?? "⚠️ Unable to decode script content."
+            String(data: slice.data, encoding: .utf8) ?? "Unable to decode script content."
         }
 
         // Step 3: create preview

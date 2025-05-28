@@ -13,8 +13,11 @@ class URLQueue: ObservableObject {
     @Published var legitScore = ScoreUpdateModel()
     @Published var groupedWarnings: [WarningDomainGroup] = []
     @Published var summary: String = ""
+    @Published var internalErrorMessages: [String] = [] // Catch of json failure, and TODO: future all "error" internal to the app
     
-    var lastGeneratedHTML: String? = nil
+    var lastGeneratedHTML: String? = nil //html report
+    var jsonDataForUserModel: String? = nil // primed prompt for llms
+    var jsonLenTokenEstimate: (Int, Int)? = nil
     
     
     

@@ -41,11 +41,11 @@ struct CSPRecommendationView: View {
                         ForEach(recommendation.findings, id: \.self) { finding in
                             switch finding {
                             case .unsafeInlineDetected:
-                                Text("⚠️ Inline scripts detected — consider using a CSP nonce instead of 'unsafe-inline'.")
+                                Text("Inline scripts detected — consider using a CSP nonce instead of 'unsafe-inline'.")
                                     .font(.caption)
                                     .foregroundColor(.yellow)
                             case .dataUriDetected:
-                                Text("⚠️ data: URI script detected — dangerous in secure environments.")
+                                Text("data: URI script detected — dangerous in secure environments.")
                                     .font(.caption)
                                     .foregroundColor(.red)
                             }
@@ -62,11 +62,11 @@ struct CSPRecommendationView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("ℹ️ Important: Each page load must generate a unique nonce. Script hashes are static but must exactly match the script content to ensure integrity.")
+                    Text("Important: Each page load must generate a unique nonce. Script hashes are static but must exactly match the script content to ensure integrity.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Divider()
-                    Text("⚠️ Disclaimer: This script-src directive example is minimal. Your site may require custom allowances based on how your scripts behave. Always review and adapt CSPs for your real-world needs.")
+                    Text("Disclaimer: This script-src directive is a simplified example generated automatically. It may not suit complex websites or production environments yet.\nAlways review and tailor your CSP based on your site's actual script behavior.")
                         .font(.caption)
                         .foregroundColor(.orange)
                     }

@@ -25,7 +25,7 @@ struct HeaderRebuild {
                     output.append("\(directive): \(decoded.joined(separator: " "))")
                 }
             }
-            return output.joined(separator: "\n")
+            return output.joined(separator: "; ")
         }()
 
         let formattedCookies: String = cookies.map { cookie in

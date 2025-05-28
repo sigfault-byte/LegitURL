@@ -9,6 +9,7 @@ import SwiftUI
 struct URLAnalysisView: View {
     @StateObject private var viewModel: URLAnalysisViewModel
     @State private var showHelpPage = false
+    @State private var showCopyJSONPage = false
     
     let onExit: () -> Void
     
@@ -32,8 +33,37 @@ struct URLAnalysisView: View {
                 
                 ScoreSummaryComponent(viewModel: viewModel.scoreSummaryVM)
                 
+                
+                
                 if viewModel.isAnalysisComplete {
+                    
+                    WarningSummaryComponent(viewModel: viewModel.warningsVM)
+
                     DestinationInfoComponent(viewModel: viewModel.destinationInfoVM)
+                    
+                    Section {
+                        Button(action: {
+                            showCopyJSONPage = true
+                        }) {
+                            HStack {
+                                Spacer()
+                                Text("Explain the score in your favorite AI")
+                                    .foregroundColor(.blue)
+                                Spacer()
+                                Image(systemName: "square.and.arrow.up.on.square")
+                                    .foregroundColor(.blue)
+                            }
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(.systemGray6))
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle()) // Optional: avoids blue row highlight
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                    }
+                    
+                    RedirectChainSection(viewModel: viewModel.urlComponentsVM)
                     
                     Section(header: Text("report")) {
                         if let html = viewModel.urlQueue.lastGeneratedHTML{
@@ -42,9 +72,7 @@ struct URLAnalysisView: View {
                             }
                         }
                     }
-
-                    RedirectChainSection(viewModel: viewModel.urlComponentsVM)
-
+                    
                 }
                 else {
                     HStack {
@@ -62,9 +90,7 @@ struct URLAnalysisView: View {
                     }
                 }
                 
-                
-                
-                // Spacer for warning banner if needed
+                // Spacer for warning banner if needed no needed anymore, but let s test
                 if !viewModel.warningsVM.grouped.isEmpty {
                     Section {
                         Color.clear
@@ -75,12 +101,12 @@ struct URLAnalysisView: View {
                 }
             }
             .navigationBarHidden(true)
-            .listStyle(.insetGrouped)
-            .overlay(alignment: .bottom) {
-                WarningBannerComponent(viewModel: viewModel.warningsVM)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .zIndex(1)
-            }
+//            .listStyle(.insetGrouped)
+//            .overlay(alignment: .bottom) {
+//                WarningBannerComponent(viewModel: viewModel.warningsVM)
+//                    .transition(.move(edge: .bottom).combined(with: .opacity))
+//                    .zIndex(1)
+//            }
             .toolbar {
                 // Bottom bar for Home & Help
                 ToolbarItemGroup(placement: .bottomBar) {
@@ -90,6 +116,9 @@ struct URLAnalysisView: View {
             }
             .navigationDestination(isPresented: $showHelpPage) {
                 HelpPageView(scrollTarget: nil)
+            }
+            .navigationDestination(isPresented: $showCopyJSONPage) {
+                CopyJSONInfoView()
             }
         }
     }

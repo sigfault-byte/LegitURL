@@ -16,7 +16,7 @@ class RecommendedCSPGenerator {
     var detectedInlineScriptContents: [String] = []
     var detectedScriptNonces: Set<String> = []
     
-    // (Optional later) Other assets: images, frames, etc.
+    // Other assets: images, frames, etc... !
     
     // MARK: - Public Interface
     func generateRecommendedCSP() -> CSPRecommendation {

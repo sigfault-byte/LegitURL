@@ -4,7 +4,6 @@ struct WarningsDetailComponent: View {
     @ObservedObject var viewModel: WarningsComponentModel
     @State private var expandedWarningIDs: Set<UUID> = []
     @State private var showInfoWarnings: Bool = false
-    var onDismissAndNavigate: ((String) -> Void)?
 
     var body: some View {
         ScrollView {
@@ -26,16 +25,14 @@ struct WarningsDetailComponent: View {
                             Text("Analysis complete")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Button(action: {
-                                onDismissAndNavigate?("howItWorks")
-                            }) {
+                            NavigationLink(destination: HelpPageView()) {
                                 Text("See glossary")
                                     .font(.caption)
                                     .fontWeight(.medium)
-                                }
-                                .foregroundColor(.blue)
-                                .padding(.vertical, 4)
+                                    .foregroundColor(.blue)
                             }
+                            .padding(.vertical, 4)
+                        }
                         Spacer()
                         VStack(spacing: 4) {
                             Toggle("", isOn: $showInfoWarnings)
@@ -75,10 +72,7 @@ struct WarningsDetailComponent: View {
                                     expandedWarningIDs.insert(warningID)
                                 }
                             },
-                            showInfoWarnings: showInfoWarnings,
-                            onSourceTap: { tappedSource in
-                                onDismissAndNavigate?(tappedSource)
-                            }
+                            showInfoWarnings: showInfoWarnings
                         )
                     }
                 }
@@ -95,7 +89,6 @@ struct LegitURLReplyView: View {
     let expandedWarningIDs: Set<UUID>
     let toggleExpandedWarningID: (UUID) -> Void
     let showInfoWarnings: Bool
-    let onSourceTap: (String) -> Void
     let truncatedLimit: Int = 128
 
     var body: some View {
@@ -130,9 +123,6 @@ struct LegitURLReplyView: View {
                                         .onTapGesture {
                                             toggleExpandedWarningID(warning.id)
                                         }
-//                                    if expandedWarningIDs.contains(warning.id) {
-//                                        GlossaryBubbleView(source: sourceGroup.source)
-//                                    }
                                 }
                             }
                             .padding(10)
