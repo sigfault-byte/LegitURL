@@ -25,7 +25,7 @@ struct HTTPRespAnalyzer {
         guard var onlineInfo = URLQueue.shared.onlineQueue.first(where: { $0.id == urlInfo.id }) else {
             var modified = urlInfo
             modified.warnings.append(SecurityWarning(
-                message: "⚠️ No online analysis found for this URL. Analysis is halted.",
+                message: "No online analysis found for this URL. Analysis is halted.",
                 severity: .critical,
                 penalty: -100,
                 url: urlInfo.components.coreURL ?? "",
@@ -121,13 +121,15 @@ struct HTTPRespAnalyzer {
         //TODO: Add the found CSP to the CSP analyszer
         if csp?.count ?? 0 > 0 {
             urlInfo.warnings.append(SecurityWarning(
-                message: "CSP directives found in meta http-equiv, Older, Weaker CSP Delivery. Http header should be used instead",
+                message: "CSP directives found in meta http-equiv, this is is not analyzed ( yet ) and ignored. Browsers might not honor them, or merge them with other CSP rules.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.metaCSP,
                 url: urlOrigin,
                 source: .body
             ))
         }
+        //MARK: CSP META EQUIV
+//        print("CSP META EQUIV: ", String(data: csp ?? Data(), encoding: .utf8))
         
         //TODO: Move the logic back to the extractor, it has nothing to do here.... How to mutate the warning within async extractor...?
         let maxBodyForUI: Int = 1_200_000

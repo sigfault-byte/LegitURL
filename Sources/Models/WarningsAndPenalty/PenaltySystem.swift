@@ -1,5 +1,23 @@
 import Foundation
 
+// TODO: Add positive signal:
+//CSP header
+//strict, uses nonce/SRI, no unsafe-inline
+//+5 +15 ?
+//TLS certificate
+
+//EV certificate
+//maybe +3 if from highly trusted CA and domain logic aligns
+//Consistent domain across redirects
+//if no other bad signals present
+//-> this is the hardest, EV with *.domain.com maybe, but for now only letsencrypt make sense for the DNS challenge, not sure for other issuer
+//small X ?
+//Short cookie lifespan + low entropy, or no cookie? But this is tricky lot of scam have no cookies.......
+//may indicate session handling, not tracking ? But this is a CLEAN GET i do not need a session ???????
+//+2
+//all inline locked with nonce / sha or no inline, no external JS, all scripts via HTTPS + SRI
+//real trust signal ?
+
 struct PenaltySystem {
     public enum Penalty {
         // CRITICAL ISSUES

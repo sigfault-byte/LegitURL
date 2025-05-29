@@ -35,10 +35,9 @@ extension URLQueue {
         return allWarnings().filter { $0.bitFlags.contains(flag) }.count
     }
     
-    func generateAndStoreHTMLReport() -> String {
+    func generateAndStoreHTMLReport() -> Void {
         let html = generateHTML(from: self)
         self.lastGeneratedHTML = html
-        return html
     }
 }
 

@@ -3,7 +3,10 @@
 //
 //  Created by Chief Hakka on 14/03/2025.
 //
-/// **Represents a security warning associated with a URL**
+// represents a security warning associated with a URL
+
+
+
 import Foundation
 import SwiftUI
 
@@ -26,7 +29,7 @@ struct SecurityWarning: Identifiable{
         self.bitFlags = bitFlags ?? []
         }
 
-    /// **Represents severity levels for warnings**
+    //Represents severity levels for warnings
     enum SeverityLevel: String {
         case info = "INFO"
         case good = "GOOD"
@@ -37,7 +40,7 @@ struct SecurityWarning: Identifiable{
         case critical = "CRITICAL"
         case fetchError = "FETCH_ERROR"
         
-        /// Returns a color for UI representation
+        //Return color for da UI
         var color: Color {
             switch self {
             case .info: return Color.blue
@@ -67,7 +70,7 @@ struct SecurityWarning: Identifiable{
         case responseCode
     }
 }
-// ✅ Update SeverityLevel to support sorting & icons
+//  severityLevel for sorting & icons
 extension SecurityWarning.SeverityLevel: CaseIterable {
     static var allWarnings: [SecurityWarning.SeverityLevel] {
         return [.critical, .fetchError, .dangerous, .scam, .suspicious, .tracking, .good, .info]
@@ -110,7 +113,6 @@ extension SecurityWarning.SourceType {
     }
 }
 
-/// Struct for the view
 struct WarningDomainGroup: Identifiable {
     let id = UUID()
     let domain: String

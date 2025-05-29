@@ -8,7 +8,7 @@
 
 import Foundation
 
-func generateLLMJson(from queue: URLQueue) throws -> [Data] {
+func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data] {
     
     //Date formatter
     let formatter: ISO8601DateFormatter = {
@@ -27,29 +27,46 @@ func generateLLMJson(from queue: URLQueue) throws -> [Data] {
     //Main jason object
     var finalOutput: [[String: Any]] = []
     
+    //User locale
+    let userLocale = Locale.current.identifier
+    
     //priming the model
-finalOutput.append(["00_priming" : "This is a machine-generated report of a URL's behavior for AI interpretation. Do not give verdicts. Instead, explain why certain findings matter, focusing on possible risks or strengths."])
-    let prime: [String: Any] = ["01_Instructions": LLMPriming.instructions]
+    let (prime, instruction) = LLMPriming.loadPrimmingInstructions(brief: brief, locale: userLocale)
     finalOutput.append(prime)
-finalOutput.append(["02_Model_Note": "Highlight ambiguous or conflicting technical signals. The score is a guide, not proof — justify it using the available data."])
+    finalOutput.append(instruction)
+    
     
     //summary of the following JSON
     let inputURL = first.components.fullURL ?? "-"
     let finalURL = last.components.fullURL ?? "-"
-    let score = String(queue.legitScore.score)
+//    let score = String(queue.legitScore.score)
     let hopCount = String(queue.offlineQueue.count - 1)
-    let criticalWarnings = URLQueue.shared.offlineQueue
-        .flatMap { $0.warnings }
-        .filter { $0.severity == .critical || $0.severity == .fetchError }
+//    let criticalWarnings = URLQueue.shared.offlineQueue
+//        .flatMap { $0.warnings }
+//        .filter { $0.severity == .critical || $0.severity == .fetchError }
+
+    let warnings = generateWarningJson(urls: queue)
     
     let summary: [String : Any] = ["Summary" : [
         "01_input_url" : inputURL,
         "02_final_url" : finalURL,
-        "03_score" : score,
+//        "03_score" : score,
         "04_number_of_redirect" : hopCount, //This needs to be prime that its the number of urls report
-        "05_critical_warnings" : criticalWarnings.isEmpty ? criticalWarnings : ""
+//        "05_findings_summary_sorted": "descending by penalty",
+        "06_findings" : warnings
     ]]
+    
     finalOutput.append(summary)
+    
+    //-------------------------------------------------//
+    //-------------------------------------------------//
+    //-------------------------------------------------//
+    //-------------------------------------------------//
+    //MARK: Bail early for "brief" reports.
+    
+    if brief {
+        return [try serializeAndClean(finalOutput)]
+    }
     
     // Loop URLs
     var scriptAppendices: [[String: Any]] = []
@@ -67,16 +84,6 @@ finalOutput.append(["02_Model_Note": "Highlight ambiguous or conflicting technic
         let query = components.query ?? "-"
         let fragment = components.fragment ?? "-"
         let punycode = components.punycodeHostEncoded ?? "_"
-        //Offline findings
-        let relevantOffline: [SecurityWarning.SourceType] = [.host, .path, .fragment, .query]
-        let sectionWarningsOffline = urlReport.warnings.filter { relevantOffline.contains($0.source) }
-        var findings : [Any] = []
-        if !sectionWarningsOffline.isEmpty {
-            
-            for (index, warning) in sectionWarningsOffline.enumerated() {
-                findings.append(["finding-\(index) in \(warning.source)" : ["\(warning.severity), \(warning.message)", "penalty: \(warning.penalty)"]])
-            }
-        }
         
         var reportContent: [String: Any] = [
             "01_FullURL" : urlReport.components.fullURL ?? "",
@@ -87,7 +94,7 @@ finalOutput.append(["02_Model_Note": "Highlight ambiguous or conflicting technic
             "06_query" : query,
             "07_fragment" : fragment,
             "08_punycoded_host" : punycode,
-            "09_findings" : findings.isEmpty ? "" : findings
+//            "09_findings" : findings.isEmpty ? "" : findings
         ]
         
         // Online Var
@@ -122,16 +129,6 @@ finalOutput.append(["02_Model_Note": "Highlight ambiguous or conflicting technic
                 if let subjectAlternativeNames = cert.subjectAlternativeNames {
                     reportContent["18_number_of_san"] = subjectAlternativeNames.count
                 }
-                //findings for response code and tls
-                let relevantResponseTLS: [SecurityWarning.SourceType] = [.tls, .redirect, .responseCode]
-                let sectionWarningsResponseTLS = urlReport.warnings.filter { relevantResponseTLS.contains($0.source) }
-                var findings : [Any] = []
-                if !sectionWarningsResponseTLS.isEmpty {
-                    for (index, warning) in sectionWarningsResponseTLS.enumerated() {
-                        findings.append(["finding-\(index) in \(warning.source)" : ["\(warning.severity), \(warning.message)", "penalty: \(warning.penalty)"]])
-                    }
-                }
-                reportContent["19_tls_responsecode_findings"] = findings.isEmpty ? "" : findings
             } // end TLS
             
             //Cookies
@@ -179,16 +176,6 @@ finalOutput.append(["02_Model_Note": "Highlight ambiguous or conflicting technic
                 }
                 reportContent["21_cookie_detail"] = cookieDetail.isEmpty ? "" : cookieDetail
                 
-                //findings for cookies
-                let relevantCookie: [SecurityWarning.SourceType] = [.cookie]
-                let sectionWarningsCookie = urlReport.warnings.filter { relevantCookie.contains($0.source) }
-                var findings : [Any] = []
-                if !sectionWarningsCookie.isEmpty {
-                    for (index, warning) in sectionWarningsCookie.enumerated() {
-                        findings.append(["finding-\(index) in \(warning.source)" : ["\(warning.severity), \(warning.message)", "penalty: \(warning.penalty)"]])
-                    }
-                }
-                reportContent["22_cookie_findings"] = findings.isEmpty ? "" : findings
             } // if cookie end
             
             //headers
@@ -199,115 +186,23 @@ finalOutput.append(["02_Model_Note": "Highlight ambiguous or conflicting technic
                 groupedHeaders["02_Tracking_headers"] = headers.trackingHeaders.filter { $0.key.lowercased() != "set-cookie" }
                 //TODO: think about what matters and what matters less. To assess, the thrust by the model, maybe security header and server is enough?
                 groupedHeaders["03_Server_metadata"] = headers.serverHeaders
-                //                groupedHeaders["Other_headers"] = headers.otherHeaders
+                groupedHeaders["Other_headers"] = headers.otherHeaders
                 
                 reportContent["23_headers"] = groupedHeaders
                 
-                //finding for headers
-                let relevantHeader: [SecurityWarning.SourceType] = [.header]
-                let sectionWarningsHeader = urlReport.warnings.filter { relevantHeader.contains($0.source) }
-                var findings : [Any] = []
-                if !sectionWarningsHeader.isEmpty {
-                    for (index, warning) in sectionWarningsHeader.enumerated() {
-                        findings.append(["finding-\(index) in \(warning.source)" : ["\(warning.severity), \(warning.message)", "penalty: \(warning.penalty)"]])
-                    }
-                }
-                reportContent["24_header_findings"] = findings.isEmpty ? "" : findings
             } // if header end
             
             //body / script ...
             let scripts = online.script4daUI
-            
-            if !scripts.isEmpty {
-                //
-                let totalCount = scripts.count
-                let inlineCount = scripts.filter { $0.origin == .inline || $0.origin == .moduleInline }.count
-                let dataCount = scripts.filter { $0.origin == .dataURI }.count
-                let httpCount = scripts.filter { $0.origin == .httpExternal || $0.origin == .httpsExternal }.count
-                let relativeCount = scripts.filter { $0.origin == .relative || $0.origin == .protocolRelative }.count
-                let moduleExternalCount = scripts.filter { $0.origin == .moduleExternal || $0.origin == .moduleRelative }.count
-                let dataScriptCount = scripts.filter { $0.origin == .dataScript }.count
-                let unknownCount = scripts.filter { $0.origin == .unknown || $0.origin == .malformed }.count
-                
-                let inlineNonceCount = scripts.filter {
-                    ($0.origin == .inline || $0.origin == .moduleInline) && ($0.nonce?.isEmpty == false)
-                }.count
-                
-                let totalInlineSize = scripts.filter { $0.origin == .inline || $0.origin == .moduleInline }.reduce(0) { $0 + $1.size }
-                
-                reportContent["25_scripts_count"] = [
-                    "01_total": totalCount,
-                    "inline": inlineCount,
-                    "inline_nonce": inlineNonceCount,
-                    "inline_total_size": totalInlineSize,
-                    "dataURI": dataCount,
-                    "httpExternal": httpCount,
-                    "relative": relativeCount,
-                    "moduleExternal": moduleExternalCount,
-                    "dataScript": dataScriptCount,
-                    "unknown": unknownCount
-                ]
-                
-                var inlineScripts: [Any] = []
-                var externalScripts: [Any] = []
-                var scriptsPreviews: [Any] = []
-                
-                for (index, script) in scripts.enumerated() {
-                    if script.isInline {
-                        let previewNeeded = script.findings?.contains(where: { $0.pos != nil && $0.pos != 0 }) ?? false
-                        if !previewNeeded == false {
-                            
-                            if previewNeeded { scriptsPreviews.append(index) }
-                            var findingsValue: [Any]
-                            if previewNeeded {
-                                // do NOT compress messages, because 1 message -> one snippet. Could theorically ask model " show snippet of keyword 3" or w/e
-                                let messages = script.findings?.compactMap { $0.message }.joined(separator: ", ") ?? "unknown"
-                                findingsValue = [["\(messages)"], "see Appendix object: ScriptPreviews → inlineScript_\(index)"]
-                            } else {
-                                findingsValue = [[""]]
-                            }
-                            inlineScripts.append([
-                                "01_id": "script#\(index)",
-                                "02_size": "\(script.size)B",
-                                "03_context": script.context?.rawValue ?? "unknown",
-                                "04_nonce": script.nonce ?? "",
-                                "05_is_module": script.isModule ?? "false",
-                                "06_findings": findingsValue
-                            ])
-                        }
-                    } else {
-                        if script.findings?.count ?? 0 > 0 {
-                            externalScripts.append([
-                                "01_src": script.extractedSrc ?? "unknown",
-                                "02_origin": script.origin?.rawValue ?? "unknown",
-                                "03_integrity": script.integrity ?? "",
-                                "04_crossorigin": script.crossOriginValue ?? ""
-                            ])
-                        }
-                    }
-                }
-                reportContent["26_script_summary"] = [
-                    "inline": inlineScripts,
-                    "external": externalScripts
-                ]
-                
-                //findings for scripts / body
-                let relevantScript: [SecurityWarning.SourceType] = [.body]
-                let sectionWarningsBody = urlReport.warnings.filter { relevantScript.contains($0.source) }
-                var findings : [Any] = []
-                if !sectionWarningsBody.isEmpty {
-                    for (index, warning) in sectionWarningsBody.enumerated() {
-                        findings.append(["finding-\(index) in \(warning.source)" : ["\(warning.severity), \(warning.message)", "penalty: \(warning.penalty)"]])
-                    }
-                }
-                reportContent["27_findings_body"] = findings
-            }
+            let scriptSummary = ScriptSummaryBuilder.makeSummary(from: scripts)
+            reportContent["24_Script"] = scriptSummary
             
         } // if Online end
         
-        
         let report: [String: Any] = ["Report_\(index)" : reportContent]
         finalOutput.append(report)
+        
+        
         
         // Generate appendices for inline script focused snippets
         // TODO: Using findings pos, or by editing the snippet object, so an indication can be given to the model about what is "suspicious" here
@@ -337,21 +232,27 @@ finalOutput.append(["02_Model_Note": "Highlight ambiguous or conflicting technic
         finalOutput.append(appendixWrapper)
     }
     
-    // Serialize the array of dictionaries to JSON data without sorting keys (preserves insertion order)
+    return [try serializeAndClean(finalOutput)]
+}
+
+
+//MARK: THE END FUNCTION IS HERE
+func serializeAndClean(_ json: [[String: Any]]) throws -> Data {
     let jsonData = try JSONSerialization.data(
-        withJSONObject: finalOutput.map { NSDictionary(dictionary: $0) },
-        options: [.withoutEscapingSlashes, .prettyPrinted, .sortedKeys]
+        withJSONObject: json.map { NSDictionary(dictionary: $0) },
+        options: [.withoutEscapingSlashes, .sortedKeys, /*.prettyPrinted*/]
     )
-    
-    // Convert JSON data to a string for prefix removal
+
     guard var jsonString = String(data: jsonData, encoding: .utf8) else {
         throw NSError(domain: "SerializationError", code: -1, userInfo: nil)
     }
+
+    let prefixesToRemove = ["\"00_", "\"01_", "\"02_", "\"03_", "\"04_", "\"05_",
+                            "\"06_", "\"07_", "\"08_", "\"09_", "\"10_", "\"11_",
+                            "\"12_", "\"13_", "\"14_", "\"15_", "\"16_", "\"17_",
+                            "\"18_", "\"19_", "\"20_", "\"21_", "\"22_", "\"23_",
+                            "\"24_", "\"25_", "\"26_", "\"27_"]
     
-// HORRIBLE TODO: create two parrallel arrays or tuple holding value and key. And process in order?? ?? ? ? ?  ? ??
-    let prefixesToRemove = ["\"00_","\"01_","\"02_","\"03_","\"04_","\"05_","\"06_","\"07_","\"08_","\"09_",
-                            "\"10_","\"11_","\"12_","\"13_","\"14_","\"15_","\"16_","\"17_","\"18_",
-                            "\"19_","\"20_","\"21_","\"22_","\"23_","\"24_","\"25_","\"26_","\"27_"]
     for prefix in prefixesToRemove {
         jsonString = jsonString.replacingOccurrences(of: prefix, with: "\"")
     }
@@ -359,6 +260,158 @@ finalOutput.append(["02_Model_Note": "Highlight ambiguous or conflicting technic
     guard let cleanedData = jsonString.data(using: .utf8) else {
         throw NSError(domain: "SerializationError", code: -1, userInfo: nil)
     }
-    
-    return [cleanedData]
+
+    return cleanedData
+}
+
+func generateWarningJson(urls: URLQueue) -> [Any] {
+    var listOfWarnings: [Any] = []
+
+    for url in urls.offlineQueue {
+        let sortedFindings = url.warnings.sorted { $0.penalty > $1.penalty }
+
+        guard !sortedFindings.isEmpty else { continue }
+
+        let mapped = sortedFindings.map { warning in
+            return [
+//                "severity": warning.severity.rawValue.lowercased(),
+//                "penalty": warning.penalty,
+                "signal": warning.message
+            ]
+        }
+
+        let urlEntry: [String: Any] = [
+            "01_url": url.components.coreURL ?? "(unknown)",
+            "02_findings": mapped
+        ]
+
+        listOfWarnings.append(urlEntry)
+    }
+
+    return listOfWarnings
+}
+
+struct ScriptSummaryBuilder {
+    static func makeSummary(from scripts: [ScriptPreview]) -> Dictionary<String, Any> {
+        let inlineScripts = scripts.filter { $0.origin == .inline || $0.origin == .moduleInline }
+        let httpScripts = scripts.filter { $0.origin == .httpExternal || $0.origin == .httpsExternal }
+        let relativeScripts = scripts.filter { $0.origin == .relative || $0.origin == .protocolRelative }
+        let moduleExternalScripts = scripts.filter { $0.origin == .moduleExternal || $0.origin == .moduleRelative }
+        let protocolRelativeScripts = scripts.filter {$0.origin == .protocolRelative}
+
+        let inlineNonceCount = inlineScripts.filter { !($0.nonce?.isEmpty ?? true) }.count
+        let totalInlineSize = inlineScripts.reduce(0) { $0 + $1.size }
+        let largestInlineScriptSize = inlineScripts.map { $0.size }.max() ?? 0
+        let externalScriptsTotal = httpScripts.count + relativeScripts.count + moduleExternalScripts.count
+        let externalWithSRI = scripts.filter { !($0.integrity?.isEmpty ?? true) }.count
+        let externalWithCrossOrigin = scripts.filter { !($0.crossOriginValue?.isEmpty ?? true) }.count
+
+        let averageInline = inlineScripts.count > 0 ? totalInlineSize / inlineScripts.count : 0
+        
+        var scriptsPreviews: [Int] = []
+        
+        for (index, script) in scripts.enumerated() {
+            if script.isInline {
+                let previewNeeded = script.findings?.contains(where: { $0.pos != nil && $0.pos != 0 }) ?? false
+                if previewNeeded {
+                    scriptsPreviews.append(index)
+                }
+            }
+        }
+
+        var suspiciousSnippets: [[String: Any]] = []
+        for idx in scriptsPreviews {
+            let matching = scripts[idx]
+            //nasty
+            suspiciousSnippets.append([
+                "size": matching.size,
+                "nonce": !(matching.nonce?.isEmpty ?? true),
+                "is_module": matching.isModule ?? false,
+                "findings": matching.findings?.compactMap { $0.message } ?? [],
+                "snippet_ref": "ScriptPreviews → inlineScript_\(idx)"
+            ])
+        }
+        let externalDetail = generate_externalSrc(scripts: scripts)
+        // TODO: Group external scripts by path prefix and detect known third-party services
+        return [
+                "01_summary": [
+                    "01_total": scripts.count,
+                    "02_inline": inlineScripts.count,
+                    "03_external": externalScriptsTotal,
+                    "04_protocol_relative": protocolRelativeScripts.count,
+                    "05_total_inline_bytes": totalInlineSize,
+                    "06_largest_inline_script": largestInlineScriptSize,
+                    "07_average_inline_script": averageInline,
+                    "08_inline_with_nonce": inlineNonceCount,
+                    "09_inline_with_suspicious_calls": scriptsPreviews.count,
+                    "10_external_with_sri": externalWithSRI,
+                    "11_module_cross_origin": externalWithCrossOrigin,
+                    "12_external_from_known_third_parties": 0, // placeholder to compute separately
+                    "13_script_density_per_kb": 0.0 // placeholder to compute externally if needed
+                ],
+                "02_inline_scripts": suspiciousSnippets.map { snippet in
+                    return [
+                        "01_size": snippet["size"] ?? 0,
+                        "02_has_nonce": snippet["nonce"] ?? false,
+                        "03_is_module": snippet["is_module"] ?? false,
+                        "04_findings": snippet["findings"] ?? [],
+                        "05_focused_snippets": (snippet["snippet_ref"].map { [String(describing: $0)] } ?? [])
+                    ]
+                },
+                "03_external_script_groups": externalDetail
+        ]
+    }
+    private static func generate_externalSrc(scripts: [ScriptPreview]) -> [Any] {
+        // Categorize scripts into absolute/protocol-relative, relative, and ignore others
+        var absoluteScripts: [ScriptPreview] = []
+        var relativeScripts: [ScriptPreview] = []
+
+        for script in scripts {
+            guard let src = script.extractedSrc else { continue }
+            if src.hasPrefix("http") || src.hasPrefix("//") {
+                absoluteScripts.append(script)
+            } else if src.hasPrefix("/") || (!src.contains("://") && !src.hasPrefix("data:")) {
+                relativeScripts.append(script)
+            }
+            // Others are ignored
+        }
+
+        func groupScripts(_ scripts: [ScriptPreview]) -> [[String: Any]] {
+            var grouped: [String: [ScriptPreview]] = [:]
+            for script in scripts {
+                guard let src = script.extractedSrc else { continue }
+                //chatGPT <3
+                var prefix = src.components(separatedBy: "/").prefix(4).joined(separator: "/")
+                if src.hasPrefix("http://") {
+                    prefix = "http://" + prefix.dropFirst(5)
+                } else if src.hasPrefix("https://") {
+                    prefix = "https://" + prefix.dropFirst(8)
+                } else if src.hasPrefix("//") {
+                    prefix = "//" + prefix.dropFirst(2)
+                }
+                grouped[prefix, default: []].append(script)
+            }
+            return grouped.map { (prefix, scripts) in
+                let sri_present = scripts.contains { !($0.integrity?.isEmpty ?? true) }
+                let crossorigin_present = scripts.contains { !($0.crossOriginValue?.isEmpty ?? true) }
+
+                let trimmedSamples = scripts.compactMap { $0.extractedSrc }.map {
+                    $0.replacingOccurrences(of: prefix, with: "")
+                }
+
+                return [
+                    "01_path_prefix": prefix,
+                    "02_count": scripts.count,
+                    "03_suffixes": trimmedSamples,
+                    "04_sri_present": sri_present,
+                    "05_crossorigin_present": crossorigin_present
+                ]
+            }
+        }
+
+        return [
+            ["01_group_type": "absolute_or_protocol_relative", "groups": groupScripts(absoluteScripts)],
+            ["02_group_type": "relative_path", "groups": groupScripts(relativeScripts)]
+        ]
+    }
 }

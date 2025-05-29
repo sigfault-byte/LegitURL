@@ -16,9 +16,10 @@ class URLQueue: ObservableObject {
     @Published var internalErrorMessages: [String] = [] // Catch of json failure, and TODO: future all "error" internal to the app
     
     var lastGeneratedHTML: String? = nil //html report
-    var jsonDataForUserModel: String? = nil // primed prompt for llms
-    var jsonLenTokenEstimate: (Int, Int)? = nil
-    
+    var jsonDataForUserLLModel: String? = nil // primed prompt for llms
+    var jsonLenTokenEstimateLLModel: (Int, Int)? = nil
+    var jsonDataForUserLLModelBrief: String? = nil // primed prompt for llms brief mode
+    var jsonLenTokenEstimateLLModelBrief: (Int, Int)? = nil
     
     
     //    seen cookies set to not double penalyze same cookie keys because we have a fresh get each time

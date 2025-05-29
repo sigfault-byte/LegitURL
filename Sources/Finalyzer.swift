@@ -45,27 +45,50 @@ struct Finalyzer {
         
         let grouped = groupWarningsByDomainAndSource(from: URLQueue.shared.offlineQueue.flatMap { $0.warnings })
         URLQueue.shared.groupedWarnings = grouped
-        URLQueue.shared.legitScore.analysisCompleted = true
-        let _ = URLQueue.shared.generateAndStoreHTMLReport()
+        
+        //generate HTML report
+        URLQueue.shared.generateAndStoreHTMLReport()
+        
         do {
-            let jsonData = try generateLLMJson(from: URLQueue.shared)
+            let jsonDataBrief = try generateLLMJson(from: URLQueue.shared, brief: true)
             // jason
-            for json in jsonData {
+            let jsdonFullReport = try generateLLMJson(from: URLQueue.shared, brief: false)
+            
+            for json in jsonDataBrief {
                 
-                if let jsonString = String(data: json, encoding: .utf8) {
-//                    print(jsonString)
-                    URLQueue.shared.jsonDataForUserModel = jsonString
-                    URLQueue.shared.jsonLenTokenEstimate = (json.count, json.count / 4)
+                if let jsonDataBrief = String(data: json, encoding: .utf8) {
+//                    print("size: ", jsonString)
+                    URLQueue.shared.jsonDataForUserLLModelBrief = jsonDataBrief
+                    URLQueue.shared.jsonLenTokenEstimateLLModelBrief = (json.count, json.count / 4)
                 } else {
-//                    print("flied to decode JSON data to string")
+//                    print("flied to decode JSON data to string : ((( ")
                     URLQueue.shared.internalErrorMessages.append("Failed to convert JSON data to UTF-8 string.")
                 }
             }
+            
+            for json in jsdonFullReport {
+                
+                if let jsonDataBrief = String(data: json, encoding: .utf8) {
+//                    print("size: ", jsonString)
+                    URLQueue.shared.jsonDataForUserLLModel = jsonDataBrief
+                    URLQueue.shared.jsonLenTokenEstimateLLModel = (json.count, json.count / 4)
+                } else {
+//                    print("flied to decode JSON data to string : ((( ")
+                    URLQueue.shared.internalErrorMessages.append("Failed to convert JSON data to UTF-8 string.")
+
+                }
+            }
+            
         } catch {
             let errorMessage = "Internal error during JSON generation: \(error.localizedDescription)"
 //            print(errorMessage)
             URLQueue.shared.internalErrorMessages.append(errorMessage)
+            // global
+            URLQueue.shared.legitScore.analysisCompleted = true
         }
+        
+        //global
+        URLQueue.shared.legitScore.analysisCompleted = true
     }
     
     
