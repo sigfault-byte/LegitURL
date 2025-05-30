@@ -247,7 +247,7 @@ struct CommonTools {
             return emails
         } catch {
             #if DEBUG
-            print("Error detecting email addresses: \(error)")
+            print("Error in email addresses: \(error)")
             #endif
             return []
         }

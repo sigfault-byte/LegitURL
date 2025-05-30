@@ -44,9 +44,11 @@ struct HTMLReportPreview: View {
                                     try data.write(to: tmpURL)
                                     generator.sharePDF(url: tmpURL)
                                 } catch {
+                                    //TODO: nice catch ???
                                     print("Failed to write PDF: \(error)")
                                 }
                             } else {
+                                //TODO: even better
                                 print("PDF generation failed.")
                             }
                         }

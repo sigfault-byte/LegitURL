@@ -13,7 +13,7 @@ public struct LLMPriming {
         var block = [String: Any]()
         if !brief {
             block = [
-                "00_priming": "You are assessing a URL’s trustworthiness by analyzing its technical behavior, not its reputation. Do not return yes/no answers. Instead, explain observed signals (good or bad) and how they influenced the score. Be clear, neutral, and helpful.",
+                "00_priming": "You are assessing a URL’s trustworthiness by analyzing its technical behavior, not its reputation. Do not return yes/no answers. Instead, explain observed signals (good or bad) and how they influenced trust. Be clear, neutral, and helpful.",
                 "01_user_locale": locale,
                 "02_expected_output": "Use clear, accessible language. Avoid excessive jargon. Think like you are helping a cautious user understand why the behavior matters."
                 

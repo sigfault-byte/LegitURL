@@ -1,0 +1,102 @@
+
+// ─────────────────────────────────────────────────────────────
+//  MACHINE-CENTRIC JSON DESIGN CHECKLIST
+//  (use JSONC comments like these for documentation only;
+//   strip them out in production if you need strict JSON)
+// ─────────────────────────────────────────────────────────────
+
+{
+  /* 1.  Top-level metadata — version everything */
+  "schema"    : "2025-05-30",          // YYYY-MM-DD of schema
+  "generator" : "LegitURL",
+
+  /* 2.  Store every HTTP transaction in a flat array */
+  "requests": [
+    {
+      "seq"        : 0,                // zero-based index
+      "url"        : "https://www.example.com/",
+      "status"     : 301,
+      "parent_seq" : null,             // null = root request
+
+      /* 3.  Typed primitives only */
+      "tls": {
+        "ov"        : true,            // boolean
+        "not_before": "2025-04-25T00:00:00Z",
+        "not_after" : "2026-04-24T23:59:59Z"
+      },
+
+      /* 4.  Heavy repeated structures are referenced, not duplicated */
+      "cookies_ref": 0,                // index into pools.cookies
+      "headers_ref": 0                 // index into pools.headers
+    },
+
+    {
+      "seq"        : 1,
+      "url"        : "https://www.example.com/fr",
+      "status"     : 200,
+      "parent_seq" : 0,
+      "tls_ref"    : 0,                // same cert as seq 0
+      "cookies_ref": 0,
+      "headers_ref": 1,
+
+      /* 5.  Security-specific metrics kept numeric */
+      "csp": {
+        "present"      : true,
+        "unsafeInline" : true,
+        "unsafeEval"   : true,
+        "objectSrc"    : false,
+        "scriptSrcCnt" : 13
+      },
+
+      "script_metrics": {
+        "inline"           : 3,
+        "external"         : 65,
+        "density"          : 0.746,
+        "external_with_sri": 0
+      }
+    }
+  ],
+
+  /* 6.  Deduplication pools — indexed by *_ref above */
+  "pools": {
+    "cookies": [
+      [
+        { "name":"SOCGENLB",          "len":72, "entropy":3.91, "secure":true,
+          "httpOnly":true, "sameSite":"none", "scope":"site",  "expiry":0 },
+
+        { "name":"visid_incap_898321","len":64, "entropy":4.88, "secure":false,
+          "httpOnly":true, "sameSite":"none", "scope":"wide",  "expiry":31536000 },
+
+        { "name":"incap_ses_540_898321","len":56, "entropy":4.92, "secure":false,
+          "httpOnly":true, "sameSite":"none", "scope":"wide",  "expiry":0 }
+      ]
+    ],
+
+    "headers": [
+      { "location":"https://www.example.com/fr" },
+
+      { "strict-transport-security":"max-age=31536000;includeSubDomains",
+        "content-security-policy":"script-src 'self' 'unsafe-eval' ..." }
+    ],
+
+    "tls":[
+      { "issuer_cn":"DigiCert Global G2 TLS RSA SHA256 2020 CA1", "san":5 }
+    ]
+  },
+
+  /* 7.  Scoring block — numeric only, with fixed enum IDs */
+  "score"  : 70,
+  "contrib": [
+    { "id":"TLS_HSTS",    "delta":  5 },
+    { "id":"COOKIE_WEAK", "delta": -7 },
+    { "id":"CSP_INLINE",  "delta":-10 },
+    { "id":"NO_SRI",      "delta": -7 },
+    { "id":"SCRIPT_BLOAT","delta": -3 },
+    { "id":"MISC",        "delta": -8 }
+  ],
+
+  /* 8. Optional compression for off-device transport               */
+  /*    "data_gzip_b64": "H4sIAAAAA..."                            */
+
+  /* 9. Future-proofing: consider CBOR / protobuf once JSON stable  */
+}

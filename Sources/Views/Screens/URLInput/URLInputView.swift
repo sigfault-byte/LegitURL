@@ -61,17 +61,29 @@ struct URLInputView: View {
                 
             Spacer()
                 //TODO: This is mainly invisible to users. This needs to be either in a button or something...
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Curious how it all works?")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                    Link("GitHub Repository", destination: URL(string: "https://github.com/sigfault-byte/LegitURL")!)
-                        .font(.footnote)
-                        .foregroundColor(.blue)
-                    Link("A quick story about what happens when you visit a URL", destination: URL(string: "https://legiturl.fr")!)
-                        .font(.footnote)
-                        .foregroundColor(.blue)
-                }
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "lightbulb")
+                                .foregroundColor(.yellow)
+                                .font(.headline)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Curious how it all works?")
+                                    .font(.footnote)
+                                    .foregroundColor(.primary)
+
+                                Link("GitHub Repository", destination: URL(string: "https://github.com/sigfault-byte/LegitURL")!)
+                                    .font(.footnote)
+
+                                Link("What really happens when you visit a link", destination: URL(string: "https://legiturl.fr")!)
+                                    .font(.footnote)
+                            }
+                        }
+                        .padding(10)
+                        .background(Color(uiColor: .systemGray6))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding([.horizontal, .bottom])
+                    }
                 .padding([.horizontal, .bottom])
                 }
             }
@@ -122,10 +134,19 @@ extension View {
 
 struct AppHeaderView: View {
     var body: some View {
-        Text("LegitURL")
-            .font(.largeTitle)
-            .fontWeight(.bold)
-            .padding(.top, 40)
+        VStack(spacing: 4) {
+            Text("LegitURL")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .padding(.top, 40)
+
+            if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+               let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String {
+                Text("v\(version) (\(build))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
     }
 }
 
@@ -238,5 +259,11 @@ struct CustomCorner: Shape {
     func path(in rect: CGRect) -> Path {
         let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
         return Path(path.cgPath)
+    }
+}
+
+#Preview {
+    URLInputView(incomingURL: nil) { urlInput, infoMessage in
+        print("Preview analyze: \(urlInput), \(infoMessage)")
     }
 }

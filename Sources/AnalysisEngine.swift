@@ -8,28 +8,28 @@ import Foundation
 
 struct AnalysisEngine {
     private static var analysisStartTime: Date?
-   
+    
     public static var hasManuallyStopped = false
     public static var hasFinalized = false
     
     // MARK: - Public Entry Point
     public static func analyze(urlString: String) async {
-        #if DEBUG
+#if DEBUG
         self.analysisStartTime = Date()
-        #endif
+#endif
         AnalysisStateReset.reset()
-//        load user singletn + statics
+        //        load user singletn + statics
         UserHeuristicsCache.load()
         
         let extractedInfo = extractComponents(from: urlString)
-
+        
         if extractedInfo.warnings.contains(where: { $0.severity == .critical }) {
             URLQueue.shared.offlineQueue.append(extractedInfo)
             Finalyzer.finalizeAnalysis()
             return
         }
         URLQueue.shared.offlineQueue.append(extractedInfo)
-
+        
         if shouldStopAnalysis(atIndex: 0) { return }
         
         await processQueue()
@@ -98,46 +98,58 @@ struct AnalysisEngine {
     // MARK: - Online Queue Processing
     
     private static func processOnlineQueue() async {
-//        let remaining = URLQueue.shared.offlineQueue.filter { !$0.processedOnline && !$0.processingNow }
-//        print("Remaining URLs: \(remaining.map { $0.components.fullURL ?? "unknown" })")
+        //        let remaining = URLQueue.shared.offlineQueue.filter { !$0.processedOnline && !$0.processingNow }
+        //        print("Remaining URLs: \(remaining.map { $0.components.fullURL ?? "unknown" })")
         
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline && !$0.processingNow }) else {
-//            print("✅ All online checks complete.")
+            //            print("✅ All online checks complete.")
             if !hasFinalized {
                 hasFinalized = true
                 //flush singleton
                 UserHeuristicsCache.flush()
+                if let beforeFinalyzing = analysisStartTime {
+                    let duration = Date().timeIntervalSince(beforeFinalyzing)
+                    print("🎬 Before finalizing: \(String(format: "%.3f", duration)) seconds")
+                }
                 Finalyzer.finalizeAnalysis()
-                #if DEBUG
+#if DEBUG
                 if let start = analysisStartTime {
                     let duration = Date().timeIntervalSince(start)
-                    print("🌐 Full analyze() duration: \(String(format: "%.3f", duration)) seconds")
+                    print(" ✅ End of the pipeline, after generating HTML report, JSON exports, sorting findings, calculating score, computing possible bitFlag\nDuration: \(String(format: "%.3f", duration)) seconds")
                 }
-                #endif
+#endif
             }
             return
         }
-
+        
         if shouldStopAnalysis(atIndex: currentIndex) { return }
-
+        
         let currentURLInfo = URLQueue.shared.offlineQueue[currentIndex]
         URLQueue.shared.offlineQueue[currentIndex].processingNow = true
-//        print(" Starting online analysis for URL:", currentURLInfo.components.fullURL ?? "unknown")
+        //        print(" Starting online analysis for URL:", currentURLInfo.components.fullURL ?? "unknown")
         
         if !URLQueue.shared.onlineQueue.contains(where: { $0.id == currentURLInfo.id }) {
             URLQueue.shared.onlineQueue.append(OnlineURLInfo(from: currentURLInfo))
         }
-
+        
         do {
+            let getSendTime = Date()
+            print("🏁Get Sent to \(currentURLInfo.components.fullURL ?? "unknown")")
             let onlineInfo = try await HTTPGetCoordinator.extractAsync(urlInfo: currentURLInfo)
-//            print("Finished GET extract for:", currentURLInfo.components.fullURL ?? "unknown")
+#if DEBUG
+            let htmlReceiveTime = Date()
+            let duration2 = htmlReceiveTime.timeIntervalSince(getSendTime)
+            print("🐌 HttpGet time: \(String(format: "%.2f", duration2 * 1000)) ms")
+            print("🛜 Http Respond received starting analysis of the body.")
+#endif
+            //            print("Finished GET extract for:", currentURLInfo.components.fullURL ?? "unknown")
             
             
             guard let index = URLQueue.shared.offlineQueue.firstIndex(where: { $0.id == currentURLInfo.id }) else {
-//                print("ould not find URLInfo to attach onlineInfo")
+                //                print("ould not find URLInfo to attach onlineInfo")
                 return
             }
-
+            
             let updatedURLInfo = URLQueue.shared.offlineQueue[index]
             
             //  Sync the latest onlineInfo into the onlineQueue:
@@ -154,25 +166,44 @@ struct AnalysisEngine {
             }
             
             URLQueue.shared.offlineQueue[index] = updatedURLInfo
-
+            
             
             
             let OnlineAnalysisURLInfo = await HTTPRespAnalyzer.analyze(urlInfo: updatedURLInfo)
             URLQueue.shared.offlineQueue[index] = OnlineAnalysisURLInfo
-//            print("Online analysis complete for:", OnlineAnalysisURLInfo.components.fullURL ?? "unknown")
+            //            print("Online analysis complete for:", OnlineAnalysisURLInfo.components.fullURL ?? "unknown")
             URLQueue.shared.offlineQueue[index].processedOnline = true
-            
+            #if DEBUG
+            let duration = Date().timeIntervalSince(htmlReceiveTime)
+            if let html = onlineInfo.rawBody {
+                let byteCount = html.count
+                let sizeInKB = Double(byteCount) / 1024
+                let sizeInMB = sizeInKB / 1024
+                let scriptExtracted = OnlineAnalysisURLInfo.onlineInfo?.script4daUI.count
+                let inline = onlineInfo.script4daUI.filter { $0.isInline }.count
+                let totalInlineScriptSize = OnlineAnalysisURLInfo.onlineInfo?.script4daUI
+                    .filter { $0.isInline }
+                    .map { $0.size }
+                    .reduce(0, +)
+                let ext = onlineInfo.script4daUI.filter { !$0.isInline }.count
+                print("🧙‍♂️Extracted and analyzed Scripts: \(scriptExtracted ?? 0)", "Inline: \(inline) total: \(totalInlineScriptSize ?? 0) bytes,\n🧙‍♂️External \(ext)")
+                print("🍪Extracted and analyzed Cookies: \(OnlineAnalysisURLInfo.onlineInfo?.cookiesForUI.count ?? 0)")
+                print("📦 HTML body size: \(String(format: "%.2f", sizeInMB)) MB")
+                
+                print("⚡️ HTML → HTML analysis duration: \(String(format: "%.2f", duration * 1000)) ms")
+            }
+            #endif
             // Check if any critical finding where found
             if shouldStopAnalysis(atIndex: index) {
                 return
             }
-
+            
             if let finalRedirect = OnlineAnalysisURLInfo.onlineInfo?.finalRedirectURL {
                 await handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect, responseCode: currentURLInfo.onlineInfo?.serverResponseCode ?? 0)
             }
-
+            
         } catch {
-//            print(" GET request failed for:", currentURLInfo.components.fullURL ?? "unknown")
+            //            print(" GET request failed for:", currentURLInfo.components.fullURL ?? "unknown")
             let warning = SecurityWarning(
                 message: error.localizedDescription + "\nAnalysis is incomplete.",
                 severity: .fetchError,
@@ -184,9 +215,9 @@ struct AnalysisEngine {
             URLQueue.shared.addWarning(to: currentURLInfo.id, warning: warning)
             markURLInfoOnlineProcessed(for: currentURLInfo)
         }
-
+        
         if !hasFinalized {
-//            print(" Re-entering processOnlineQueue more work...")
+            //            print(" Re-entering processOnlineQueue more work...")
             await processOnlineQueue()
         }
     }
@@ -209,11 +240,11 @@ struct AnalysisEngine {
         return CommonTools.sanitizeInputURL(urlString)
     }
     
-    private static func extractComponents(from url: String) -> URLInfo {
+    public static func extractComponents(from url: String) -> URLInfo {
         return URLComponentExtractor.extract(url: url)
     }
     
-    private static func shouldStopAnalysis(atIndex index: Int) -> Bool {
+    public static func shouldStopAnalysis(atIndex index: Int) -> Bool {
         let urlInfo = URLQueue.shared.offlineQueue[index]
         
         if urlInfo.warnings.contains(where: { $0.severity == .critical }) {
@@ -228,8 +259,8 @@ struct AnalysisEngine {
             hasManuallyStopped = true
             return true
         } /*else if urlInfo.onlineInfo?.serverResponseCode == 200 {*/
-//            return true
-//        }
+        //            return true
+        //        }
         return false
     }
     
@@ -250,7 +281,7 @@ struct AnalysisEngine {
         
         let newURLInfo = extractComponents(from: cleanedRedirectURL)
         
-//        print("Adding redirect URL to offline queue:", cleanedRedirectURL)
+        //        print("Adding redirect URL to offline queue:", cleanedRedirectURL)
         URLQueue.shared.offlineQueue.append(newURLInfo)
         
         await processQueue()

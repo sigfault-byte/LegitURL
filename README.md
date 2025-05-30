@@ -8,6 +8,11 @@
 
 **Paste, type, or scan** a link → tap **Check**.
 
+
+<div align="center">
+  <img src="AppPreview/LegitURL_demo.gif" height="650" alt="LegitURL demo"/>
+</div>
+
 | Score | Findings | Meaning |
 |-------|----------|---------|
 | 🟥 **Red – Unsafe** | Multiple issues (weak TLS, missing CSP, scam keywords…). | Treat as hostile unless you already trust the sender. |
@@ -38,7 +43,7 @@ After scanning you can inspect:
 The only network traffic is **one direct HTTPS request to the link itself.**  
 **No cloud, no tracking, no third-party services. Ever.**
 
-**Dig deeper:** see [`TECHNICAL.md`](TECHNICAL.md)
+**Dig deeper:** see [`TECHNICAL_OVERVIEW.md`](TECHNICAL_OVERVIEW.md)
 
 ---
 

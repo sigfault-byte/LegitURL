@@ -38,7 +38,7 @@ struct CookiesAnalyzer {
         let totalValueSize = headersCookies.reduce(0) { $0 + $1.value.utf8.count }
         let jsCookieExposed = headersCookies.contains { !$0.isHTTPOnly }
         let cookieFlags: WarningFlags = jsCookieExposed ? [.COOKIE_JS_ACCESS] : []
-        print("IS COOKIE JS: ", jsCookieExposed)
+//        print("IS COOKIE JS: ", jsCookieExposed)
 
         if httpResponseCode != 200 {
             let severity: SecurityWarning.SeverityLevel

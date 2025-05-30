@@ -30,7 +30,7 @@ struct DomainAndTLDExtractor {
             return (domain, tld)
         }
         #if DEBUG
-        print("❌ ERROR: No valid TLD found")
+//        print("❌ ❌ ❌ ❌ ERROR: No valid TLD found")
         #endif
         return nil
     }

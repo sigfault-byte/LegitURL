@@ -40,6 +40,15 @@ struct HotDogWaterView: View {
                                     .background(Color.blue.opacity(0.1))
                                     .cornerRadius(5)
                             }
+                            if preview.isInline {
+                                Text("size: \(preview.size)B")
+                                    .font(.caption)
+                                    .foregroundColor(preview.size > 50000 ? .red : .blue)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.black.opacity(0.1))
+                                    .cornerRadius(5)
+                            }
                             Spacer()
                             Button(action: {
                                 let generator = UIImpactFeedbackGenerator(style: .light)

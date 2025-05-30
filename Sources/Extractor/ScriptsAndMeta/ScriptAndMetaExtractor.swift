@@ -14,7 +14,7 @@ struct ScriptAndMetaExtractor {
                         warnings: inout [SecurityWarning]) -> (ScriptExtractionResult?, metaCSP: Data?)
     {
         #if DEBUG
-        let startTime = Date()
+//        let startTime = Date()
         #endif
         let tagPositions = DataSignatures.extractAllTagMarkers(in: body, within: htmlRange)
         var headPos = 0
@@ -26,7 +26,7 @@ struct ScriptAndMetaExtractor {
         //populate the array of candidates
         ScriptHelperFunction.populateScriptTarget(&scriptCandidates, tagPositions: tagPositions)
         #if DEBUG
-        let t1 = Date()
+//        let t1 = Date()
         #endif
         //Look for body tag and pre filter the scriptCandidate
         ScriptHelperFunction.checkForOpenAndCloseTags(in: body,
@@ -80,8 +80,8 @@ struct ScriptAndMetaExtractor {
             return (nil, nil)
         }
         #if DEBUG
-        let t2 = Date()
-        print("Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
+//        let t2 = Date()
+//        print("Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
         #endif
         // MARK: Look if some meta are injecting meta equiv CSP
         let metaCSP = CSPMetaExtractor.extract(from: body, tags:tagPositions, range: headPos..<headEndPos!)
@@ -96,8 +96,8 @@ struct ScriptAndMetaExtractor {
         // guard if there are no script to analyze
         guard !initialScripts.isEmpty else { return (nil, nil) }
         #if DEBUG
-        let t3 = Date()
-        print("Step 2 - Script detection took \(Int(t3.timeIntervalSince(t2) * 1000))ms")
+//        let t3 = Date()
+//        print("Step 2 - Script detection took \(Int(t3.timeIntervalSince(t2) * 1000))ms")
         #endif
         // find the tag closure of the script and check if there is a self closing slash
         
@@ -142,15 +142,15 @@ struct ScriptAndMetaExtractor {
         ScriptHelperFunction.pairScriptsWithClosings(scripts: &confirmedScripts, closingTags: closingScriptPositions, body: body)
         
         #if DEBUG
-        let t4 = Date()
-        print("Step 3 - Tag closure detection took \(Int(t4.timeIntervalSince(t3) * 1000))ms")
+//        let t4 = Date()
+//        print("Step 3 - Tag closure detection took \(Int(t4.timeIntervalSince(t3) * 1000))ms")
         #endif
         // primary school math to find context
         ScriptHelperFunction.classifyContext(for: &confirmedScripts, headPos: headPos, bodyPos: bodyPos)
         
         #if DEBUG
-        let t5 = Date()
-        print("Step 4 - Context classification took \(Int(t5.timeIntervalSince(t4) * 1000))ms")
+//        let t5 = Date()
+//        print("Step 4 - Context classification took \(Int(t5.timeIntervalSince(t4) * 1000))ms")
         #endif
         // look for src
         ScriptHelperFunction.scanScriptSrc(in: body, scripts: &confirmedScripts)
@@ -160,15 +160,15 @@ struct ScriptAndMetaExtractor {
         //filter out js application data! no use anymore
 //        ScriptHelperFunction.filterOutDataScripts(&confirmedScripts)
         #if DEBUG
-        let t6 = Date()
-        print("Step 5 - Src position scan took \(Int(t6.timeIntervalSince(t5) * 1000))ms")
+//        let t6 = Date()
+//        print("Step 5 - Src position scan took \(Int(t6.timeIntervalSince(t5) * 1000))ms")
         #endif
         // sort the scripts to their origin
         ScriptHelperFunction.assignScriptSrcOrigin(in: body, scripts: &confirmedScripts)
         
         #if DEBUG
-        let t7 = Date()
-        print("Step 6 - Script origin classification took \(Int(t7.timeIntervalSince(t6) * 1000))ms")
+//        let t7 = Date()
+//        print("Step 6 - Script origin classification took \(Int(t7.timeIntervalSince(t6) * 1000))ms")
         #endif
         
         //find nonce script and value, data URI is useless nonce doesnt work on it, but many do the error?
@@ -195,13 +195,13 @@ struct ScriptAndMetaExtractor {
         }
         
         #if DEBUG
-        let t8 = Date()
-        print("Step 7 - Script find nonce took \(Int(t8.timeIntervalSince(t7) * 1000))ms")
-        
-        
-        let duration = Date().timeIntervalSince(startTime)
-        print("Total scan completed in \(Int(duration * 1000))ms")
-        print("Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
+//        let t8 = Date()
+//        print("Step 7 - Script find nonce took \(Int(t8.timeIntervalSince(t7) * 1000))ms")
+//        
+//        
+//        let duration = Date().timeIntervalSince(startTime)
+//        print("Total scan completed in \(Int(duration * 1000))ms")
+//        print("Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
         #endif
         //            DEBUG
 //        for script in confirmedScripts {

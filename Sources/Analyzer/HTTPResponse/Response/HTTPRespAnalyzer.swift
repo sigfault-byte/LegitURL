@@ -12,7 +12,7 @@ struct HTTPRespAnalyzer {
 
     static func analyze(urlInfo: URLInfo) async -> URLInfo {
         #if DEBUG
-        let start = Date()
+//        let start = Date()
         #endif
         var urlInfo = urlInfo
         
@@ -269,11 +269,11 @@ struct HTTPRespAnalyzer {
         }
 
         #if DEBUG
-        let end = Date()
-        let durationMS = end.timeIntervalSince(start) * 1000
-        print("Time taken: \(durationMS) ms, for a \(onlineInfo.rawBody?.count ?? 0) byte response body")
-        print("Number of script extracted and classified :", findings?.scripts.count ?? 0)
-        print("header analysis done, csp parsed")
+//        let end = Date()
+//        let durationMS = end.timeIntervalSince(start) * 1000
+//        print("Time taken: \(durationMS) ms, for a \(onlineInfo.rawBody?.count ?? 0) byte response body")
+//        print("Number of script extracted and classified :", findings?.scripts.count ?? 0)
+//        print("header analysis done, csp parsed")
         #endif
         return urlInfo
     }

@@ -75,7 +75,6 @@ private func evaluateSourceBitFlags(for value: Data) -> CSPBitFlag {
     var flags: CSPBitFlag = []
 
     if value == dangerousCSPValues.wildcard {
-        print("--------------------------------------------")
         flags.insert(.wildcard)
     } else if value.starts(with: dangerousCSPValues.data) {
         flags.insert(.allowsData)

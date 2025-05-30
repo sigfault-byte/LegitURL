@@ -11,7 +11,7 @@ struct ScriptHelperFunction {
         guard scripts.count == closingTags.count else {
             //TODO: this is  redundnat there s a guard before the function call
 #if DEBUG
-            print("Cannot zip scripts with closings count mismatch.")
+//            print("Cannot zip scripts with closings count mismatch.")
 #endif
             return
         }

@@ -54,12 +54,7 @@ struct URLAnalysisView: View {
                                     .foregroundColor(.blue)
                             }
                             .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(.systemGray6))
-                            )
                         }
-                        .buttonStyle(PlainButtonStyle()) // Optional: avoids blue row highlight
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     }
                     

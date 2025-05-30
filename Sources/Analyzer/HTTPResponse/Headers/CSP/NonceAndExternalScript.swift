@@ -316,8 +316,8 @@ struct NonceAndExternalScript {
         // After checking each external script
         if !openBar {
             var matchedSources = Set<String>()
-            print("---------------")
-            print("matchedSources: \(matchedSources)")
+//            print("---------------")
+//            print("matchedSources: \(matchedSources)")
             for originPair in normalizedScriptOrigins {
                 for directive in srcValueFromDirective {
                     if isExternalScriptAllowed(scriptURL: originPair.original, allowedSources: [directive]) {

@@ -28,7 +28,14 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
     var finalOutput: [[String: Any]] = []
     
     //User locale
-    let userLocale = Locale.current.identifier
+//    let userLocale = Locale.current.identifier -> this is system hybrid hotdogwater
+    var userLocale = Locale.preferredLanguages.first ?? "en" // this should be good ???
+    if let dashIndex = userLocale.firstIndex(of: "-") {
+        userLocale = String(userLocale.prefix(upTo: dashIndex))
+    }
+    if userLocale.isEmpty {
+        userLocale = "en"
+    }
     
     //priming the model
     let (prime, instruction) = LLMPriming.loadPrimmingInstructions(brief: brief, locale: userLocale)

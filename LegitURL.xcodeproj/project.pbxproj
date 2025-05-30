@@ -15,6 +15,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		241C2DAD2DE9BAE80038B6CE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 249557082D86D6EC0094E1D8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2495570F2D86D6EC0094E1D8;
+			remoteInfo = LegitURL;
+		};
 		2481AD2A2DDEFE820069ADB8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 249557082D86D6EC0094E1D8 /* Project object */;
@@ -39,8 +46,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		24039BF52DDB49F900BB93CB /* PRIVACY.MD */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.MD; sourceTree = "<group>"; };
-		2406CE772DCA6B2D0029B046 /* TECHNICAL.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TECHNICAL.md; sourceTree = "<group>"; };
+		24039BF52DDB49F900BB93CB /* PRIVACY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.md; sourceTree = "<group>"; };
+		241C2DA42DE9B6B40038B6CE /* TECHNICAL_OVERVIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TECHNICAL_OVERVIEW.md; sourceTree = "<group>"; };
+		241C2DA92DE9BAE80038B6CE /* LegitURLTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LegitURLTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		241C2DB22DE9E5770038B6CE /* TLS-SAN-HEURISTICS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "TLS-SAN-HEURISTICS.md"; sourceTree = "<group>"; };
 		2481AD1B2DDE48870069ADB8 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.4.sdk/System/Library/Frameworks/WebKit.framework; sourceTree = DEVELOPER_DIR; };
 		2481AD1D2DDEF0510069ADB8 /* Notes.TXT */ = {isa = PBXFileReference; lastKnownFileType = text; path = Notes.TXT; sourceTree = "<group>"; };
 		2481AD222DDEFE820069ADB8 /* LegitURLShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LegitURLShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -48,6 +57,8 @@
 		2481AD342DDF32CB0069ADB8 /* LegitURL.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LegitURL.entitlements; sourceTree = "<group>"; };
 		248D78AD2DD1A71C00BABB98 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		249557102D86D6EC0094E1D8 /* LegitURL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LegitURL.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		24B892062DEA056A00157408 /* TECHNICAL_OVERVIEW_2.0.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TECHNICAL_OVERVIEW_2.0.md; sourceTree = "<group>"; };
+		24B892082DEA083800157408 /* README_2.0.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README_2.0.md; sourceTree = "<group>"; };
 		24F49ED72DC329AF0028FC51 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		24FA8B542DCF80D10037DAAC /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -73,6 +84,11 @@
 		24039BE72DD456C600BB93CB /* AppPreview */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = AppPreview;
+			sourceTree = "<group>";
+		};
+		241C2DAA2DE9BAE80038B6CE /* LegitURLTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = LegitURLTests;
 			sourceTree = "<group>";
 		};
 		2481AD232DDEFE820069ADB8 /* LegitURLShare */ = {
@@ -104,6 +120,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		241C2DA62DE9BAE80038B6CE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2481AD1F2DDEFE820069ADB8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -141,12 +164,16 @@
 				24039BE72DD456C600BB93CB /* AppPreview */,
 				24F49ED72DC329AF0028FC51 /* Assets.xcassets */,
 				2481AD232DDEFE820069ADB8 /* LegitURLShare */,
+				241C2DAA2DE9BAE80038B6CE /* LegitURLTests */,
 				249557112D86D6EC0094E1D8 /* Products */,
 				24E29A0B2DB7DC9C0036E457 /* Archive */,
 				24E29A9F2DB7DCA20036E457 /* Sources */,
 				24E29B0E2DB7DCA70036E457 /* Tools */,
-				2406CE772DCA6B2D0029B046 /* TECHNICAL.md */,
-				24039BF52DDB49F900BB93CB /* PRIVACY.MD */,
+				24039BF52DDB49F900BB93CB /* PRIVACY.md */,
+				24B892082DEA083800157408 /* README_2.0.md */,
+				241C2DB22DE9E5770038B6CE /* TLS-SAN-HEURISTICS.md */,
+				24B892062DEA056A00157408 /* TECHNICAL_OVERVIEW_2.0.md */,
+				241C2DA42DE9B6B40038B6CE /* TECHNICAL_OVERVIEW.md */,
 				24FA8B542DCF80D10037DAAC /* LICENSE.md */,
 				248D78AD2DD1A71C00BABB98 /* README.md */,
 				2481AD1A2DDE48870069ADB8 /* Frameworks */,
@@ -158,6 +185,7 @@
 			children = (
 				249557102D86D6EC0094E1D8 /* LegitURL.app */,
 				2481AD222DDEFE820069ADB8 /* LegitURLShare.appex */,
+				241C2DA92DE9BAE80038B6CE /* LegitURLTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -165,6 +193,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		241C2DA82DE9BAE80038B6CE /* LegitURLTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 241C2DAF2DE9BAE80038B6CE /* Build configuration list for PBXNativeTarget "LegitURLTests" */;
+			buildPhases = (
+				241C2DA52DE9BAE80038B6CE /* Sources */,
+				241C2DA62DE9BAE80038B6CE /* Frameworks */,
+				241C2DA72DE9BAE80038B6CE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				241C2DAE2DE9BAE80038B6CE /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				241C2DAA2DE9BAE80038B6CE /* LegitURLTests */,
+			);
+			name = LegitURLTests;
+			packageProductDependencies = (
+			);
+			productName = LegitURLTests;
+			productReference = 241C2DA92DE9BAE80038B6CE /* LegitURLTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		2481AD212DDEFE820069ADB8 /* LegitURLShare */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2481AD2E2DDEFE820069ADB8 /* Build configuration list for PBXNativeTarget "LegitURLShare" */;
@@ -223,6 +274,10 @@
 				LastSwiftUpdateCheck = 1630;
 				LastUpgradeCheck = 1630;
 				TargetAttributes = {
+					241C2DA82DE9BAE80038B6CE = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = 2495570F2D86D6EC0094E1D8;
+					};
 					2481AD212DDEFE820069ADB8 = {
 						CreatedOnToolsVersion = 16.3;
 					};
@@ -251,11 +306,19 @@
 			targets = (
 				2495570F2D86D6EC0094E1D8 /* LegitURL */,
 				2481AD212DDEFE820069ADB8 /* LegitURLShare */,
+				241C2DA82DE9BAE80038B6CE /* LegitURLTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		241C2DA72DE9BAE80038B6CE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2481AD202DDEFE820069ADB8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -274,6 +337,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		241C2DA52DE9BAE80038B6CE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2481AD1E2DDEFE820069ADB8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -291,6 +361,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		241C2DAE2DE9BAE80038B6CE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2495570F2D86D6EC0094E1D8 /* LegitURL */;
+			targetProxy = 241C2DAD2DE9BAE80038B6CE /* PBXContainerItemProxy */;
+		};
 		2481AD2B2DDEFE820069ADB8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 2481AD212DDEFE820069ADB8 /* LegitURLShare */;
@@ -299,12 +374,53 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		241C2DB02DE9BAE80038B6CE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7HBGX5P282;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURLTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LegitURL.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LegitURL";
+			};
+			name = Debug;
+		};
+		241C2DB12DE9BAE80038B6CE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7HBGX5P282;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURLTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LegitURL.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LegitURL";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		2481AD2F2DDEFE820069ADB8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LegitURLShare/LegitURLShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250530;
+				CURRENT_PROJECT_VERSION = 20250530.1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LegitURLShare/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LegitURLShare;
@@ -316,7 +432,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL.LegitURLShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -332,7 +448,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LegitURLShare/LegitURLShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250530;
+				CURRENT_PROJECT_VERSION = 20250530.1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LegitURLShare/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LegitURLShare;
@@ -344,7 +460,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL.LegitURLShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -485,7 +601,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = LegitURL.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250530;
+				CURRENT_PROJECT_VERSION = 20250530.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -507,7 +623,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -528,7 +644,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = LegitURL.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250530;
+				CURRENT_PROJECT_VERSION = 20250530.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -550,7 +666,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -566,6 +682,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		241C2DAF2DE9BAE80038B6CE /* Build configuration list for PBXNativeTarget "LegitURLTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				241C2DB02DE9BAE80038B6CE /* Debug */,
+				241C2DB12DE9BAE80038B6CE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		2481AD2E2DDEFE820069ADB8 /* Build configuration list for PBXNativeTarget "LegitURLShare" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

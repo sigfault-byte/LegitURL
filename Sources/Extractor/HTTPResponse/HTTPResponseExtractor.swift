@@ -42,6 +42,11 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
             return
         }
         
+        #if DEBUG
+        print("📤 [Extractor] GET Sent to \(sanitizedURLString)")
+        #endif
+        let startTime = CFAbsoluteTimeGetCurrent()
+        
         // Create a URLRequest for the URL.
         var request = URLRequest(url: url)
         request.httpMethod = "GET" // Specify the HTTP method.
@@ -74,6 +79,11 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         
         // Create a data task with the request.
         let task = session.dataTask(with: request) { data, response, error in
+            let getDuration = CFAbsoluteTimeGetCurrent() - startTime
+            #if DEBUG
+            print("⏱️ [Extractor] HttpGet duration: \(String(format: "%.2f", getDuration * 1000)) ms")
+            #endif
+            
             // Handle any errors that occur during the request.
             if let error = error as NSError? {
                 if error.code == NSURLErrorCancelled {
@@ -110,6 +120,11 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
             let sslCertificateDetails = sharedInstance.sslCertificateDetails
             let parsedCert = sslCertificateDetails["ParsedCertificate"] as? ParsedCertificate
             
+            let pipelineStart = CFAbsoluteTimeGetCurrent()
+            #if DEBUG
+            print("📥 [Extractor] Response received, starting analysis.")
+            #endif
+
 //            let maxSafeBodySize = 4_000_000 // ~ 4MB
             
 
@@ -160,6 +175,12 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
             
             // Pass the response and updated URLInfo to the completion handler.
             completion(onlineInfo, nil)
+            
+            let pipelineDuration = CFAbsoluteTimeGetCurrent() - pipelineStart
+            #if DEBUG
+            print("✅ [Extractor] Pipeline complete (HTML report, JSON, scoring, etc.)")
+            print("⌛️ [Extractor] Analysis duration: \(String(format: "%.2f", pipelineDuration * 1000)) ms")
+            #endif
         }
         // Start the data task.
         task.resume()
@@ -186,19 +207,14 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
     // URLSessionTaskDelegate method:
     // This method is called when a redirect response is received.
     // By calling completionHandler(nil), we cancel the redirect so that the URLSession returns the original response.
-    @objc func urlSession(_ session: URLSession, task: URLSessionTask,
-                         willPerformHTTPRedirection response: HTTPURLResponse,
-                         newRequest request: URLRequest,
-                         completionHandler: @Sendable @escaping (URLRequest?) -> Void) {
+    @objc func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @Sendable @escaping (URLRequest?) -> Void) {
 //        print("Redirect cancelled !!!.")
         completionHandler(nil)
     }
     
     /// Delegate to save the TLS and check its content
     //MARK: OLD WORKING WITH WARNING FROM XCODE SNIPPET
-    @objc func urlSession(_ session: URLSession,
-                   didReceive challenge: URLAuthenticationChallenge,
-                   completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+    @objc func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         TLSExtractor().extract(session, didReceive: challenge, completionHandler: completionHandler)
     }
     
