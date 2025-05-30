@@ -5,7 +5,10 @@
 //  Created by Chief Hakka on 06/05/2025.
 //
 // TODO: Expand to detect other http-equiv meta types (refresh, content-type, etc.)
-// loading the meta in the header is terrible practice?
+// t.co shortener -> 200 ok but -> meta name ok to catch.The script logic is different...
+// Might o nly check this when the html is small ?
+//<head><meta name="referrer" content="always"><noscript><META http-equiv="refresh" content="0;URL=http://www.100x-mindset.com"></noscript><title>http://www.100x-mindset.com</title></head><script>window.opener = null; location.replace("http:\/\/www.100x-mindset.com")</script>
+//
 import Foundation
 
 struct CSPMetaExtractor {

@@ -75,11 +75,21 @@ struct CSPAnalyzer {
         
         structuredCSP = ExtractedStructuredCSP
         
-        //Check If script-src or default-src or require-trusted-types-for exists.
-        let coreDirectiveWarnings = ScriptAndDefaultDirective.evaluate(structuredCSP: structuredCSP, url: urlOrigin)
-        warnings.append(contentsOf: coreDirectiveWarnings)
-        
         let directiveBitFlags: [String: Int32] = parseCSP(structuredCSP)
+        var defaultSrcBitFlags = CSPBitFlag(rawValue: 0)
+        
+        //TODO: This is a hacky fix, need refactor
+        for (key, value) in directiveBitFlags {
+            if key == "default-src" {
+                defaultSrcBitFlags = CSPBitFlag(rawValue: value)
+            }
+        }
+        let isDefaultNone = defaultSrcBitFlags.contains(.none)
+        //End of hacky fix
+        
+        //Check If script-src or default-src or require-trusted-types-for exists and object-src.
+        let coreDirectiveWarnings = ScriptAndDefaultDirective.evaluate(structuredCSP: structuredCSP, url: urlOrigin, defaultSrcIsNone: isDefaultNone)
+        warnings.append(contentsOf: coreDirectiveWarnings)
         
         //Check illogic missconfig, only appen script-src or default-src warnings
         let misconfigWarningsScriptAndDefautlSrc = CSPConfigAnalysis.analyze(directiveFlags: directiveBitFlags, url: urlOrigin)

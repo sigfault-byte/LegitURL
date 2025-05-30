@@ -27,7 +27,6 @@ struct CSPBitFlag: OptionSet, Hashable {
     static let wildcardURL      = CSPBitFlag(rawValue: 1 << 15)   //  *.cdn.com
 }
 
-
 func parseCSP(_ structuredCSP: [String: [Data: CSPValueType]]) -> [String: Int32] {
     var directiveBitFlags: [String: Int32] = [:]
 

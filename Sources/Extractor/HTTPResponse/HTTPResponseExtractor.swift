@@ -12,6 +12,7 @@ import ObjectiveC
 // It cancels any HTTP redirection, so you receive the original response (e.g., a 301) instead of following the redirect.
 // It also handles SSL challenges by simply accepting the provided certificate.
 // TODO: Need another delegate, low levelish, to intercept the body len it s decompressed by urlsession to compare to the header's value
+@objcMembers
 class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegate {
     
     // Shared instance used as the delegate for URLSession tasks.
@@ -172,7 +173,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         }
     }
         
-//    TODO: Delegate to limit html size
+//    TODO: Delegate to limit html size, too tricky for now
 //    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
 //        totalBytesReceived += data.count
 //        if totalBytesReceived > maxSafeSize {
@@ -185,17 +186,19 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
     // URLSessionTaskDelegate method:
     // This method is called when a redirect response is received.
     // By calling completionHandler(nil), we cancel the redirect so that the URLSession returns the original response.
-    func urlSession(_ session: URLSession, task: URLSessionTask,
-                    willPerformHTTPRedirection response: HTTPURLResponse,
-                    newRequest request: URLRequest,
-                    completionHandler: @escaping (URLRequest?) -> Void) {
-//        print("🔄 Redirect cancelled. Returning original response.")
+    @objc func urlSession(_ session: URLSession, task: URLSessionTask,
+                         willPerformHTTPRedirection response: HTTPURLResponse,
+                         newRequest request: URLRequest,
+                         completionHandler: @Sendable @escaping (URLRequest?) -> Void) {
+//        print("Redirect cancelled !!!.")
         completionHandler(nil)
     }
     
     /// Delegate to save the TLS and check its content
-    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
-                    completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+    //MARK: OLD WORKING WITH WARNING FROM XCODE SNIPPET
+    @objc func urlSession(_ session: URLSession,
+                   didReceive challenge: URLAuthenticationChallenge,
+                   completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         TLSExtractor().extract(session, didReceive: challenge, completionHandler: completionHandler)
     }
     

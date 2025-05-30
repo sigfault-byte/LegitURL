@@ -77,14 +77,14 @@ struct ScriptAndDefaultDirective {
         return warnings
     }
     
-    public static func evaluate(structuredCSP: [String: [Data: CSPValueType]], url: String) -> [SecurityWarning] {
+    public static func evaluate(structuredCSP: [String: [Data: CSPValueType]], url: String, defaultSrcIsNone: Bool) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
 
         let hasDefaultSrc = structuredCSP.keys.contains("default-src")
         let hasScriptSrc = structuredCSP.keys.contains("script-src")
         let hasObjectSrc = structuredCSP.keys.contains("object-src")
         let hasRequiredTrustedTypeFor = structuredCSP.keys.contains("require-trusted-types-for")
-
+        
         // Penalize completely missing script-src and default-src
         if !hasDefaultSrc && !hasScriptSrc && !hasRequiredTrustedTypeFor{
             warnings.append(SecurityWarning(
@@ -96,8 +96,7 @@ struct ScriptAndDefaultDirective {
                 bitFlags: [.HEADERS_FAKE_CSP]
             ))
             
-        //TODO: If this is missing the fallback is default-src, so if default-src is not none this is "bad"
-        } else if !hasObjectSrc {
+        } else if !hasObjectSrc && !defaultSrcIsNone {
             warnings.append(SecurityWarning(
                 message: "CSP is missing 'object-src'. This weakens protection against legacy plugin-based attacks.",
                 severity: .suspicious,
