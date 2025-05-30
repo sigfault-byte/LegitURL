@@ -1,6 +1,6 @@
 >**Work in progress notice:**  
 >The examples, scores, and heuristic logic described here may vary slightly across app versions.  
->Current version: v1.0.3 
+>Current version: v1.1.0 
 
 ## LegitURL  
 
@@ -9,8 +9,8 @@
 - [3. Scoring system](#3-scoring-system)
 - [4. Core detection & heuristics](#4-core-detection--heuristics)
 - [5. Core detection features](#5-code-detection-features)
-- [6. Example use case](#6-example-use-case)
-- [7. The philosophy behind LegitURL](#7-the-philosophy-behind-legiturl)
+- [6. LLM Exploration and prompt strategy] (#6-llm-exploration-and-prompt-strategy)
+- [7. Example use case](#6-example-use-case)
 - [8. Why LegitURL exists](#8-why-legiturl-exists)
 - [9. Contact & License](#9-contact--license)
 
@@ -551,8 +551,8 @@ Branches that reveal a valid URL are fed back into the **offline inspection** pi
    | `integrity=` (SRI) | Logged for presence (hash not yet verified) |
    | `type=` value | Used to detect `dataScript` and `module`|  
    
-	> Note: CORS attributes are detected but not yet cross-checked against CSP or response headers.  
-	>The type= value is parsed to flag type="module" and data only scripts like type="application/json" or application/ld+json (referred to as dataScript). These are not executed by the browser but may carry structured or behavioral data.
+    > Note: CORS attributes are detected but not yet cross-checked against CSP or response headers.  
+    >The type= value is parsed to flag type="module" and data only scripts like type="application/json" or application/ld+json (referred to as dataScript). These are not executed by the browser but may carry structured or behavioral data.
 
 5. **Script origin classification**  
    *For `<script src="…">`* determine origin: `'self'`, external URL, protocol‑relative, `data:` URI, etc.
@@ -699,7 +699,87 @@ LegitURL inspects headers **only on `200 OK`**, so the findings reflect the pag
 | `Referrer-Policy` | Value | `strict-origin` or stricter |
 | `Server` / `X-Powered-By` | Version leakage (`apache/2.4`, `php/8.2`) | **INFO** if header present but no version,<br>**Suspicious** if version string leaks |
 
-## 6. Example use case
+## 6. LLM Integration and Prompt Strategy
+
+To simplify explanations for non-technical users — and empower curious users to dig deeper — LegitURL includes built-in JSON export support for LLM interpretation.
+
+### JSON Format
+The exported structure uses `KeyValuePairs` with zero-padded prefixes (e.g. `04a_`, `04b_`) to preserve the intended logical and visual ordering, even after serialization. These prefixes are removed post-serialization to ensure clean input for models.
+
+This allows large models to follow the reasoning structure as if reading annotated pseudo-code.
+
+- Two modes exist:
+  - `brief`: Summary-focused, optimized for short outputs
+  - `full`: Includes domain breakdown, cookies, TLS details, headers, script findings, and inline snippets around suspicious functions or accessors
+
+> **Note:** Brief mode uses fewer tokens. The app estimates token usage by dividing the byte size by 4 and shows the result to the user.
+
+The JSON contains:
+- A `priming` key to steer model behavior
+- A `findings_summary` block flattened into discrete `signal` entries
+- Both avoid specifying a score or penalty severity — leaving the model free to reason based on observed patterns
+- Full technical data grouped and ordered for token efficiency
+
+### Copy-to-Model Flow
+Users can copy either:
+- A single "Explain this finding" JSON snippet
+- The full structured report
+
+### Example That Worked Exceptionally Well
+
+One real-world example involved the domain `portal-finance.net`:
+
+- The model correctly:
+  - Flagged the domain as **visually and phonetically similar to “binance”**, using the app’s Levenshtein and n-gram results
+  - Identified the external file `/hidden/payload.js` as suspicious due to its naming  
+    - **This is exactly what LegitURL was designed to highlight** — the model connected filename patterns to real threats
+  - Noted the absence of CSP, HSTS, and SRI headers
+  - Connected the TLS issue date (same-day issuance) to likely phishing deployment
+
+All without relying on brand blocklists — purely via behavioral pattern recognition.
+
+> This confirmed that the combination of exported JSON + well-primed instructions can enable GPT-4o, Gemini, Claude or DeepSeek to produce a strong, accurate risk explanation from raw technical input. While the priming is still refined manually, the balance between guiding and overconstraining the model remains a key challenge.  
+>
+> The model’s ability to leverage background knowledge is exceptionally powerful. Prior attempts to detect such threats relied on static brand lists, dictionary lookups, or entropy checks — all of which struggled against infinite variations. This new pipeline offers a more flexible and adaptive path forward.  
+>
+> As of now, LegitURL measures JSON export efficiency not only by minimizing token size (still a work in progress), but also by evaluating the **cognitive load** placed on the model,that is, how easily it can extract structure, identify key signals, and reason across findings.  
+>
+> **LegitURL remains a fully offline local tool**, but this JSON export adds a new layer: enabling models to provide meaningful insight without deep technical parsing. Suspicious inline script snippets are extracted, structured, and passed in clean blocks — letting models focus on interpretation, not AST traversal.
+
+<details>
+<summary>Click to view anthropic's Claude (Sonnet 4) output from just pasting the JSON</summary>
+
+Looking at the technical behavior of portal-finance.net, I see several concerning signals that suggest this site should be approached with extreme caution.
+
+## Critical Red Flags
+
+**Domain Impersonation**: The domain "portal-finance.net" appears designed to mimic Binance, one of the world's largest cryptocurrency exchanges. The analysis shows "FINANCE" has a Levenshtein distance of only 1 from "binance" and 71% structural similarity. This is a classic impersonation tactic used by scammers to trick users into thinking they're visiting a legitimate financial platform.
+
+**Brand New Certificate**: The TLS certificate was issued just yesterday (May 29, 2025) - literally 0 days old when tested. Legitimate financial services don't typically launch with same-day certificates. This suggests the site was created very recently, which is common with scam operations that get shut down and recreate quickly.
+
+**Suspicious Script Loading**: The site loads an external script from a relative path `./assets/hidden/payload.js` - the name "payload" combined with being in a "hidden" directory is highly suspicious. Legitimate sites don't typically name their JavaScript files "payload" or hide them in directories with such obvious names. This could contain malicious code.
+
+## Security Hygiene Issues
+
+The site exhibits poor security practices across multiple areas:
+
+- **Missing Security Headers**: No Content Security Policy, X-Content-Type-Options, Referrer-Policy, or HSTS headers. This creates vulnerabilities and suggests the operators don't follow security best practices.
+- **No Script Integrity**: External scripts lack Subresource Integrity (SRI) hashes, meaning if the jQuery CDN or the local server were compromised, malicious code could be injected.
+- **Aggressive Caching Prevention**: The "no-store" cache control header prevents any caching, which while not inherently malicious, is unusual for static content and could indicate frequently changing content.
+
+## Behavioral Context
+
+The inline JavaScript appears benign (clipboard copying functionality), but this could be a facade. The real concern is the external "payload.js" script that wasn't analyzed but has a highly suspicious name and location.
+
+## Trust Assessment
+
+This combination of signals - domain impersonation of a major crypto exchange, same-day certificate issuance, suspicious script naming, and poor security hygiene - creates a pattern consistent with cryptocurrency scam sites. These operations typically create convincing-looking finance portals to steal login credentials or crypto wallet information.
+
+A cautious user should avoid this site entirely. The technical behavior suggests it was hastily constructed to impersonate Binance, likely for fraudulent purposes. The risks far outweigh any potential legitimate use case.​​​​​​​​​​​​​​​​
+
+</details>
+
+## 7. Example use case
 
 ### Example 1: Brand impersonation with suspicious TLD
 
@@ -917,7 +997,7 @@ Some high-profile sites make a visible effort to secure users — and it shows.
 > The French government site is solid and has a EV cert.  
 > Apple's CSP still allows unsafe-inline/unsafe-eval; referrer policy is lax, the EV cert helps.
 
-## 7. Why LegitURL exists
+## 8. Why LegitURL exists
 
 Web browsers were designed to be forgiving.  
 For decades that resilience, auto‑closing tags, guessing encodings, running scripts despite weak policies, helped the Web grow.  

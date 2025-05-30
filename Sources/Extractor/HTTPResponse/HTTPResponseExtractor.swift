@@ -195,7 +195,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
     
     /// Delegate to save the TLS and check its content
     func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge,
-                    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+                    completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         TLSExtractor().extract(session, didReceive: challenge, completionHandler: completionHandler)
     }
     

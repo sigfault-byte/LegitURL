@@ -1,4 +1,4 @@
-> **Work‑in‑progress.**  
+> **Work‑in‑progress. (1.1.0)**  
 > It works today and gets sharper every week with new heuristics and polish.
 
 ## LegitURL
@@ -12,7 +12,7 @@
 |-------|----------|---------|
 | 🟥 **Red – Unsafe** | Multiple issues (weak TLS, missing CSP, scam keywords…). | Treat as hostile unless you already trust the sender. |
 | 🟧 **Orange – Suspicious** | Mixed signals: solid parts but hygiene gaps (tracking cookies on redirects, `unsafe-inline`, …). | Usually fine for major brands; be cautious with unknown sites. |
-| 🟩 **Green – Safe** | Clean redirects, correct headers, trusted cert. | Not bullet‑proof, but shows clear effort. |
+| 🟩 **Green – Safe** | Clean redirects, correct headers, trusted cert. | Not bulletproof, but shows clear effort. |
 
 After scanning you can inspect:
 
@@ -22,7 +22,10 @@ After scanning you can inspect:
 * Cookies summary  
 * HTML body (up to 1.2 MB)  
 * Each `<script>` block (up to 3 KB)
-
+* Export the full analysis with all details to a PDF  
+* Copy a primed JSON prompt for:
+	* Explaining the findings  
+	* Getting a full report summary via an LLM  
 
 
 ---

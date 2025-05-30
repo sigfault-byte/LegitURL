@@ -94,7 +94,6 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
             "06_query" : query,
             "07_fragment" : fragment,
             "08_punycoded_host" : punycode,
-//            "09_findings" : findings.isEmpty ? "" : findings
         ]
         
         // Online Var
