@@ -10,7 +10,7 @@
 
 
 <div align="center">
-  <img src="AppPreview/LegitURL_demo.gif" height="650" alt="LegitURL demo"/>
+  <img src="AppPreview/LegitURL_demo.gif" alt="LegitURL demo"/>
 </div>
 
 | Score | Findings | Meaning |
