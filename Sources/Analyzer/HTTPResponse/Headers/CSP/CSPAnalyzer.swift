@@ -8,18 +8,17 @@ import Foundation
 
 struct CSPAnalyzer {
     static func analyze(_ headers: [String: String],
+                        httpEquivCSP: Data?,
                         urlOrigin: String,
                         scriptValueToCheck: ScriptSourceToMatchCSP?, // To check nonce and external
                         script: inout ScriptExtractionResult?) // flag fails from the checks
     
     -> (warnings: [SecurityWarning], result: ClassifiedCSPResult) {
 //Only CSP kinda need byte parsing. Permission policy might not need it.
-//All others can be handled with strin analysis.
+//All others can be handled with string analysis.
         
-//        if let csp = headers["content-security-policy"] {
-//            let babylonCSP = Data(csp.utf8)
-//
-//        }
+        
+        
         var warnings: [SecurityWarning] = []
         var structuredCSP: [String: [Data: CSPValueType]] = [:]
         let scriptValueToCheckUnwrapped = scriptValueToCheck ?? nil
@@ -43,6 +42,11 @@ struct CSPAnalyzer {
                 originCSP = "CSP-RO"
             }
         }
+        if babylonCSP.isEmpty && (httpEquivCSP != nil) {
+            babylonCSP = httpEquivCSP ?? Data()
+            originCSP = "HTTP-Equiv"
+        }
+        
         // return early
         guard !babylonCSP.isEmpty else {
             warnings.append(SecurityWarning(
@@ -71,12 +75,31 @@ struct CSPAnalyzer {
         //Clean and extract the CSP into a dictionnary : [String: [Data: CSPValueType]] = [:]
         let (ExtractedStructuredCSP, extractorWarnings) = CSPExtractor.extract(from: babylonCSP,
                                                                                url: urlOrigin)
+        
+        //Clean and extract meta CSP if they exist
+        var mergedStructuredCSP : [String: [Data: CSPValueType]] = [:]
+        var addedDirective: [String] = []
+        var mergedDirectives = [String]()
+        if let httpEquivUnWrapp = httpEquivCSP, !httpEquivUnWrapp.isEmpty {
+            let (ExtractedStructuredMetaCSP, metaWarnings) = CSPExtractor.extract(from: httpEquivUnWrapp, url : urlOrigin, meta: true)
+            if !metaWarnings.isEmpty {
+                warnings.append(contentsOf: metaWarnings)
+            }
+            (mergedStructuredCSP, addedDirective, mergedDirectives) = CSPMerge.merge(headerCSP: ExtractedStructuredCSP, httpEquivCSP: ExtractedStructuredMetaCSP)
+            let addMergeWarnings = CSPMerge.logMergedSignal(addedDirectives: addedDirective, mergedDirective: mergedDirectives, oginUrl: urlOrigin)
+            if !addMergeWarnings.isEmpty {
+                warnings.append(contentsOf: addMergeWarnings)
+            }
+        }
+        
         warnings.append(contentsOf: extractorWarnings)
         
-        structuredCSP = ExtractedStructuredCSP
+        //If merge is empty used the header CSP otherwise use the merged
+        structuredCSP = mergedStructuredCSP.isEmpty ? ExtractedStructuredCSP : mergedStructuredCSP
         
         let directiveBitFlags: [String: Int32] = parseCSP(structuredCSP)
         var defaultSrcBitFlags = CSPBitFlag(rawValue: 0)
+        
         
         //TODO: This is a hacky fix, need refactor
         for (key, value) in directiveBitFlags {

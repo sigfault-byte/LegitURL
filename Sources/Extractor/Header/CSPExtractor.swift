@@ -7,13 +7,18 @@
 import Foundation
 
 struct CSPExtractor {
-    static func extract(from raw: Data, url: String) -> (structured: [String: [Data: CSPValueType]], warnings: [SecurityWarning]) {
+    static func extract(from raw: Data, url: String, meta: Bool = false) -> (structured: [String: [Data: CSPValueType]], warnings: [SecurityWarning]) {
         var raw = raw
+        // Strip all non sense that can appears and crash the parser when slicing
+//        This covers : ; ' " * / . _ - and all printable char
+        raw = raw.filter { $0 >= 0x20 && $0 <= 0x7E || $0 == 0x0A || $0 == 0x09 }
+        let message = meta ? "From Meta-tag Content-Security-Policy." : ""
+        
         var warnings: [SecurityWarning] = []
         var directiveSlices: [Range<Int>] = []
         var directiveValues: [[Data: [Data]]] = []
         var structuredCSP: [String: [Data: CSPValueType]] = [:]
-
+        
         //add the possible missing semicolon
         if raw.last != 0x3B {
             raw.append(0x3B)
@@ -35,7 +40,7 @@ struct CSPExtractor {
                 directiveValues.append(parsedDirective)
             } else {
                 warnings.append(SecurityWarning(
-                    message: "Failed to parse CSP directive.",
+                    message: "Failed to parse CSP directive.\(message)",
                     severity: .suspicious,
                     penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
                     url: url,
@@ -51,7 +56,7 @@ struct CSPExtractor {
             for (directiveNameData, valueList) in slice {
                 guard let directiveName = String(data: directiveNameData, encoding: .utf8) else {
                     warnings.append(SecurityWarning(
-                        message: "Unrecognized CSP directive encoding.",
+                        message: "Unrecognized CSP directive encoding.\(message)",
                         severity: .suspicious,
                         penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
                         url: url,
@@ -69,7 +74,7 @@ struct CSPExtractor {
 
                     if count == 1 {
                         warnings.append(SecurityWarning(
-                            message: "Duplicate CSP directive '\(directiveName)' detected.",
+                            message: "Duplicate CSP directive '\(directiveName)' detected.\(message)",
                             severity: .suspicious,
                             penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
                             url: url,

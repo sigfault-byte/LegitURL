@@ -14,9 +14,9 @@ struct AnalysisEngine {
     
     // MARK: - Public Entry Point
     public static func analyze(urlString: String) async {
-#if DEBUG
+        #if DEBUG
         self.analysisStartTime = Date()
-#endif
+        #endif
         AnalysisStateReset.reset()
         //        load user singletn + statics
         UserHeuristicsCache.load()
@@ -96,28 +96,28 @@ struct AnalysisEngine {
     }
     
     // MARK: - Online Queue Processing
-    
     private static func processOnlineQueue() async {
         //        let remaining = URLQueue.shared.offlineQueue.filter { !$0.processedOnline && !$0.processingNow }
         //        print("Remaining URLs: \(remaining.map { $0.components.fullURL ?? "unknown" })")
         
         guard let currentIndex = URLQueue.shared.offlineQueue.firstIndex(where: { !$0.processedOnline && !$0.processingNow }) else {
-            //            print("✅ All online checks complete.")
             if !hasFinalized {
                 hasFinalized = true
                 //flush singleton
                 UserHeuristicsCache.flush()
+                #if DEBUG
                 if let beforeFinalyzing = analysisStartTime {
                     let duration = Date().timeIntervalSince(beforeFinalyzing)
-                    print("🎬 Before finalizing: \(String(format: "%.3f", duration)) seconds")
+                    print("----> Analysis> Before finalizing: \(String(format: "%.3f", duration)) seconds")
                 }
+                #endif
                 Finalyzer.finalizeAnalysis()
-#if DEBUG
+                #if DEBUG
                 if let start = analysisStartTime {
                     let duration = Date().timeIntervalSince(start)
-                    print(" ✅ End of the pipeline, after generating HTML report, JSON exports, sorting findings, calculating score, computing possible bitFlag\nDuration: \(String(format: "%.3f", duration)) seconds")
+                    print("----> Analysis> End of the pipeline, after generating HTML report, JSON exports, sorting findings, calculating score, computing possible bitFlag\nDuration: \(String(format: "%.3f", duration)) seconds")
                 }
-#endif
+                #endif
             }
             return
         }
@@ -134,14 +134,18 @@ struct AnalysisEngine {
         
         do {
             let getSendTime = Date()
-            print("🏁Get Sent to \(currentURLInfo.components.fullURL ?? "unknown")")
+            #if DEBUG
+            print("----> Analysis> Get Sent to \(currentURLInfo.components.fullURL ?? "unknown")")
+            #endif
+            
             let onlineInfo = try await HTTPGetCoordinator.extractAsync(urlInfo: currentURLInfo)
-#if DEBUG
+            
+            #if DEBUG
             let htmlReceiveTime = Date()
             let duration2 = htmlReceiveTime.timeIntervalSince(getSendTime)
-            print("🐌 HttpGet time: \(String(format: "%.2f", duration2 * 1000)) ms")
-            print("🛜 Http Respond received starting analysis of the body.")
-#endif
+            print("----> Analysis> HttpGet time: \(String(format: "%.2f", duration2 * 1000)) ms")
+            print("----> Analysis> Http Respond received starting analysis of the body.")
+            #endif
             //            print("Finished GET extract for:", currentURLInfo.components.fullURL ?? "unknown")
             
             
@@ -173,6 +177,7 @@ struct AnalysisEngine {
             URLQueue.shared.offlineQueue[index] = OnlineAnalysisURLInfo
             //            print("Online analysis complete for:", OnlineAnalysisURLInfo.components.fullURL ?? "unknown")
             URLQueue.shared.offlineQueue[index].processedOnline = true
+            
             #if DEBUG
             let duration = Date().timeIntervalSince(htmlReceiveTime)
             if let html = onlineInfo.rawBody {
@@ -180,19 +185,20 @@ struct AnalysisEngine {
                 let sizeInKB = Double(byteCount) / 1024
                 let sizeInMB = sizeInKB / 1024
                 let scriptExtracted = OnlineAnalysisURLInfo.onlineInfo?.script4daUI.count
-                let inline = onlineInfo.script4daUI.filter { $0.isInline }.count
+                let inline = OnlineAnalysisURLInfo.onlineInfo?.script4daUI.filter { $0.isInline }.count
                 let totalInlineScriptSize = OnlineAnalysisURLInfo.onlineInfo?.script4daUI
                     .filter { $0.isInline }
                     .map { $0.size }
                     .reduce(0, +)
                 let ext = onlineInfo.script4daUI.filter { !$0.isInline }.count
-                print("🧙‍♂️Extracted and analyzed Scripts: \(scriptExtracted ?? 0)", "Inline: \(inline) total: \(totalInlineScriptSize ?? 0) bytes,\n🧙‍♂️External \(ext)")
-                print("🍪Extracted and analyzed Cookies: \(OnlineAnalysisURLInfo.onlineInfo?.cookiesForUI.count ?? 0)")
-                print("📦 HTML body size: \(String(format: "%.2f", sizeInMB)) MB")
+                print("----> Extracted and analyzed Scripts: \(scriptExtracted ?? 0)", "==>Inline: \(inline ?? 0) total: \(totalInlineScriptSize ?? 0) bytes,\n==>External \(ext)")
+                print("----> Analysis> Extracted and analyzed Cookies: \(OnlineAnalysisURLInfo.onlineInfo?.cookiesForUI.count ?? 0)")
+                print("----> Analysis> HTML body size: \(String(format: "%.2f", sizeInMB)) MB")
                 
-                print("⚡️ HTML → HTML analysis duration: \(String(format: "%.2f", duration * 1000)) ms")
+                print("----> Analysis> HTML analysis duration: \(String(format: "%.2f", duration * 1000)) ms")
             }
             #endif
+            
             // Check if any critical finding where found
             if shouldStopAnalysis(atIndex: index) {
                 return

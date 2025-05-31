@@ -214,9 +214,10 @@ struct HTTPRespAnalyzer {
         var cspResult: ClassifiedCSPResult? = nil
         if responseCode == 200 {
             let (warningsCSP, result) = CSPAnalyzer.analyze(headers,
-                                                                 urlOrigin: urlOrigin,
-                                                                 scriptValueToCheck: scriptValueToCheck,
-                                                                 script: &findings)
+                                                            httpEquivCSP: csp,
+                                                            urlOrigin: urlOrigin,
+                                                            scriptValueToCheck: scriptValueToCheck,
+                                                            script: &findings)
             urlInfo.warnings.append(contentsOf: warningsCSP)
             cspResult = result
         }

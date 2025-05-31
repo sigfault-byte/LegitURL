@@ -43,7 +43,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         }
         
         #if DEBUG
-        print("📤 [Extractor] GET Sent to \(sanitizedURLString)")
+        print("----> <Network> GET Sent to \(sanitizedURLString)")
         #endif
         let startTime = CFAbsoluteTimeGetCurrent()
         
@@ -81,7 +81,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
         let task = session.dataTask(with: request) { data, response, error in
             let getDuration = CFAbsoluteTimeGetCurrent() - startTime
             #if DEBUG
-            print("⏱️ [Extractor] HttpGet duration: \(String(format: "%.2f", getDuration * 1000)) ms")
+            print("---->Newtwork> HttpGet duration: \(String(format: "%.2f", getDuration * 1000)) ms")
             #endif
             
             // Handle any errors that occur during the request.
@@ -122,7 +122,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
             
             let pipelineStart = CFAbsoluteTimeGetCurrent()
             #if DEBUG
-            print("📥 [Extractor] Response received, starting analysis.")
+            print("---->Netweok> Response received, starting analysis.")
             #endif
 
 //            let maxSafeBodySize = 4_000_000 // ~ 4MB
@@ -178,8 +178,8 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
             
             let pipelineDuration = CFAbsoluteTimeGetCurrent() - pipelineStart
             #if DEBUG
-            print("✅ [Extractor] Pipeline complete (HTML report, JSON, scoring, etc.)")
-            print("⌛️ [Extractor] Analysis duration: \(String(format: "%.2f", pipelineDuration * 1000)) ms")
+            print("---->Network> Pipeline complete (HTML report, JSON, scoring, etc.)")
+            print("---->Netwrok> Analysis duration: \(String(format: "%.2f", pipelineDuration * 1000)) ms")
             #endif
         }
         // Start the data task.

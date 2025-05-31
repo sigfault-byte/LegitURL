@@ -24,10 +24,10 @@ func logResourceSnapshot(label: String = "📊 Resource Snapshot") {
         let usedMB = Double(info.phys_footprint) / 1024 / 1024
         print("""
         \(label)
-        🧠 RAM Used: \(String(format: "%.2f", usedMB)) MB
+        RAM Used: \(String(format: "%.2f", usedMB)) MB
         """)
     } else {
-        print("⚠️ Error with task_info(): \(kerr)")
+        print("Error with task_info(): \(kerr)")
     }
 
     let cpuTime = ProcessInfo.processInfo.systemUptime
@@ -48,7 +48,7 @@ func logPeakMemory(label: String = "📈 Peak Memory Snapshot") {
         let peakMB = Double(info.resident_size) / 1024 / 1024
         print("\(label)\n📈 Peak RAM: \(String(format: "%.2f", peakMB)) MB")
     } else {
-        print("⚠️ Error (peak memory): \(kerr)")
+        print("Error (peak memory): \(kerr)")
     }
 }
 
@@ -63,9 +63,9 @@ final class LegitURLTests: XCTestCase {
         AnalysisEngine.hasManuallyStopped = false
         AnalysisEngine.hasFinalized = false
 
-//        print("📌 BEFORE analysis")
-//        logResourceSnapshot(label: "📊 RAM Snapshot (Before)")
-//        logPeakMemory(label: "📈 Peak RAM (Before)")
+//        print(" BEFORE analysis")
+//        logResourceSnapshot(label: "RAM Snapshot (Before)")
+//        logPeakMemory(label: "Peak RAM (Before)")
 
         let start = Date()
         await AnalysisEngine.analyze(urlString: testURL1)
