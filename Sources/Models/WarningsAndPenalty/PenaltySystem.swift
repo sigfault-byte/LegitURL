@@ -115,7 +115,7 @@ struct PenaltySystem {
         static let jsStorageAccess                     = -10
         static let jsSetItemAccess                     = -10
         static let protocolRelativeScriptSrc           = -10
-        static let jsCookieAccess                      = -10
+        static let jsCookieAccess                      = -5
         static let metaCSP                             = -5
         static let mediumScritpDensity                 = -5
         static let scriptIs5070Percent                 = -5
@@ -125,8 +125,8 @@ struct PenaltySystem {
         //InlineSpecific & JS penalty
         static let hightPenaltyForInlineJS             = -20
         static let jsSetEditCookie                     = -15
-        static let mediumPenaltyForInlineJS            = -15
         static let inlineMore100kB                     = -30
+        static let mediumPenaltyForInlineJS            = -10
         static let moduleCrossoriginUnknownValue       = -5 // Same penalty different reasons?
         static let moduleCrossoriginMalformed          = -5 // Need a specific bitflag maybe... but for what??
         static let lowPenaltyForInlineJS               = -5
@@ -405,23 +405,23 @@ struct PenaltySystem {
         case "eval", "window[\"eval\"]", "Function":
             return (PenaltySystem.Penalty.critical, .critical)
         case "cookie":
-            return (PenaltySystem.Penalty.jsCookieAccess, .dangerous)
-        case "WebAssembly":
+            return (PenaltySystem.Penalty.jsCookieAccess, .suspicious)
+        case "WebAssembly", "innerhtml", "outerhtml":
             return (PenaltySystem.Penalty.jsWebAssembly, .dangerous)
-        case "atob", "btoa", "fetch", "xmlhttprequest", "window.open", "document.write":
+        case "atob", "btoa", "window.open", "document.write":
             return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
         case "location.href":
             return (PenaltySystem.Penalty.hightPenaltyForInlineJS, .dangerous)
         case "location.replace", "location.assign", "getElementById":
             return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
-        case "innerhtml", "outerhtml", "unescape", "escape":
+        case "unescape", "escape":
             return (PenaltySystem.Penalty.mediumPenaltyForInlineJS, .suspicious)
-        case "console.log":
-            return (PenaltySystem.Penalty.lowPenaltyForInlineJS, .info)
         case "localStorage":
             return (PenaltySystem.Penalty.jsStorageAccess, .suspicious)
         case "setItem":
             return (PenaltySystem.Penalty.jsSetItemAccess, .suspicious)
+        case "console.log", "fetch", "xmlhttprequest", "websocket", "import":
+            return (PenaltySystem.Penalty.informational, .info)
         default:
             return (-10, .suspicious)
         }

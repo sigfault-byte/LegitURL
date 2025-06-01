@@ -68,16 +68,6 @@ Full spec lives in [`TECHNICAL_OVERVIEW.md`](TECHNICAL_OVERVIEW.md).
 
 ---
 
-## Roadmap
-
-* ✅ Cookie bit-flag pyramid  
-* ✅ CSP / header correlation  
-* 🛠️  Meta-refresh & JS `location.replace` detection  
-* 🛠️  SRI hash checks  
-* 🛠️  Static JS AST analysis
-
----
-
 ## License
 
 GNU  Affero GPL v3 – see [`LICENSE`](LICENSE) for details. Issues welcome.

@@ -398,6 +398,7 @@ struct ScriptInlineAnalyzer {
                 }()
                 
                 let adjustedSeverity = setterDetected ? SecurityWarning.SeverityLevel.dangerous : severity
+                let adjustedPenalty = setterDetected ? PenaltySystem.Penalty.hightPenaltyForInlineJS : penalty
                 
                 var message: String = "Suspicious JS accessor: .\(displayName) detected inline \(count) time(s)."
                 if setterDetected {
@@ -406,7 +407,7 @@ struct ScriptInlineAnalyzer {
                 warnings.append(SecurityWarning(
                     message: message,
                     severity: adjustedSeverity,
-                    penalty: /*count * */penalty, // cant multiply, several signal in the same spot doesnt make a bigger signal!
+                    penalty: /*count * */adjustedPenalty, // cant multiply, several signal in the same spot doesnt make a bigger signal!
                     url: origin,
                     source: .body
                 ))

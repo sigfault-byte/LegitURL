@@ -41,13 +41,20 @@ struct HotDogWaterView: View {
                                     .cornerRadius(5)
                             }
                             if preview.isInline {
-                                Text("size: \(preview.size)B")
-                                    .font(.caption)
-                                    .foregroundColor(preview.size > 50000 ? .red : .blue)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.black.opacity(0.1))
-                                    .cornerRadius(5)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(preview.size) Bytes ")
+                                        .font(.caption)
+                                        .foregroundColor(preview.size > 50000 ? .red : .blue)
+                                    if preview.size > 3072 && preview.isInline {
+                                        Text("Preview truncated to 3072 bytes")
+                                            .font(.caption2)
+                                            .foregroundColor(.orange)
+                                    }
+                                }
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.blue.opacity(0.1))
+                                .cornerRadius(5)
                             }
                             Spacer()
                             Button(action: {
@@ -105,6 +112,17 @@ struct HotDogWaterView: View {
                                     Text(item.count > 1 ? "\(item.message) x\(item.count)" : item.message)
                                         .font(.subheadline)
                                         .foregroundColor(item.color)
+                                    if let snippets = preview.focusedSnippets, index < snippets.count {
+                                        Text("Snippet:")
+                                            .font(.subheadline)
+                                            .foregroundColor(item.color)
+                                        Text(snippets[index])
+                                            .font(.system(.body, design: .monospaced))
+                                            .padding(4)
+                                            .background(Color(.tertiarySystemFill))
+                                            .cornerRadius(4)
+                                            .padding(.bottom, 6)
+                                    }
                                 }
 //                            }
                         }

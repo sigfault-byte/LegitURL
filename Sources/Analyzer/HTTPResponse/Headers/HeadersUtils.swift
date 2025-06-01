@@ -16,7 +16,7 @@ struct HeadersUtils {
                 // Assume server name + version leak
                 warnings.append(SecurityWarning(
                     message: "Server leaks name and version: \(serverHeader).",
-                    severity: .dangerous,
+                    severity: .suspicious,
                     penalty: PenaltySystem.Penalty.serverLeakNameAndVersion,
                     url: urlOrigin,
                     source: .header,

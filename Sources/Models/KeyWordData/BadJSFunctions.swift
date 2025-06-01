@@ -4,7 +4,8 @@
 //
 //  Created by Chief Hakka on 14/04/2025.
 //
-
+//TODO: refine restructure and think more about setter -> bad js logic
+//Dirty patch for fetch works for now
 import Foundation
 
 struct BadJSFunctions {

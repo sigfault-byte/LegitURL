@@ -60,15 +60,16 @@ struct ScriptToPreview {
         // Step 3: create preview
         for (i, decoded) in decodedStrings.enumerated() {
             let script = byteSlices[i].script
-            var findings = script.findings4UI?.map { (message, severity, pos) in (message: message, severity: severity, pos) } ?? []
+            let findings = script.findings4UI?.map { (message, severity, pos) in (message: message, severity: severity, pos) } ?? []
 
-            if script.origin == .inline && byteSlices[i].wasTruncated {
-                findings.append((
-                    message: "Truncated preview (3072 bytes)",
-                    severity: .info,
-                    pos: 0
-                ))
-            }
+            //Useless with the .size atrr
+//            if script.origin == .inline && byteSlices[i].wasTruncated {
+//                findings.append((
+//                    message: "Truncated preview (3072 bytes)",
+//                    severity: .info,
+//                    pos: 0
+//                ))
+//            }
             //MARK: LAST CRASH ON SCRIPT FOR CROSSORIGIN ATTR IN MODULE SCRIPT
             var snippets: [String] = []
             if let findings4UI = script.findings4UI {
