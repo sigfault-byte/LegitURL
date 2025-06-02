@@ -46,17 +46,17 @@
 | | |
 |---|---|
 | **Signals & Logs** | <img src="AppPreview/signals_details.PNG" alt="Signals and logs view showing coloured findings" width="400"> |
-| **Inline script findings** | <img src="AppPreview/script_details.png" alt="Inline script detail with extracted snippet of risky functions" width="400"> |
+| **Inline script findings** | <img src="AppPreview/script_details.PNG" alt="Inline script detail with extracted snippet of risky functions" width="400"> |
 
 <details>
 <summary>More screenshots</summary>
 
 | | |
 |---|---|
-| **Cookie view** | <img src="AppPreview/cookies_details.png" alt="Cookie detail with bit-flag severity pyramid" width="45%"> |
-| **CSP directives** | <img src="AppPreview/csp_details.png" alt="Content-Security-Policy directive list" width="45%"> |
-| **HTML report export** | <img src="AppPreview/html_report.png" alt="Preview of generated HTML security report" width="45%"> |
-| **LLM JSON export** | <img src="AppPreview/LLM_json_export.png" alt="Screen showing compact JSON export for LLMs" width="45%"> |
+| **Cookie view** | <img src="AppPreview/cookies_details.PNG" alt="Cookie detail with bit-flag severity pyramid" width="45%"> |
+| **CSP directives** | <img src="AppPreview/csp_details.PNG" alt="Content-Security-Policy directive list" width="45%"> |
+| **HTML report export** | <img src="AppPreview/html_report.PNG" alt="Preview of generated HTML security report" width="45%"> |
+| **LLM JSON export** | <img src="AppPreview/LLM_json_export.PNG" alt="Screen showing compact JSON export for LLMs" width="45%"> |
 
 </details>
 
