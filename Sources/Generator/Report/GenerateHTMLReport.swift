@@ -22,7 +22,13 @@ func generateHTML(from queue: URLQueue) -> String {
     
     let score = queue.legitScore.score
     let scoreClass = score < 40 ? "critical" : score < 70 ? "suspicious" : "ok"
+    
+    let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+    
     var html = """
+    
+    
     
     <!DOCTYPE html>
     <html>
@@ -175,7 +181,10 @@ func generateHTML(from queue: URLQueue) -> String {
     <body>
     <div class="container">
         <h1 class="report-title">LegitURL Report</h1>
-        <p class="report-date">Generated on \(formatter.string(from: Date()))</p>
+        <div class="report-date">
+            Generated on \(formatter.string(from: Date()))<br>
+            Version: \(version ?? "") / Build: \(build ?? "")
+        </div>
         <p class="report-disclaimer">This report uses heuristics.</p>
         <p class="report-disclaimer">A low score does not imply the URL is malicious, only that it lacks strong security hygiene.</p>
         <p class="report-disclaimer">This analysis is based on clean HTTP requests, made <strong>without query parameters or fragments</strong>, to simulate a first-time access.</p> 

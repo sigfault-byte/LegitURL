@@ -1,837 +1,351 @@
+# Technical Overview
 
-| Version | Status   | Notes               |
-|---------|----------|---------------------|
+| Version | Status | Notes |
+|---------|--------|-------|
 | 1.1.0   | *stable* | Current public release |
 
-> *LegitURL is a 100% on-device link scanner that evaluates trust based purely on technical behavior - with all analysis completed locally in under 2 seconds.*.  
-> *No cloud, no sign-ups, no tracking.*
+> **LegitURL is a 100 % on-device link scanner.**  
+> It rates trust purely from technical behaviour and finishes in < 2 s—no cloud, no sign-ups, no tracking.
 
-## LegitURL  
 ![Schema 2025-05-30](https://img.shields.io/badge/schema-2025--05--30-blue)
 
-## Performance Benchmarks (iPhone 16, iOS 18.4)
+## Performance benchmarks — iPhone 16 (-A18/ iOS 18.4)
 
-The following tests were run using `XCTestCase`, with live `GET` requests and full end-to-end HTML analysis (scripts, cookies, scoring, JSON export, findings):
+| Site | HTML | JS | Cookies | Findings | HTML parse | Total ⏱ | GET ⏱ |
+|------|------|----|---------|----------|------------|----------|--------|
+| stripe.com/ae | 2.05 MB | 8 | 1 | 10 | 26 ms | **1.76 s** | 1.71 s |
+| store.steampowered.com | 0.78 MB | 25 | 3 | 18 | 22 ms | **0.86 s** | 0.72 s |
+| societegenerale.com/fr | 0.08 MB | 68 | 3 | 16 | 15 ms | **1.52 s** | 0.88 s |
+| x.com | 0.26 MB | 41 | 6 | 43 | 36 ms | **0.72 s** | 0.63 s |
 
-| Site                      | HTML Size | Scripts | Cookies | Findings | HTML Parse ⏱ | Total Analysis ⏱ | GET Time 🐌 |
-|---------------------------|-----------|---------|---------|----------|----------------|-------------------|-------------|
-| `stripe.com/ae`           | 2.05 MB   | 8       | 1       | 10       | 25.64 ms       | 1.76 sec          | 1.71 sec    |
-| `store.steampowered.com`  | 0.78 MB   | 25      | 3       | 18       | 21.77 ms       | 0.86 sec          | 0.72 sec    |
-| `societegenerale.com/fr`  | 0.08 MB   | 68      | 3       | 16       | 14.69 ms       | 1.52 sec          | 0.88 sec    |
-| `x.com`                   | 0.26 MB   | 41      | 6       | 43       | 35.53 ms       | 0.72 sec          | 0.63 sec    |
+<sup>⏱ Times are wall-clock averages of three runs.</sup>
 
----
+### Notes
 
-### Notes:
-- **Total Analysis Time** includes Network Latency, HTML parsing, script and cookie analysis, CSP checks, score computation, and JSON report generation.
-- **GET Time** reflects network latency only not internal logic.
-- LegitURL completes full analysis in **well under 2 seconds**, even on complex pages.
-- Inline scripts are fully analyzed in memory; external scripts are **not yet fetched**.
+* **Total analysis** = network latency + HTML parse + script/cookie/CSP checks + scoring + **human-report formatting & JSON export**.
+* **GET ⏱** shows network latency only, not internal logic.  
+* Inline scripts are fully parsed in memory; external scripts are analysed via their `src` attribute (no extra fetch yet).
 
-> **These results are reproducible.**  
-> Run `testAnalysisEngine_PerformanceForSimpleURL` from `LegitURLTests.swift` in **Xcode debug mode** to observe raw timings, findings, script counts, and cookie extraction in the console.  
-> No mocking — each test performs a real HTTP GET followed by full pipeline analysis.
-
-## TECHNICAL_OVERVIEW.md  
-
-- [1. Who is LegitURL for?](#1-who-is-legiturl-for?)
-- [2. How it works](#2-how-it-works)
-- [3. Scoring system](#3-scoring-system)
-- [4. Core detection features & heuristics](#4-core-detection--heuristics)
-
-- [6. LLM Exploration and prompt strategy] (#6-llm-exploration-and-prompt-strategy)
-- [7. Example use case](#6-example-use-case)
-- [8. Why LegitURL exists](#8-why-legiturl-exists)
-- [9. Contact & License](#9-contact--license)
-
-
-**LegitURL is a privacy-focused iOS app** that helps you:  
-- **Spot scams** (e.g., `secure-paypal-login.com`)  
-- **Avoid trackers** (shady redirects, invasive cookies)  
-- **Inspect security** (TLS certs, headers, scripts)  
-
-It uses strict, transparent heuristics to compute a **Legitimacy Score**, based entirely on how the site behaves.
-
-LegitURL analyzes all signals **blindly** — it doesn’t care if the domain is famous or obscure.  
-It only cares whether the site **demonstrates a commitment to security and quality**,  
-or whether the URL shows signs of deception, like **lookalike domains** or **scam indicators**.
-
-## 1. Who is LegitURL for?
-
-Most people can’t tell if a link is safe — especially when it’s shortened, disguised, or came from an unknown source.  
-Browsers rarely warn you unless a page is *blatantly* malicious.
-
-**LegitURL gives you a second opinion before you click.**
-
-Its core audience is anyone who asks:  
-> *"Can I trust this link I just found in a message, an ad, or an email?"*
-
-**Ideal for:**  
-- Casual users who want a fast safety check  
-- Privacy-conscious users 
-- Developers inspecting headers, CSP, and TLS
-
-LegitURL checks both:  
-- The **structure of the URL** (to catch scams like `secure-paypal-login.com`)  
-- The **behavior of the site** (headers, cookies, redirects, TLS certs, and more)
-
-The original idea was simple: follow a link and show where it leads.  
-But that wasn’t enough — real analysis required deeper inspection.
-
-So the app grew into something more technical, now offering:  
-- Full URL decomposition  
-- HTTP header inspection  
-- TLS certificate analysis  
-- Cookie behavior scoring  
-- Content-Security-Policy (CSP) evaluation  
-- Inline script extraction (from a single, minimal GET request)
-
-All done **without exposing any user-identifying information**.
-
-## 2. How it works
-
-Users can paste, type, or scan a QR code to input a URL.  
-With a single tap, they receive a **Legitimacy Score**, displayed as:  
-🟩 Green, 🟧 Orange, or 🟥 Red.
-
-The app analyzes each URL in **two phases**:
+> **Reproduce it:** run `` `testAnalysisEngine_PerformanceForSimpleURL()` `` in **LegitURLTests.swift** (Xcode Debug). Each run performs an actual HTTPS GET and full pipeline analysis—no mocks.
 
 ---
 
-### 1. Offline inspection
+## 1 · Overview
 
-LegitURL dissects the full URL structure — including domain, subdomains, path, query parameters, fragment and flags:
+### 1.1 . Queue & dissect
+* The entered URL is queued, split into domain / sub-domains / path / query / fragment.
+* Domain is normalised to Punycode.
+* Each part is scanned for brand-spoofs, typos, high entropy, and encoded blobs (Base64, %-encoding, etc.).
 
-- Brand impersonation (e.g. secure-paypal-login.com)
-- Scam keywords and look-alike tricks
-- Encoded or nested URLs/UUIDs
-- High-entropy or non dictionary tokens
-- Suspicious punctuation or mixed‑script formatting
+### 1.2 . One clean GET
+* LegitURL fires a single HTTPS GET with a vanilla iOS User-Agent and no query-string.
+* Any redirect target is pushed back into the same queue, so every hop is inspected in turn.
 
----
+### 1.3 . Signal sweep
+* TLS chain -> age, SAN match, issuer.
+* Headers -> CSP, HSTS, Referrer-Policy, leaks.
+* Cookies -> flags, entropy, redirect phase.
+* HTML & inline JS -> structure, risky patterns, nonce/hash ties.
 
-### 2. Online behavior analysis
+## 2 · How LegitURL Works
 
+LegitURL scores a link solely from its technical behaviour.   
+It dissects the URL offline, then performs one sandboxed GET to capture TLS, headers, cookies, HTML, and scripts.  
+Deterministic heuristics award or deduct points; a bit-flag engine escalates dangerous combinations.    
+Reputation is ignored—only concrete signals matter.  
+The result: a transparent 🟩/🟧/🟥 verdict and a fully-traceable findings log.
 
-A **single sandboxed HTTPS GET** is sent to the *core* URL  
-(query parameters and fragments are removed).
+> The pipeline ends by rendering two outputs:  
+> • a human-readable HTML/PDF report (one page per hop), and  
+> • a compact JSON blob primed for LLM analysis.  
+> See [§ 3.6 Export & LLM Integration](#3.6-export-llm-integration-and-prompt-strategy) for format details.
 
-Captured signals:
+```mermaid
+flowchart TD
+  A[Paste / Scan URL] --> B[Offline parse & decode]
+  B -->|critical hit| V[Verdict 🟥]
+  B -->|no critical| C[Single HTTPS GET]
 
-- **Response headers**
-- **TLS certificate**
-- **Cookies** (parsed & scored)
-- **HTML body** – fully parsed; *UI display* capped at 1.2 MB
-- **Inline scripts** – fully parsed; *UI display* capped at 3 KB per block
+  C --> D[TLS]
+  C --> E[Headers / CSP]
+  C --> F[Cookies]
+  C --> G[HTML & inline JS]
 
-If the request triggers redirects, **every hop re‑enters phase 1**, enabling detection of:
+  D --> H[Detection Engine]
+  E --> H
+  F --> H
+  G --> H
 
-- Tracking or affiliate chains
-- Phishing “hop‑by‑hop” scams
-- Security downgrades
-- Silent server‑side rewrites (no `Location` header)
+  H --> I[Score & bit-flags]
+  H --> K[If New URL detected]
+  K --> B
 
-> No assumptions, no shortcuts — every step is verified on‑device with **zero user data leaked**.
+  I --> V
+  V --> R[HTML / PDF report]
+  V --> J[LLM-ready JSON]   
+```
 
----
+## 3 · Detection Engine
 
+LegitURL inspects every layer, from raw URL to inline JS, to surface deterministic, explainable signals.
 
-### Bonus tools
+### Compact reference sets
+* **Scam keywords / homoglyphs**
+* **Brand whitelist**
+* **Suspicious TLDs / infra**
+* **Risky JS APIs**
 
-- **Custom watchlists** for domains, keywords, or brands  
-- A built‑in **glossary** of headers, TLS, and security terms
+All bundled offline; users can extend keywords and brand.
 
----
+### Impersonation & obfuscation
+* **Levenshtein + n-gram** catch typos (`gooogle.com`) and brand hijacks in sub-domains/paths.  
+* Entropy + decoding Base64 / `%`-encoded blobs in path and queries / fragments.
 
-### 3. Export LLM Integration and Prompt Strategy
+### Five-layer rule grid
 
-To simplify explanations for non-technical users — and empower curious users to dig deeper — LegitURL includes built-in JSON export support for LLM interpretation.
+| Layer | Focus |
+|-------|-------|
+| 1 | **URL pieces** – host, path, query |
+| 2 | **TLS** – CN/SAN, chain, age |
+| 3 | **Headers** – CSP, HSTS, leaks |
+| 4 | **Cookies** – size, entropy, flags |
+| 5 | **HTML / JS** – tag mix, risky calls |
 
-### JSON Format
-The exported structure uses `KeyValuePairs` with zero-padded prefixes (e.g. `04a_`, `04b_`) to preserve the intended logical and visual ordering, even after serialization. These prefixes are removed post-serialization to ensure clean input for models.
+Each rule gives a **point delta** and, when critical, sets a **bit-flag**.  
+Flags accumulate across redirect hops to expose compound risks.
 
-This allows large models to follow the reasoning structure as if reading annotated pseudo-code.
+### Context-aware weighting
 
-- Two modes exist:
-  - `brief`: Summary-focused, optimized for short outputs
-  - `full`: Includes domain breakdown, cookies, TLS details, headers, script findings, and inline snippets around suspicious functions or accessors
+| Example | Heavier penalty |
+|---------|-----------------|
+| Tracking cookie on **3xx** vs **200** | **3xx** (redirect tracking) |
+| Brand term in foreign host | Non-brand domain |
 
-> **Note:** Brief mode uses fewer tokens. The app estimates token usage by dividing the byte size by 4 and shows the result to the user.
+### INFO-only notes
 
-The JSON contains:
-- A `priming` key to steer model behavior
-- A `findings_summary` block flattened into discrete `signal` entries
-- Both avoid specifying a score or penalty severity — leaving the model free to reason based on observed patterns
-- Full technical data grouped and ordered for token efficiency
+Low-risk facts (fresh DV cert, tiny cookie, benign internal redirect) log as **INFO**—no score hit unless paired with other flags.
 
-### Copy-to-Model Flow
+### 3.1 URL & Encoding
 
-Users can copy either:
-- A single "Explain this finding" JSON snippet
-- The full structured report
+LegitURL inspects every link **locally—before any network traffic**.  
+If a *critical* offline signal appears, the online phase is skipped.
 
-### Example That Worked Exceptionally Well
+#### Split & scan
 
-One real-world example involved the domain `portal-finance.net`:
+The URL is split into **domain · sub-domains · path · query · fragment**.  
+Each part is checked for:
 
-- The model correctly:
-  - Flagged the domain as **visually and phonetically similar to “binance”**, using the app’s Levenshtein and n-gram results
-  - Identified the external file `/hidden/payload.js` as suspicious due to its naming  
-    - **This is exactly what LegitURL was designed to highlight** — the model connected filename patterns to real threats
-  - Noted the absence of CSP, HSTS, and SRI headers
-  - Connected the TLS issue date (same-day issuance) to likely phishing deployment
-
-All without relying on brand blocklists — purely via behavioral pattern recognition.
-
-> This confirmed that the combination of exported JSON + well-primed instructions can enable GPT-4o, Gemini, Claude or DeepSeek to produce a strong, accurate risk explanation from raw technical input. While the priming is still refined manually, the balance between guiding and overconstraining the model remains a key challenge.  
->
-> The model’s ability to leverage background knowledge is exceptionally powerful. Prior attempts to detect such threats relied on static brand lists, dictionary lookups, or entropy checks — all of which struggled against infinite variations. This new pipeline offers a more flexible and adaptive path forward.  
->
-> As of now, LegitURL measures JSON export efficiency not only by minimizing token size (still a work in progress), but also by evaluating the **cognitive load** placed on the model,that is, how easily it can extract structure, identify key signals, and reason across findings.  
->
-> **LegitURL remains a fully offline local tool**, but this JSON export adds a new layer: enabling models to provide meaningful insight without deep technical parsing. Suspicious inline script snippets are extracted, structured, and passed in clean blocks — letting models focus on interpretation, not AST traversal.
-
-<details>
-<summary>Click to view anthropic's Claude (Sonnet 4) output from just pasting the JSON</summary>
-
-Looking at the technical behavior of portal-finance.net, I see several concerning signals that suggest this site should be approached with extreme caution.
-
-## Critical Red Flags
-
-**Domain Impersonation**: The domain "portal-finance.net" appears designed to mimic Binance, one of the world's largest cryptocurrency exchanges. The analysis shows "FINANCE" has a Levenshtein distance of only 1 from "binance" and 71% structural similarity. This is a classic impersonation tactic used by scammers to trick users into thinking they're visiting a legitimate financial platform.
-
-**Brand New Certificate**: The TLS certificate was issued just yesterday (May 29, 2025) - literally 0 days old when tested. Legitimate financial services don't typically launch with same-day certificates. This suggests the site was created very recently, which is common with scam operations that get shut down and recreate quickly.
-
-**Suspicious Script Loading**: The site loads an external script from a relative path `./assets/hidden/payload.js` - the name "payload" combined with being in a "hidden" directory is highly suspicious. Legitimate sites don't typically name their JavaScript files "payload" or hide them in directories with such obvious names. This could contain malicious code.
-
-## Security Hygiene Issues
-
-The site exhibits poor security practices across multiple areas:
-
-- **Missing Security Headers**: No Content Security Policy, X-Content-Type-Options, Referrer-Policy, or HSTS headers. This creates vulnerabilities and suggests the operators don't follow security best practices.
-- **No Script Integrity**: External scripts lack Subresource Integrity (SRI) hashes, meaning if the jQuery CDN or the local server were compromised, malicious code could be injected.
-- **Aggressive Caching Prevention**: The "no-store" cache control header prevents any caching, which while not inherently malicious, is unusual for static content and could indicate frequently changing content.
-
-## Behavioral Context
-
-The inline JavaScript appears benign (clipboard copying functionality), but this could be a facade. The real concern is the external "payload.js" script that wasn't analyzed but has a highly suspicious name and location.
-
-## Trust Assessment
-
-This combination of signals - domain impersonation of a major crypto exchange, same-day certificate issuance, suspicious script naming, and poor security hygiene - creates a pattern consistent with cryptocurrency scam sites. These operations typically create convincing-looking finance portals to steal login credentials or crypto wallet information.
-
-A cautious user should avoid this site entirely. The technical behavior suggests it was hastily constructed to impersonate Binance, likely for fraudulent purposes. The risks far outweigh any potential legitimate use case.​​​​​​​​​​​​​​​​
-
-</details>
-
-## 3.1 Valid input
-
-Only URLs that use **HTTPS (`https://`)** are analysed, mirroring Apple’s `URLSession` policy.  
-Schemes such as `ftp://`, `ssh://`, or `file://` are **not supported**.
-
-If the scheme is omitted, LegitURL **assumes `https://`**.  
-Plain‑HTTP (`http://`) links are considered unsafe and are **flagged without any network request**.
-
----
-
-## 3.2 URL‑components analysis  
-
-LegitURL inspects a link **locally, before any network traffic**.  
-If a *critical* offline signal is found, the online phase is skipped.
-
-The URL is split into five parts: **domain, subdomains, path, query, fragment** and each part is scanned for:
-
-- Brand impersonation
-- Scam patterns
-- Obfuscation techniques
-- Embedded tracking infrastructure
-
-### Checks per component  
-
-| Signal type | Examples |
-|-------------|----------|
-| **Brand impersonation** | `secure-paypal-login.com` |
-| **Look‑alike tricks** | Mixed scripts (Cyrillic + Latin), homoglyphs |
-| **Scam keywords** | `account‑verify`, `login‑secure`, etc. |
-| **Encoded artefacts** | Hidden e‑mails, UUIDs, nested URLs |
+| Signal | Example |
+|--------|---------|
+| **Brand spoof** | `secure-paypal-login.com` |
+| **Look-alike** | Cyrillic + Latin mix, homoglyphs |
+| **Scam words** | `account-verify`, `login-secure` |
+| **Encoded blobs** | hidden emails, UUIDs, nested URLs |
 
 **Weighting**
 
-- **Domains & subdomains** carry the highest weight.  
-- **Path & fragment** add behavioural context.  
-- **Query values** are decoded *recursively* by a custom decoder.
+* Domain + sub-domains » highest score impact  
+* Path + fragment » behavioural context  
+* Query values -> recursively decoded by **Lamai** (custom decoder)
+
+#### Technical pipeline
+
+| Step | Purpose |
+|------|---------|
+| **PSL + URLComponents** | Accurate domain vs. sub-domain split |
+| **Punycode normalisation** | ASCII comparison for IDNs |
+| **Tokenise on `_`/`-`** | Expose embedded words |
+| **Mixed-script check** | Flags Cyrillic/Latin blends |
+
+#### Spoof & entropy heuristics
+
+* **Levenshtein ≤ 1** → typo-squats  
+* **2-gram score** → brand smushing (`pay‐paI`)  
+* **System dictionary** → confirm real words  
+* **Shannon entropy** → flag random strings
+
+#### Path / query / fragment drill-down
+
+1. **Recursive decode** – Base64, `%`, Unicode escapes  
+2. **Structure scan** – emails, IPs, UUIDs, nested URLs  
+3. **Re-queue** any decoded URL (depth ≤ 5)
+
+> *Pruning:* branches that resolve to high-entropy noise are cut early to avoid decoding depth bombs.
+
+### 3.2 TLS Analysis  
+
+LegitURL parses the full X.509 chain **after** `URLSession` trust.  
+It layers deterministic heuristics on top—no extra network calls.
+
+| Check | What we inspect | Risk signal |
+|-------|-----------------|-------------|
+| **Age window** | *New* < 7 days • *Stale* > 13 months. | Fresh DV + weak headers ⇒ throw **orange**; stale cert ⇒ **maintenance doubts**. |
+| **CA policy** | DV / OV / EV via policy OID. | + pts for EV/OV; neutral for DV unless combined with other flags. |
+| **SAN coverage** | Wildcard vs. enumerated FQDNs; unrelated hosts count. | > 25 mixed SANs without wildcard ⇒ common in burner infra. |
+
+> **Why not custom trust?**  
+> Apple rejects apps that bypass `URLSession` PKI. LegitURL therefore accepts system trust.
+
+#### System-trust blind spots
+
+`URLSession` only says “handshake failed,” never *why* (missing leaf, bad chain, untrusted root).  
+LegitURL treats any such failure as **critical** and stops further online checks.
+
+### 3.3 Header & Content-Security-Policy
+
+LegitURL treats CSP as the front line of client-side defence.  
+Rules fire in this order:
+
+| Goal | Rule | Score impact |
+|------|------|--------------|
+| **Presence** | No `Content-Security-Policy` header | **Heavy penalty** |
+| | Only `…Report-Only` present | Heavy penalty, but still parsed |
+| **Syntax** | Header must end with `;` | Auto-append if missing (INFO) |
+| | Split directives on `;` → build map | — |
+| **Mandatory source** | `script-src` missing → fall back to `default-src` → if both absent, check `require-trusted-types-for 'script'` | Treat as **incomplete CSP** (same weight as missing) |
+| **Bit-flags** | Directive/value combos mapped to flags (`UNSAFE_INLINE`, `UNSAFE_EVAL`, `STRICT_DYNAMIC`, …) | Flags feed scorer |
+| **Inline nonce / ext-origin match** | Inline-script nonce or SHA must match `script-src`; external script host must be in allow-list | Mismatch ⇒ penalty • Correct nonce/SHA ⇒ bonus |
+
+> A strict CSP won’t stop every attack, but it **shrinks the attack surface**.  
+> When a header is absent or weak, LegitURL proposes a *sample `script-src` directive*:  
+> * hashes for ≤ 5 inline scripts, explicit hosts for external scripts, and `nonce-***` guidance when inline count > 5.  
+> This example is advisory; heavy, dynamic sites will need additional tuning.
 
 ---
 
-### Technical details
+#### Other security headers
 
-- Domains are parsed with Apple’s **`URLComponents`** plus the **Mozilla Public Suffix List (PSL)**.  
-- **IDNA (Punycode) normalisation** ensures internationalised domains resolve to ASCII for comparison.  
-- Hyphens (`-`) and underscores (`_`) are optionally **tokenised** to expose embedded words.  
-- **Mixed‑script detection** flags character‑set blends (e.g. Cyrillic + Latin).
+| Header | Check | Expected / Penalty |
+|--------|-------|--------------------|
+| `Strict-Transport-Security` | Present + `max-age` ≥ 31536000 + `includeSubDomains` | Missing or short age ⇒ penalty |
+| `X-Content-Type-Options` | Value | Must be `nosniff` |
+| `Referrer-Policy` | Value | `strict-origin` or stricter |
+| `Permissions-Policy` | Scans for dangerous features (`camera`, `microphone`, `geolocation`…) | Wildcards ⇒ warning |
+| `Server` / `X-Powered-By` | Version leakage (`apache/2.4`, `php/8.2`) | **INFO** if header present but no version • **Suspicious** if version leaks |
 
-**Brand‑spoofing & high‑entropy detection**
+### 3.4 Cookies
 
-- **Levenshtein distance = 1** for typo‑based similarity.  
-- **2‑gram similarity** as a fallback pattern match.  
-- **iOS dictionary look‑ups** to confirm real‑word tokens.  
-- **Shannon‑entropy fallback** catches random or machine‑generated strings.
+Every `HTTPCookie` is reduced to a **bit-flag bundle**:
 
-**Path, query, and fragment analysis**
+| Flag | Trigger |
+|------|---------|
+| `httpOnly`          | `HttpOnly` present |
+| `secure`            | `Secure` present |
+| `persistent`        | Expires > 30 days |
+| `smallValue`        | Value < 16 B |
+| `largeValue`        | Value > 64 B |
+| `highEntropyValue`  | Shannon > 3.5 bits/char |
+| `setOnRedirect`     | Arrives on 3xx / 4xx / 5xx |
+| `sameSiteNone`      | `SameSite=None` |
+| `sameSiteMissing`   | Attribute absent *(not defaulted to `Lax`)* |
 
-1. **Decode recursively** — Base64, percent‑encode, Unicode escapes, etc.  
-2. **Scan for structures**  
-   - Email addresses, IPs, UUIDs, nested URLs  
-   - Scam phrases, obfuscated tokens  
-3. Any decoded value that looks like a URL is **fed back into the full offline inspection** (max depth 5).
+> **Why treat missing `SameSite` as risky?**  
+> 1. Mobile tracking kits still rely on no-`SameSite` for cross-site POST redirects.  
+> 2. Silent browser defaults hide developer intent; explicit ≥ implicit.  
+> 3. `URLSession` flattens duplicate `Set-Cookie` headers, making detection brittle—LegitURL errs on caution.
 
-> **Note:** Only the first decoding branch that produces a *meaningful* token continues; high‑entropy leaves are pruned early to avoid depth bombs. 
+#### Flag → penalty matrix
 
-## 3.3 Response analysis
+| Flags raised | Score impact |
+|--------------|-------------|
+| `smallValue` + low entropy | **Ignored** — likely benign session ID |
+| `httpOnly` only            | Minor (CSRF-related, but low risk for read-only scan) |
+| `largeValue` + `highEntropyValue` | **Tracking** — strong penalty |
+| Any flag on a **3xx** hop  | Additional penalty (redirect tracking) |
 
-After the offline pass, LegitURL fires **one sandboxed HTTPS GET** to the *core* URL  
-(query and fragment are already stripped).
+> LegitURL simulates a first-visit GET: **no** existing cookies, **no** query params.  
+> Any cookie set pre-consent (e.g., RGPD banners) is therefore visible.  
+> Scoring weights may evolve as privacy regulations and browser defaults change.
 
-### What is captured
+### 3.5 HTML & JavaScript
 
-- **Status code** – maps 2xx/3xx/4xx/5xx into heuristic buckets  
-- **Redirect target** – `Location` header *and* silent server‑side rewrites  
-- **TLS certificate chain** – CN/SAN match, validity dates, issuer, age  
-- **Response headers** – CSP, HSTS, Referrer‑Policy, leakage fields, etc.  
-- **Cookies** – every `Set‑Cookie` parsed and flagged by the cookie engine  
-- **Body & inline scripts** – script are fully tokenised (UI display capped)
+The full body is tokenised on-device; the UI shows only the first **1.2 MB** of HTML and **3 KB** per inline block, but scoring uses the entire stream.
 
-### Probe constraints (privacy guarantees)
+| Stage | What we do | Risk signal |
+|-------|------------|-------------|
+| **1. Boundary scan** | Test first / last ± 500 B for `<html>` & `</html>`. | Missing open ⇒ **critical** (non-HTML) • Missing close ⇒ moderate |
+| **2. Tag discovery** | Single-pass “< byte” lexer finds `<head>`, `<body>`, `<script>`, and closers. | — |
+| **3. Head checks** | Look for `<meta http-equiv="Content-Security-Policy">`. | Extra CSP here vs. header ⇒ **inconsistency** (warning) |
+| **4. Script block parse** | Extract `nonce=`, `src=`, `integrity=`, `type=`. Log CORS attrs. | Non-matching nonce/SHA ⇒ penalty • SRI present ⇒ bonus |
+| **5. Origin class** | Map each `src` to `'self'`, 3rd-party, protocol-relative, `data:`. | 3rd-party script on site with weak CSP ⇒ penalty |
+| **6. Byte-wise JS scan** | Inline code concatenated, then regex-light scan around `(` and `.` tokens. | — |
+| **7. Risk patterns** | Match against **risky API list** (`eval`, `atob`, `document.write`, …) and flagged pairings (e.g. `getElementById` → `.submit()`). | Each match adds a per-API delta; paired patterns add combo flag |
 
-| Guardrail | Purpose |
-|-----------|---------|
-| **Ephemeral `URLSession`** | No cookies or local storage sent |
-| **Default iOS User‑Agent, no extra headers** | Mimics a real browser while avoiding fingerprint noise |
-| **Single connection, 10 s timeout** | Prevents long‑poll DoS; no session reuse |
-| **No personal identifiers** | Nothing user‑specific leaves the device |
+### 3.6 Export & LLM Integration
 
-> Result: a reproducible “first‑impression” snapshot of the server’s behaviour, captured without leaking user data or following unbounded redirect chains.
+LegitURL turns its findings into two ready-to-share artefacts:
 
----
+| Output | Format | Purpose |
+|--------|--------|---------|
+| **Human report** | HTML / PDF, one page per hop | Shareable for audits or incident tickets |
+| **Machine bundle** | Compact JSON | Feed directly to GPT-4, Claude, etc. |
 
-### Technical Details
+#### JSON schema
 
-LegitURL makes one **sandboxed HTTPS GET** that mimics a first‑time visit:
+* Stored as `KeyValuePairs` → preserves ordering, zero-padded keys (`04a_`, `04b_`)  
+* All prefixes stripped **after** serialisation → models see clean keys  
+* Two size profiles:  
+  * `brief` – topline verdict + key signals (token-friendly)  
+  * `full`  – domain breakdown, cookies, TLS, headers, scripts, inline snippets
 
-<details>
-<summary>Click to view request code (Swift)</summary>
+* No penalty values are embedded — the LLM is free to reason from raw signals.
 
-```swift
-// Create a URLRequest for the URL.
-var request = URLRequest(url: url)
-request.httpMethod = "GET"
-request.setValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", forHTTPHeaderField: "User-Agent")
-request.setValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
-request.setValue("gzip, deflate, br", forHTTPHeaderField: "Accept-Encoding")
-request.timeoutInterval = 10
+> Token hint:  
+> LegitURL estimates cost by byte-length ÷ 4. A banner warns if export > 8 k tokens (~32 KB).  
 
-// Configure a dedicated URLSession for this request.
-let config = URLSessionConfiguration.default
-config.requestCachePolicy = .reloadIgnoringLocalCacheData
-config.httpCookieStorage = nil
-config.urlCache = nil
-config.httpShouldSetCookies = false
-config.httpShouldUsePipelining = false
-config.httpMaximumConnectionsPerHost = 1
-config.timeoutIntervalForRequest = 10
-config.timeoutIntervalForResource = 15
-config.httpCookieAcceptPolicy = .never
-```
-</details>
+| Action | ClipBoard Content |
+|--------|--------|
+| **Explain Finding** | Minimal JSON for the selected signal |
+| **Full Report** | Full schema block |
 
-#### Request parameters
+* *Exploration note - the ChatGPT iOS app currently exposes no share‑sheet hook for pre‑filled content in JSON, so this feature is on hold.*
 
-- **HTTPS‑only** — query‑string & fragment removed  
-- **10 s timeout** — protects against slow‑loris / hung hosts
+## 4 · Scoring & Bit-Flag Model
 
-#### Redirect handling
+Analysis starts at **100 points** once the first request is queued.  
+As LegitURL follows the entire redirect chain, every hop can deduct points from this single running total.
 
-- **3xx codes captured, not auto‑followed**  
-- **External vs internal hops** recorded for scoring  
-- **Missing `Location` header** → flagged as a *silent rewrite*
-
-#### Captured artefacts  -->  analysis layer
-
-| Artefact | Used for … |
-|----------|------------|
-| **Response headers** | CSP, HSTS, leakage, redirect classification |
-| **TLS certificate** | CN / SAN match, age, issuer, chain completeness |
-| **`Set‑Cookie` headers** | Cookie engine – size, entropy, SameSite, Secure |
-| **HTML body** <br>*full parse&nbsp;· UI shows 1.2 MB* | Tag balance, script density, malformed markup |
-| **Inline scripts** <br>*full parse&nbsp;· UI shows 3 KB* | JS risk patterns, nonce/hash extraction |
-
-If a redirect is detected, the **destination URL re‑enters phase 1** and runs through the entire offline → online cycle again (depth‑ and timeout‑guarded).
-
-### TLS certificate analysis
-
-| Check | Why it matters |
-|-------|----------------|
-| **Site domain in SAN list** | Confirms the certificate actually covers the requested host. |
-| **Validity window** | Flags *expired* certs and *over‑long* (> 13 months) or *ultra‑short* (< 7 days) DV lifetimes. |
-| **Complete, trusted CA chain** | Detects missing intermediates or untrusted roots. |
-| **Self‑signed leaf** | Outside dev/test, almost always signals risk. |
-| **Freshness heuristic** | Newly issued DV certs (< 7 days) are common in throw‑away phishing infra. |
-| **Flooded SAN list** | 25 + unrelated FQDNs without wildcards → pattern typical of large‑scale DV abuse. |
-
-*Notes:*  
-* EV/OV/DV **type is recorded but not penalised by itself**; DV only becomes a factor when combined with other weak signals (e.g., fresh issue + flooded SAN).  
-* Wildcards (`*.example.com`) are **not** counted toward the “flooded” threshold; legitimate orgs often use a single wildcard for sub‑properties.  
-* If URLSession’s strict validation fails, LegitURL treats the handshake failure as **critical**, regardless of the specific CA reason Apple reports.
-
----
-
-### Cookie analysis
-
-| Rule | Rationale |
-|------|-----------|
-| **Set on non‑200 response → suspect** | Legit sites rarely set state before final content is served. |
-| **Attribute audit** | Each `Set‑Cookie` is parsed for:<br>• size & Shannon entropy<br>• `Secure`, `HttpOnly`, `SameSite` flags |
-| **SameSite≠assumed** | LegitURL **does not default missing `SameSite` to `Lax`**:<br>1. iOS API can’t tell if it was omitted.<br>2. Security should be explicit, not browser‑inferred. |
-| **Redirect‑phase cookies** | Cookies issued during any `3xx` hop incur a higher penalty than those on the final `200`. |
-
-*Implementation notes*  
-* Duplicate cookies encountered later in the redirect chain are **recorded but not penalised again** (prevents score inflation).  
-
----
-
-### HTML body analysis
-
-*Triggered only when the server returns **200 OK** with `Content‑Type: text/html`.*
-
-| Check | Purpose |
-|-------|---------|
-| **Document skeleton** – `<html>`, `<head>`, `<body>` present | Flags broken or deliberately obfuscated markup |
-| **Malformed `<script>` tags** | Detects truncated / malformed scripts |
-| **Script‑to‑content ratio** | High JS density often correlates with cloaking or ad‑tech |
-| **Inline + external script density** (per 1 kB) | Normalises page size differences |
-| **Suspicious JS patterns** | • *Setters*: `eval`, `Function`, `atob`<br>• *Accessors*: `document.cookie`, `sessionStorage`, `WebAssembly`<br>• *Risky pairings*: `getElementById` + `.submit()` etc. |
-
-Additional data captured for cross‑checks:
-
-| Stored for… | Used in… |
-|-------------|---------|
-| **Inline script `nonce` values** | CSP nonce‑matching |
-| **External script URLs** | CSP `script‑src` origin matching |
-| **`integrity="sha…"` hashes** | SRI presence (shown; not yet verified) |
-| **Extracted SHA‑256 of inline blocks** | Future SRI self‑check roadmap |
-
-> **Note** – SRI hashes and script SHA‑256 values are **displayed to the user** but *not* cryptographically verified yet; asynchronous hashing is on the roadmap.
-
-All body parsing runs on‑device; only the first **1.2 MB** of HTML and **3 KB** per inline script are rendered in the UI, but the full content is tokenised for heuristics.
-
----
-
-### Header analysis
-
-#### Content‑Security‑Policy (CSP)
-
-| Rule | Impact |
-|------|--------|
-| **CSP header missing** | Heavy penalty, no client‑side code guard in place |
-| Must include **`script-src`, `default-src`, or `require-trusted-types-for`** | Without one of these, script execution is effectively unrestricted |
-| **`unsafe-eval`** present | High‑risk: enables runtime code generation |
-| **`unsafe-inline`** present *and* no `'strict-dynamic'` + nonce/hash | High‑risk: allows arbitrary inline scripts |
-| **Nonce mismatch** between header and inline `<script>` | Indicates policy is ineffective or stale |
-| **Unused / unrelated `script-src` origins** | Signals overly broad allow‑list; flagged as weak hygiene |
-
-*Implementation notes*
-
-* Only the values of **`script-src`** and **`default-src`** are scored today.  
-  All other directives are still parsed so future rules won’t miss them.  
-* If `'strict-dynamic'` is present **and** every inline block carries a valid nonce/hash, the penalty for `'unsafe-inline'` is *downgraded* (legacy‑browser shim).
-
----
-
-#### Other security headers checked
-
-| Header | What LegitURL looks for |
-|--------|-------------------------|
-| **`Strict-Transport-Security`** | Presence, `max-age` ≥ 1 year, `includeSubDomains` |
-| **`Content-Type`** | Correct MIME for returned body |
-| **`X-Content-Type-Options`** | Must be `nosniff` |
-| **`Referrer-Policy`** | At least `strict-origin` or stricter |
-| **`Server`, `X-Powered-By`, …** | Excessive stack leakage results in minor penalty |
-
-Headers are evaluated only on **200 OK** responses; redirects are assessed separately in the redirect‑handling logic.
-
-## 3.4 Output
-
-### Traffic‑light verdict
-
-| Colour | Meaning | When to worry |
-|--------|---------|---------------|
-| 🟥 **Red – Unsafe** | Multiple critical findings (weak TLS, missing CSP, scam keywords, etc.). | Treat as hostile unless you fully trust the sender. |
-| 🟧 **Orange – Suspicious** | Mixed signals: decent setup but notable hygiene gaps (e.g., tracking cookies on redirects, `unsafe-inline`). | Acceptable for known brands; be cautious with unknown sites. |
-| 🟩 **Green – Safe** | Strong security posture: clean redirects, correct headers, trusted cert. | Still not bullet‑proof, but shows clear effort to protect users. |
-
-*Red does **not** always equal confirmed phishing; it means the site relies on browser leniency or omits basic protections.*
-
----
-
-### Detailed breakdown (advanced view)
-
-| Data pane | What you get |
-|-----------|--------------|
-| **URL components** | Parsed domain, subdomain, path, query, fragment |
-| **Findings & logs** | Full list of heuristics and penalties |
-| **HTTP headers** | Raw + annotated view |
-| **CSP policy** | Directive table |
-| **Cookies** | Flag level, attributes, entropy |
-| **Certificate** | CN/SAN list, issuer, validity, chain notes |
-| **HTML body** | First 1.2 MB |
-| **Inline JS** | First 3 KB per block, risk highlights, can be copy |
-
-## 4. Scoring system
-
-Each **redirect chain** starts at **100 points**.  
-Penalties are applied per URL *and* for patterns that emerge across hops  
-
-### Individual penalty examples
+### Individual penalty examples
 
 | Signal | Typical hit |
 |--------|-------------|
-| Scam keyword in subdomain | −20 |
-| Watch‑list brand misuse in subdomain | −25 |
-| High‑entropy / obfuscated path | −10 |
-| Dangerous JavaScript pattern | -30 |
-| Fresh DV certificate (< 7 d) | −10 |
+| Scam keyword in sub-domain | −20 |
+| Watch-list brand misuse in sub-domain | −25 |
+| High-entropy / obfuscated path | −10 |
+| Dangerous JavaScript pattern | −30 |
+| Fresh DV certificate (< 7 d) | −10 |
 | Tracking cookie on 3xx | −15 |
-| CSP missing or no `script-src`, `defautl-src` or `require-trusted-type` | −50 |
+| CSP missing or no `script-src`, `default-src`, or `require-trusted-types-for 'script'` | −50 |
 
 *Weights are versioned and will evolve.*
 
-#### Context matters
+#### Context matters
 
 | Same signal, different context | Result |
 |--------------------------------|--------|
-| `applepie.com` vs `secure-apple.com` | Only the second triggers **brand‑spoof** penalty. |
-| Cookie on **200 OK** | Mild warning. |
-| Same cookie set on **3XX redirect** | Higher penalty (tracking during redirect). |
+| `applepie.com` vs `secure-apple.com` | Only the second triggers **brand-spoof** penalty. |
+| Cookie on **200 OK** | Mild warning |
+| Same cookie set on **3xx redirect** | Higher penalty (tracking during redirect) |
 
 ---
 
-### Bit‑flag engine
+### Bit-flag engine
 
-LegitURL tags every finding with a **bit flag** (`DOMAIN_SCAM_OR_PHISHING`, `TLS_IS_FRESH`, `HEADERS_CSP_MALFORMED`, …).  
+LegitURL tags some finding with a bit flag (`DOMAIN_SCAM_OR_PHISHING`, `TLS_IS_FRESH`, `HEADERS_CSP_MALFORMED`, …).  
 Combinations drop the score faster than individual hits—catching situations where separate “yellow” signals combine into a clear red flag.
 
-| Example combo | Flags raised | Resulting severity |
-|---------------|-------------|--------------------|
-| Scam keyword in subdomain **+** watch‑list brand in domain | `SCAM_WORD`&nbsp;∧&nbsp;`BRAND_HIJACK` | **Critical** |
+| Example combo | Flags raised | Severity |
+|---------------|-------------|----------|
+| Scam keyword in sub-domain **+** watch-list brand in domain | `SCAM_WORD` ∧ `BRAND_HIJACK` | **Critical** |
 | Fresh DV cert **+** weak headers **+** malformed HTML | `FRESH_DV` ∧ `WEAK_HDR` ∧ `HTML_MALFORM` | **Dangerous** |
-| Hop 1: `[ScamWord]` → Hop 2: `[Brand + DV]` | Chain flags propagate; overall score marked | **Critical** |
+| Hop 1: `SCAM_WORD` → Hop 2: `BRAND_HIJACK` | Chain flags propagate | **Critical** |
 
-> **Why bit flags?** They give deterministic, explainable downgrades and allow new heuristics to slot in without rewriting the whole weight table.
+> **Why bit-flags?** They provide deterministic, explainable downgrades and let new heuristics slot in without rewriting the whole weight table.
 
-## 5. Core detection features & heuristics
+## 5 · Examples
 
-LegitURL analyzes each link across multiple layers - from structure and encoding to headers and TLS, to detect suspicious behavior at every level.
-
-### Internal Reference Lists
-
-LegitURL uses compact internal datasets to detect:
-
-- Scam-related words and Unicode spoofing tricks
-- Known legitimate domains (whitelist)
-- Suspicious TLDs and infrastructure
-
-These allow fast offline comparisons without external APIs.
-
-### Typo and Brand Impersonation
-
-- Uses **Levenshtein distance**, **n-gram similarity**, and **dictionary lookups** to catch:
-  - typosquatting (e.g. `gooogle.com`)
-  - mixed-case lookalikes (e.g. `PaypaI-login`)
-  - brand hijacking in subdomains and paths
-
-### Heuristic system
-
-LegitURL relies on **deterministic rules**, not black‑/allow‑lists or ML models.  
-Signals are grouped into five layers:
-
-| Layer | What is examined |
-|-------|------------------|
-| **1. URL structure** | Domain, subdomain, path, query, fragment |
-| **2. TLS certificate** | CN/SAN, chain validity, age, issuer |
-| **3. HTTP headers** | CSP, HSTS, leakage, referrer, MIME |
-| **4. Cookies** | Size, entropy, attributes, redirect phase |
-| **5. HTML & JS body** | Tag structure, script density, risky API use |
-
-Each finding maps to **(a) a point penalty** and, if relevant, **(b) a bit flag**.  
-Flags accumulate per URL *and* across the redirect chain, catching compound risks.
-
-#### Context‑aware scoring
-
-| Scenario | Weighting difference |
-|----------|---------------------|
-| Tracking cookie on **3xx** vs **200** | Higher penalty on 3xx (redirect tracking). |
-| Scam‑style subdomain on unrelated domain vs. brand domain | Heavier hit if host contains a known brand. |
-
-### INFO‑only signals
-
-Some findings are logged for context but **do not deduct points** unless combined with other flags.
-
-| INFO signal | Why it’s informative |
-|-------------|----------------------|
-| DV Certificate type  | Neutral alone; useful in combos (e.g., *fresh DV + weak headers*). |
-| Internal redirect to sibling subdomain | Benign on its own; may pair with cookie issues. |
-| Tiny cookies (< 10 B, low entropy) | Often harmless session IDs. |
-
-INFO entries are **hidden by default** in the warning panel; users can expand to view them when needed.
-
----
-
-## 6. Core detection features
-
-LegitURL is built almost entirely on **Swift Foundation**.  
-Only two third‑party libraries are used:
-
-| Dependency | Purpose |
-|------------|---------|
-| **[ASN1Decoder](https://github.com/filom/ASN1Decoder)** | Decodes X.509 certificates (CN, SAN, issuer, extensions). |
-| **[PunycodeSwift](https://github.com/gumob/PunycodeSwift)** | Converts IDNs to ASCII (ACE) for uniform comparisons. |
-
----
-
-### Internal reference lists
-
-| Dataset | Stored as | Used for | User‑editable |
-|---------|-----------|----------|---------------|
-| **Mozilla Public Suffix List** | SQLite (raw TLD, punycode TLD) | Domain parsing & mixed‑script checks | — |
-| **Known brands & legit domains** | JSON | Brand‑spoof detection | ✅ |
-| **Scam / phishing keywords** | JSON | Subdomain & path heuristics | ✅ |
-| **Suspicious JS APIs** | Swift array | Inline‑script risk scan | — |
-
----
-
-### Matching & scanning strategy
-
-* **String matches** — plain `.contains` for speed.  
-* **Byte‑level scans** — custom forward scanner that skips whitespace and `\n`; used to pluck tags and JS tokens without full AST.  
-* Both approaches prioritise **O(n)** passes to keep on‑device analysis fast.
-
-> **Note** – Reference lists load at startup and can be updated in‑app without shipping a new binary.
-
----
-
-### Typo detection
-
-| Stage | Algorithm |
-|-------|-----------|
-| **Primary** | **Levenshtein distance = 1** (single insertion / deletion / swap). |
-| **Fallback** | **2‑gram similarity** when Levenshtein fails but string length is ≥ 4. |
-
-This two‑step avoids expensive distance calculations on obviously different strings while still catching more subtle swaps.
-
----
-
-### Lamai – recursive decoder
-
-Lamai unpacks encoded values found in **path / query / fragment strings**.
-
-#### Decode pipeline
-
-1. **Base64** (auto‑pad when `len % 4 ≠ 0`).  
-2. **URL / percent / Unicode escapes**.  
-3. Follow each successful decode as a new branch (max depth 5).  
-4. At each node, run heuristic checks:  
-   * Scam keywords & brand spoof  
-   * UUID, IP, e‑mail, nested URL patterns  
-   * Structural JSON or query blobs  
-5. If a branch yields no match and depth limit nears, evaluate **Shannon entropy** to decide whether to keep exploring.
-
-> **Entropy is last‑resort** – high entropy alone doesn’t prove encoding; early pruning avoids chasing random blobs.
-
-Branches that reveal a valid URL are fed back into the **offline inspection** pipeline, ensuring nested phishing links are scored just like top‑level targets.
-
----
-
-### HTML & script analysis (byte‑level)
-
-1. **Boundary scan**  
-   *First and Last ± 500 bytes* of body are checked:  
-   
-   | Condition | Action | Penalty |  
-   |-----------|--------|---------|  
-   | `<html>` tag missing | Mark as non‑HTML; skip deeper parsing | **Critical** |  
-   | `</html>` tag missing | Fallback end = body length | **Moderate** |  
-
-2. **Tag discovery** – scan every `<` byte  
-
-   | Byte + look‑ahead | Meaning |
-   |-------------------|---------|
-   | `<` `/` … | Closing tags `</head>`, `</body>`, `</script>` |
-   | `<head>` / `<body>` / `<script>` | Opening tags |
-
-3. **Head checks**  
-   *Inside `<head>`* search for `<meta http-equiv="Content-Security-Policy">`.
-
-4. **Script block processing**  
-   *Inside each `<script>`*:  
-   
-   | Extracted | Purpose |
-   |-----------|---------|
-   | `nonce=` value | For CSP nonce matching |
-   |`src=`value | For CSP source matching |
-   | `integrity=` (SRI) | Logged for presence (hash not yet verified) |
-   | `type=` value | Used to detect `dataScript` and `module`|  
-   
-    > Note: CORS attributes are detected but not yet cross-checked against CSP or response headers.  
-    >The type= value is parsed to flag type="module" and data only scripts like type="application/json" or application/ld+json (referred to as dataScript). These are not executed by the browser but may carry structured or behavioral data.
-
-5. **Script origin classification**  
-   *For `<script src="…">`* determine origin: `'self'`, external URL, protocol‑relative, `data:` URI, etc.
-
-6. **JavaScript‑soup scan**  
-   *Inline scripts are concatenated, then scanned byte‑wise:*  
-   
-   - Locate every `(` and `.` byte.  
-   - Look back 1–3 bytes to spot common accessors / functions.  
-   - Skip junk via lightweight filters (whitespace, digits).
-
-7. **Risk pattern matching**  
-   Inline tokens are compared to the **risky‑JS list** (`eval`, `atob`, `btoa`, `document.write`, …).  
-   Logic also flags **pairings**, e.g.:  
-
-
-   | Sequence | Flag |  
-   |----------|------|  
-   | `document.getElementById` → `.submit()` | Suspicious form auto‑submit |  
-   | `atob()` → `JSON.parse()` | Decoded blob executed |
-
-
-All parsing runs on‑device; although only the first **1.2 MB** of HTML and **3 KB** per inline block are shown in the UI, the *entire* body is tokenised for heuristics.
-
----
-
-### Cookie scoring engine (byte + flag)
-  
-Each `HTTPCookie` is distilled into a **bit‑flag bundle**:
-
-| Flag            | Condition |
-|-----------------|-----------|
-| `httpOnly`      | `HttpOnly` present |
-| `secure`        | `Secure` present |
-| `persistent`    | Expires > 30 days |
-| `smallValue` / `largeValue` | < 16 B / > 64 B |
-| `highEntropyValue` | Shannon > 3.5 bits/char |
-| `setOnRedirect` | Cookie issued on 3xx/4xx/5xx |
-| `sameSiteNone`  | `SameSite=None` |
-| `sameSiteMissing` | Attribute absent **(not defaulted to `Lax`)** |
-
-> **Why `SameSite` missing as a weakness**  
-> iOS **URLSession** flattens duplicate _Set‑Cookie_ headers into one field.  
-> Modern browsers (Chrome ≥ 80, Safari ≥ 14, Firefox ≥ 96) *assume* `SameSite=Lax` if the attribute is missing.  
-> LegitURL does **not** mirror that assumption because:  
-> 1. Mobile tracking kits still rely on no‑`SameSite` to enable cross‑site POST redirects.  
-> 2. Security should be explicit; silent defaults hide developer intent.  
-> 3. The flattening makes reliable detection harder — erring on caution is safer.  
-
-
-Flag -> penalty mapping
-
-| Flags raised | Outcome |
-|--------------|---------|
-| `smallValue ` & low entropy | **Ignored** – likely benign session ID |
-| `httpOnly` only | Capped – maybe CSRF, but irrelevant in LegitURL’s context |
-| `largeValue ` + `highEntropyValue ` | **Tracking** – probable blob |
-| Any flag on a **3xx** hop | Penalty adds a moderate penalty – redirect tracking |
-
-> LegitURL simulates a clean, first‑visit GET: no query params, no existing cookies.  
-> That means *any* cookie set before consent (RGPD banners) is visible.  
-> Balancing hygiene vs. legal grey‑zones is ongoing; weights may evolve.
-
----
-
-### TLS certificate analysis
-
-LegitURL decodes the raw X.509 and layers its own heuristics **on top of `URLSession`’s system trust**.
-
-| Check | What we look for | Why it matters |
-|-------|-----------------|----------------|
-| **Chain validity** | All intermediates present in the handshake. | Sites that rely on the browser’s cached intermediates signal **lazy or incomplete TLS**. |
-| **Issue / expiry dates** | *New* < 7 days, *Long* > 13 months. | Fresh DV certs & very long lifetimes often correlate with disposable infra. |
-| **CA type** (DV / OV / EV) | Parsed from policy OID. | Informational flag; used in combos (e.g., *fresh DV + weak headers*). Bonus for EV or OV |
-| **SAN list** | • Wildcard vs. many FQDNs<br>• Coverage of target host. | 25 + unrelated SANs without wildcards ⇒ common pattern in large‑scale DV abuse. |
-
-> **Why not bypass `URLSession`?**  
-> A fully custom verifier could read handshake errors in detail, but shipping that risks **App Store rejection**. LegitURL therefore accepts system trust and scores on top of it.
-
-#### System trust limitations
-
-Apple’s secure TLS layer does **not** expose whether a failure is due to:
-
-* Missing leaf cert  
-* Incomplete chain  
-* Untrusted root
-
-LegitURL only knows the handshake failed; such failures are treated as **critical** regardless of root cause.
-
----
-
-### SAN‑pattern analysis – spotting cloaked infrastructure
-
-LegitURL examines the **Subject Alternative Name (SAN)** list for signals that a certificate is protecting more than just a normal “set of sub‑sites.”
-
-#### Red‑flag pattern
-
-> **Many (10 – 100) unrelated FQDNs**, no wildcard entries, and a certificate age < 30 days - especially when the issuer is Let’s Encrypt,  strongly suggests throw‑away scam infra.
-
-| Why this pattern is rare on legitimate sites |
-|----------------------------------------------|
-| **Wildcards are cheaper to maintain** — orgs usually issue `*.example.com`. |
-| **Let’s Encrypt wildcards require DNS‑01** — attackers prefer HTTP‑01 because they don’t own DNS. |
-| **Dozens of disparate FQDNs** make no operational sense for normal businesses but are perfect for phishing kits, redirect chains, and disposable botnet mailers. |
-
-A SAN list packed with unrelated domains is therefore scored as **“Cloaked Infra”**.  
-When combined with weak headers, shady TLDs (`.biz`, `.click`), or obfuscated JavaScript, the overall risk escalates quickly.
-
-#### Counter‑example: Steam
-
-* `steampowered.com` → 48 SAN entries, Let’s Encrypt DV, no wildcard.  
-* Immediate redirect to `store.steampowered.com` → EV cert, only 2 SANs.
-
-Because the chain lands on a **stronger, scoped EV certificate**, LegitURL waives the penalty for the first hop, context overrules the raw SAN count.
-
----
-
-### HTTP header analysis
-
-LegitURL inspects headers **only on `200 OK`**, so the findings reflect the page that is actually rendered.
-
-#### Content‑Security‑Policy (CSP)
-
-| Step | Test | Action |
-|------|------|--------|
-| **Presence** | `Content‑Security‑Policy` header missing | **Heavy penalty** |
-| | Only `…Report‑Only` present | **Heavy penalty**, still analyzed |
-| **Parsing** | Header must end in `;` | Append if missing |
-| | Split into directives by `;` | Build directive map |
-| **Mandatory directive** | No `script-src` → fall back to `default-src` → if both missing, check `require-trusted-types-for 'script'` | If none found → treat as **incomplete CSP** (same penalty as missing) |
-| **Bit‑flags** | Map directive/value combos to flags (`UNSAFE_INLINE`, `UNSAFE_EVAL`, `STRICT_DYNAMIC`, etc.) | Feed flags into scorer |
-| **Nonce / origin match** | Compare inline‑script nonces + external script origins to `script-src` allow‑list | Mismatch -> penalty, correct nonce match -> bonus |
-
-> A strict CSP can’t stop every attack, but it **shrinks the client‑side attack surface** that modern threats exploit.
-
----
-
-#### Other security headers
-
-| Header | What we check | Expectation / Penalty |
-|--------|---------------|-----------------------|
-| `Strict-Transport-Security` | Presence + `max-age` | ≥ 31536000 s and `includeSubDomains` |
-| `X-Content-Type-Options` | Value | Must be `nosniff` |
-| `Referrer-Policy` | Value | `strict-origin` or stricter |
-| `Server` / `X-Powered-By` | Version leakage (`apache/2.4`, `php/8.2`) | **INFO** if header present but no version,<br>**Suspicious** if version string leaks |
-
-## 7. Example use case
-
-### Example 1: Brand impersonation with suspicious TLD
+<details>
+<summary><strong>Example 1: Brand impersonation with suspicious TLD (Score: 0/100)</strong></summary>
 
 If the user has correctly added `bankoftrust.com` to their **watchlist**, the app will:
 
@@ -879,7 +393,10 @@ If the user has correctly added `bankoftrust.com` to their **watchlist**, the ap
 > This URL impersonates a known brand using a deceptive subdomain, a suspicious TLD, and a query path that mimics login flow.  
 > **Final Score: 0/100 — flagged as DANGEROUS**
 
-### Example 2: Redirect chain with tracking cookies and suspicious scripts
+</details>
+
+<details>
+<summary><strong>Example 2: Redirect chain with tracking cookies and suspicious scripts (Score: 0/100)</strong></summary>
 
 Let’s say a user encounters a shortened link in a promoted X.com post:  
 **Pasted URL: bit.ly/mihoyanagi**
@@ -939,12 +456,16 @@ Let’s say a user encounters a shortened link in a promoted X.com post:
 > This link leads through a **redirect chain with cookie abuse, tracking attempts, and excessive inline scripts**.  
 > Final domain leaks stack metadata and hosts CSP violations.  
 > **Final Score: 0/100 — flagged as DANGEROUS**
+</details>
 
-### Example 3: Cloaked scam infrastructure via shared TLS Certificate
+<details>
+<summary><strong>Example 3: Cloaked scam infrastructure via shared TLS Certificate (Score: 0/100)</strong></summary>
 
 Let’s consider the following link:  
 **https://www.man-entreprise.com/vrp/ayxxxxxxx/yyyy**  
 *(Query parameters have been altered to avoid exposing personal data.)*
+
+
 
 ---
 
@@ -994,7 +515,7 @@ Let’s consider the following link:
 | **SAN Entries**  | 76 fully-qualified domains, unrelated, no wildcard | 🚨 High-risk |
 | **Wildcard**     | None |
 
-→ 🚨 Strong signal of **cloaking infrastructure via shared certificate**
+→ Strong signal of **cloaking infrastructure via shared certificate**
 
 ---
 
@@ -1017,23 +538,28 @@ Let’s consider the following link:
 > The final destination shares a similarly structured certificate — indicating **shared scam infrastructure** at scale.
 
 **Final Score: 0/100 — flagged as CRITICAL**
+</details>
 
-### Example 4: Popular sites that score poorly when judged blind
+<details>
+<summary><strong>Example 4: Popular sites that score poorly when judged blind</strong></summary>
 
 These sites are globally recognized — but when analyzed blindly, as if they were unknown, their setups fall short.
 
 | Site               | **Score** | Key issues |
 |--------------------|---------:|------------|
-| www.google.com     | **39/100** | CSP is *report‑only* (`unsafe-eval`); sets tracking cookies |
-| m.youtube.com      | **33/100** | 92 % of HTML is JS; tracking cookies; missing `</body>`; no `object-src` , no `Referrer-Policy` |
-| m.facebook.com     | **26/100** | 96 % JS; three large cookies modified by JS; `unsafe-eval` present |
-| amazon.com         | **20/100** | Inline `document.write()`; CSP header missing, no `X-Xontent-Type`, no `Referrer-Policy` |
+| www.google.com     | **49/100** | CSP is *report‑only* (`unsafe-eval`); sets tracking cookies |
+| m.youtube.com      | **18/100** | 92 % of HTML is JS; one inline script > 100kb; tracking cookies; missing `</body>`; no `object-src` , no `Referrer-Policy` |
+| m.facebook.com     | **0/100** | 96 % JS; three large cookies ; one inline is scrip > 100kb; nonce value entropy is low ; editing cookie in JS despite non accessible js cookie ; `unsafe-eval` present |
+| amazon.com         | **20/100** | Inline `document.write`; CSP header missing, no `X-Content-Type`, no `Referrer-Policy` |
 
 > These aren’t scams - but if we didn’t already trust them, **nothing in their technical behavior would give trust signal.**  
 > This shows hygiene gaps, not proven scams.
 > Inline scripts are currently penalized equally; future versions will reduce the penalty if nonce-matching is detected.
 
-### Example 5: Popular sites that score good
+</details>
+
+<details>
+<summary><strong>Example 5: Popular sites that score good</strong></summary>
 
 Some high-profile sites make a visible effort to secure users — and it shows.
 
@@ -1046,32 +572,141 @@ Some high-profile sites make a visible effort to secure users — and it shows.
 > Stripe clearly wants to appear trustworthy — and backs it up with real protections al inline are protected by a hash, and a EV cert.  
 > The French government site is solid and has a EV cert.  
 > Apple's CSP still allows unsafe-inline/unsafe-eval; referrer policy is lax, the EV cert helps.
+</details>
 
-## 8. Why LegitURL exists
-
-Web browsers were designed to be forgiving.  
-For decades that resilience, auto‑closing tags, guessing encodings, running scripts despite weak policies, helped the Web grow.  
-Today the same leniency often masks structural problems instead of surfacing them.
-
-Browsers now play the role of **just‑in‑time compiler and debugger**: silently fixing malformed HTML, defaulting security headers, and tolerating unsafe client‑side code. As a result, many production sites operate with minimal security hygiene yet still “work,” so the underlying weaknesses remain invisible to users.
-
-Around 2020 major engines started tightening defaults, *e.g.* treating missing `SameSite` as `Lax`, encouraging Content‑Security‑Policy not to break sites, but to reduce attack surface. Even so, a modern page can set tracking cookies during redirects, embed third‑party scripts, or rely on permissive CSP directives and still render without warning.
-
-**LegitURL’s goal is visibility, not punishment.**  
-By evaluating a link’s behaviour without reputation bias, it shows where a site relies on browser forgiveness and where it follows best practices. The web is vast; trusted brands and unknown domains alike can fall short. LegitURL gives users and developers a concise, transparent view of those gaps—so they can decide whether “it works” is good enough.  
+## 6 · Case Studies
 
 
-## 9. Contact & License
+### 6.1 SAN-pattern analysis – spotting cloaked infrastructure
+<details>
+<summary>Why 76 unrelated SANs = red flag, and counter-exemple</summary>
 
-LegitURL is released under the **GNU AGPLv3 license**.
+### SAN‑pattern analysis – spotting cloaked infrastructure
 
-You’re free to use, study, and improve the code — even in commercial projects —  
-**but any derivative work, especially one used over a network (e.g. as a web service),  
-must also be made public under the same license.**
+LegitURL examines the **Subject Alternative Name (SAN)** list for signals that a certificate is protecting more than just a normal “set of sub‑sites.”
 
-This protects users and ensures the project remains open and honest.
+#### Red‑flag pattern
 
-> See [LICENSE](LICENSE) for full terms.
+> **Many (10 – 100) unrelated FQDNs**, no wildcard entries, and a certificate age < 30 days - especially when the issuer is Let’s Encrypt,  strongly suggests throw‑away scam infra.
+
+| Why this pattern is rare on legitimate sites |
+|----------------------------------------------|
+| **Wildcards are cheaper to maintain** — orgs usually issue `*.example.com`. |
+| **Let’s Encrypt wildcards require DNS‑01** — attackers prefer HTTP‑01 because they don’t own DNS. |
+| **Dozens of disparate FQDNs** make no operational sense for normal businesses but are perfect for phishing kits, redirect chains, and disposable botnet mailers. |
+
+A SAN list packed with unrelated domains is therefore scored as **“Cloaked Infra”**.  
+When combined with weak headers, shady TLDs (`.biz`, `.click`), or obfuscated JavaScript, the overall risk escalates quickly.
+
+#### Counter‑example: Steam
+
+* `steampowered.com` → 48 SAN entries, Let’s Encrypt DV, no wildcard.  
+* Immediate redirect to `store.steampowered.com` → EV cert, only 2 SANs.
+
+Because the chain lands on a **stronger, scoped EV certificate**, LegitURL waives the penalty for the first hop, context overrules the raw SAN count.
+
+</details>
+
+### 6.2 LLM interpretation – “portal-finance.net”
+<details>
+<summary>How Claude Sonnet 4 explained the risk from the raw JSON export</summary>
+
+One real-world example involved the domain `portal-finance.net`:
+
+- The model correctly:
+  - Flagged the domain as **visually and phonetically similar to “binance”**, using the app’s Levenshtein and n-gram results
+  - Identified the external file `/hidden/payload.js` as suspicious due to its naming  
+    - **This is exactly what LegitURL was designed to highlight** — the model connected filename patterns to real threats
+  - Noted the absence of CSP, HSTS, and SRI headers
+  - Connected the TLS issue date (same-day issuance) to likely phishing deployment
+
+All without relying on brand blocklists — purely via behavioral pattern recognition.
+
+> This confirmed that the combination of exported JSON + well-primed instructions can enable GPT-4o, Gemini, Claude or DeepSeek to produce a strong, accurate risk explanation from raw technical input. While the priming is still refined manually, the balance between guiding and overconstraining the model remains a key challenge.  
+>
+> The model’s ability to leverage background knowledge is exceptionally powerful. Prior attempts to detect such threats relied on static brand lists, dictionary lookups, or entropy checks — all of which struggled against infinite variations. This new pipeline offers a more flexible and adaptive path forward.  
+>
+> As of now, LegitURL measures JSON export efficiency not only by minimizing token size (still a work in progress), but also by evaluating the **cognitive load** placed on the model,that is, how easily it can extract structure, identify key signals, and reason across findings.  
+>
+> **LegitURL remains a fully offline local tool**, but this JSON export adds a new layer: enabling models to provide meaningful insight without deep technical parsing. Suspicious inline script snippets are extracted, structured, and passed in clean blocks — letting models focus on interpretation, not AST traversal.
+
+
+```text
+Claude Sonnet 4:
+
+Looking at the technical behavior of portal-finance.net, I see several concerning signals that suggest this site should be approached with extreme caution.
+
+## Critical Red Flags
+
+**Domain Impersonation**: The domain "portal-finance.net" appears designed to mimic Binance, one of the world's largest cryptocurrency exchanges. The analysis shows "FINANCE" has a Levenshtein distance of only 1 from "binance" and 71% structural similarity. This is a classic impersonation tactic used by scammers to trick users into thinking they're visiting a legitimate financial platform.
+
+**Brand New Certificate**: The TLS certificate was issued just yesterday (May 29, 2025) - literally 0 days old when tested. Legitimate financial services don't typically launch with same-day certificates. This suggests the site was created very recently, which is common with scam operations that get shut down and recreate quickly.
+
+**Suspicious Script Loading**: The site loads an external script from a relative path `./assets/hidden/payload.js` - the name "payload" combined with being in a "hidden" directory is highly suspicious. Legitimate sites don't typically name their JavaScript files "payload" or hide them in directories with such obvious names. This could contain malicious code.
+
+## Security Hygiene Issues
+
+The site exhibits poor security practices across multiple areas:
+
+- **Missing Security Headers**: No Content Security Policy, X-Content-Type-Options, Referrer-Policy, or HSTS headers. This creates vulnerabilities and suggests the operators don't follow security best practices.
+- **No Script Integrity**: External scripts lack Subresource Integrity (SRI) hashes, meaning if the jQuery CDN or the local server were compromised, malicious code could be injected.
+- **Aggressive Caching Prevention**: The "no-store" cache control header prevents any caching, which while not inherently malicious, is unusual for static content and could indicate frequently changing content.
+
+## Behavioral Context
+
+The inline JavaScript appears benign (clipboard copying functionality), but this could be a facade. The real concern is the external "payload.js" script that wasn't analyzed but has a highly suspicious name and location.
+
+## Trust Assessment
+
+This combination of signals - domain impersonation of a major crypto exchange, same-day certificate issuance, suspicious script naming, and poor security hygiene - creates a pattern consistent with cryptocurrency scam sites. These operations typically create convincing-looking finance portals to steal login credentials or crypto wallet information.
+
+A cautious user should avoid this site entirely. The technical behavior suggests it was hastily constructed to impersonate Binance, likely for fraudulent purposes. The risks far outweigh any potential legitimate use case.​​​​​​​​​​​​​​​​
+```
+
+## 7 · Architecture & Dependencies
+
+LegitURL is built almost entirely on **Swift Foundation**.  
+Only two third‑party libraries are used:
+
+| Dependency | Purpose | License |
+|------------|---------|---|
+| **[ASN1Decoder](https://github.com/filom/ASN1Decoder)** | Decodes X.509 certificates (CN, SAN, issuer, extensions). | MIT |
+| **[PunycodeSwift](https://github.com/gumob/PunycodeSwift)** | Converts IDNs to ASCII (ACE) for uniform comparisons. | MIT |
+
+### Internal reference lists
+
+| Dataset | Used for | Editable | Stored as |
+|---------|----------|----------|-----------|
+| Mozilla PSL | Domain split, mixed-script check | — | SQLite |
+| Brand whitelist | Brand-spoof detection | ✅ | JSON |
+| Scam keywords | Sub-domain & path heuristics | ✅ | JSON |
+| Risky JS APIs | Inline-script scan | — | Swift array |
+
+*Lists load at startup and can update in-app without a new binary.*
+
+### Matching & scanning strategy
+
+* Single **O(n)** sweep keeps total run time ≈ 2 s.  
+* String checks: `.contains` on case-folded ASCII.  
+* Byte lexer: skips whitespace/`LF`; extracts tags & JS tokens without a full AST.
+
+### Lamai decode tree
+
+1. **Base64** (auto-pad)  
+2. **URL / Unicode escapes**  
+3. Branch on each decode (depth ≤ 5)  
+4. Node tests: brand/scam hits, UUID, IP, e-mail, nested URL, JSON shape  
+5. If branch is high-entropy junk → prune
+
+Decoded URLs re-enter the offline queue, ensuring nested phishing links score like any top-level target.
+
+## 8 · License & Contribution
+
+LegitURL is distributed under the **GNU AGPL v3** license.  
+You may use, study, and modify the code—even in commercial projects—**but any derivative that runs over a network must publish its own source under the same license**.  
+For the full terms see [`LICENSE`](LICENSE) or the [AGPL FAQ](https://www.gnu.org/licenses/agpl-3.0-faq.en.html).
 
 ## How to Contribute
-I don’t expect forks or contributions, but feel free to open an issue or email me if you spot something weird or want to help.
+Pull requests are welcome! If you find a bug, spot a false positive, or want to add a new heuristic.
+
+But feel free to open an issue or email me if you spot something weird or want to help.

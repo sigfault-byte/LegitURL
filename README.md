@@ -1,95 +1,89 @@
-> **Work‑in‑progress. (1.1.0)**  
-> It works today and gets sharper every week with new heuristics and polish.
+# LegitURL
 
-## LegitURL
-> Like a **nutrition label for links**  
-> Scan any URL and get a 🟩 🟧 🟥 verdict based on **technical behaviour**.  
-> Because trust should be *earned*, not assumed.
+> **A nutrition label for links** — on-device scanner that scores any URL in ≈2 s using 100 + deterministic heuristics.
 
-**Paste, type, or scan** a link → tap **Check**.
-
+[![Release](https://img.shields.io/badge/release-1.1.0-blue.svg)](#)
+[![iOS](https://img.shields.io/badge/iOS-18%2B-brightgreen.svg)](#)
+[![App Store](https://img.shields.io/badge/download-App%20Store-blue)](https://apps.apple.com/fr/app/legiturl/id6745583794)
+[![License](https://img.shields.io/badge/license-AGPL--v3-green)](LICENSE)
 
 <div align="center">
-  <img src="AppPreview/LegitURL_demo.gif" alt="LegitURL demo" width="300"/>
+  <img src="AppPreview/LegitURL_demo.gif" width="500" alt="Quick 8-second demo: paste link → score → drill-in"/>
 </div>
 
-| Score | Findings | Meaning |
-|-------|----------|---------|
-| 🟥 **Red – Unsafe** | Multiple issues (weak TLS, missing CSP, scam keywords…). | Treat as hostile unless you already trust the sender. |
-| 🟧 **Orange – Suspicious** | Mixed signals: solid parts but hygiene gaps (tracking cookies on redirects, `unsafe-inline`, …). | Usually fine for major brands; be cautious with unknown sites. |
-| 🟩 **Green – Safe** | Clean redirects, correct headers, trusted cert. | Not bulletproof, but shows clear effort. |
+---
 
-After scanning you can inspect:
+## Why you might care
 
-* Parsed URL components  
-* All findings
-* Full HTTP headers & CSP directive view  
-* Cookies summary  
-* HTML body (up to 1.2 MB)  
-* Each `<script>` block (up to 3 KB)
-* Export the full analysis with all details to a PDF  
-* Copy a primed JSON prompt for:
-	* Explaining the findings  
-	* Getting a full report summary via an LLM  
-
+* **Instant verdict** - assigns 🟩/🟧/🟥 locally in ≈2 s, no cloud calls.  
+* **App-sec focus** - flags silent redirects, CSP issues, shady certs, and tracking cookies.  
+* **Explainable heuristics** - every finding follows a traceable rule, no black-box logic.  
+* **Privacy by design** - single HTTPS fetch to the target, zero third-party traffic.
 
 ---
 
-### How it works
-1. **Offline** – parse the link (look‑alikes, encodings, scam words).  
-2. **Online** – one sandboxed HTTPS request reads headers, certificate, cookies, inline JS.
+## Score legend
 
-**All processing is local.**  
-The only network traffic is **one direct HTTPS request to the link itself.**  
-**No cloud, no tracking, no third-party services. Ever.**
-
-**Dig deeper:** see [`TECHNICAL_OVERVIEW.md`](TECHNICAL_OVERVIEW.md)
+| Score | Meaning |
+|-------|---------|
+| 🟥 **Red — Unsafe** | Multiple high-risk signals (weak TLS, missing CSP, scam keywords …). |
+| 🟧 **Orange — Suspicious** | Mixed hygiene; often fine for major brands, caution for unknown sites. |
+| 🟩 **Green — Safe** | Clean redirects, solid headers, trusted cert, no heavy tracking. |
 
 ---
 
-- [1 · Who is LegitURL for?](#1-who-is-legiturl-for)  
-- [2 · Quick start](#2-quick-start)
-- [3 . App preview](#3-app-preview)
+## Quick start
 
-## 1. Who is LegitURL for?
-Anyone thinking *“Should I trust this link?”*  
-Ideal for casual users, privacy enthusiasts, and developers inspecting headers / CSP / TLS / JavaScript.
-
-If you’re new to all this and want a 2 minute story that explains what happens when you open a link, like a browser fairy tale,  read:  
-[Once upon a TLS](https://legiturl.fr)
-
-## 2. Quick start
-[Download on the appStore](https://apps.apple.com/fr/app/legiturl/id6745583794?l=en-GB) or clone and build with Xcode.
+| | |
+|---|---|
+| **End-users** | [App Store](https://apps.apple.com/fr/app/legiturl/id6745583794) |
+| **Developers** | Open `LegitURL.xcodeproj` in Xcode and run. |
 
 ---
 
-## 3. App preview
+## Feature postcards
 
-### Home screen and Analysis
+| | |
+|---|---|
+| **Signals & Logs** | <img src="AppPreview/signals_details.PNG" alt="Signals and logs view showing coloured findings" width="400"> |
+| **Inline script findings** | <img src="AppPreview/script_details.png" alt="Inline script detail with extracted snippet of risky functions" width="400"> |
 
-<img src="AppPreview/1_input-view.png" width="45%"/> <img src="AppPreview/2_home-analysis-view.png" width="45%"/>
+<details>
+<summary>More screenshots</summary>
 
----
+| | |
+|---|---|
+| **Cookie view** | <img src="AppPreview/cookies_details.png" alt="Cookie detail with bit-flag severity pyramid" width="45%"> |
+| **CSP directives** | <img src="AppPreview/csp_details.png" alt="Content-Security-Policy directive list" width="45%"> |
+| **HTML report export** | <img src="AppPreview/html_report.png" alt="Preview of generated HTML security report" width="45%"> |
+| **LLM JSON export** | <img src="AppPreview/LLM_json_export.png" alt="Screen showing compact JSON export for LLMs" width="45%"> |
 
-### Logs and URL detail
-
-<img src="AppPreview/3_logs-view.png" width="45%"/> <img src="AppPreview/4_url-detail-view.png" width="45%"/>
-
----
-
-### Cookies and CSP
-
-<img src="AppPreview/5_cookie-detail-view.png" width="45%"/> <img src="AppPreview/6_CSP-directive-view.png" width="45%"/>
-
----
-
-### TLS and Scripts
-
-<img src="AppPreview/7_tls-details-view.png" width="45%"/> <img src="AppPreview/8_scripts-detail-view.png" width="45%"/>
+</details>
 
 ---
 
-### Glossary
+## Under the hood
 
-<img src="AppPreview/9_glossary-view.png" width="45%"/>
+1. **Offline parsing** – look-alikes, encodings, scam words, entropy tests.  
+2. **Sandboxed HTTPS fetch** – reads cert, headers, cookies, HTML, inline JS.  
+3. **Deterministic scoring** – bit-flags + weighted penalties → single score.
 
+Full spec and details examples lives in [`TECHNICAL_OVERVIEW.md`](TECHNICAL_OVERVIEW.md).
+
+---
+
+## Roadmap
+
+### Completed
+- [x] Cookie bit-flag pyramid
+- [x] CSP / header correlation
+
+### In progress
+- [ ] Correlate CSP SHA to inline  
+- [ ] HTML `<meta refresh>` detection  
+- [ ] Subresource-Integrity (SRI) hash checks  
+- [ ] Consolidated CSP generator
+
+## License
+
+GNU  Affero GPL v3 – see [`LICENSE`](LICENSE) for details. Issues welcome.

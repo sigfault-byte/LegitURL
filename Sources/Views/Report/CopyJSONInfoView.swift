@@ -20,7 +20,7 @@ struct CopyJSONInfoView: View {
                 Spacer(minLength: 40)
 
                 VStack(spacing: 20) {
-                    Text("You may copy a structured security report in JSON format to your clipboard. Then, paste it into your favorite AI (like ChatGPT, Google Gemini, Claude, DeepSeek, Grok, etc.) to get a detailed explanation.")
+                    Text("Copy a structured JSON security report to your clipboard, then drop it into ChatGPT, Gemini, Claude—or any AI you like.\nQuick Summary gives you the essentials;\nFull Report includes every technical detail so the model can dig deeper.")
                         .font(.body)
                         .foregroundColor(.primary)
                         .font(.caption)
@@ -41,7 +41,7 @@ struct CopyJSONInfoView: View {
                                 UIPasteboard.general.string = URLQueue.shared.jsonDataForUserLLModelBrief
                                 didCopy = true
                             } label: {
-                                Label("Explain Score", systemImage: "doc.on.doc")
+                                Label("Quick Summary", systemImage: "doc.on.doc")
                                     .padding()
                                     .frame(maxWidth: .infinity)
                                     .background(Color.accentColor)
