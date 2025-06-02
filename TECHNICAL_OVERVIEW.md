@@ -549,7 +549,7 @@ These sites are globally recognized — but when analyzed blindly, as if they we
 |--------------------|---------:|------------|
 | www.google.com     | **49/100** | CSP is *report‑only* (`unsafe-eval`); sets tracking cookies |
 | m.youtube.com      | **18/100** | 92 % of HTML is JS; one inline script > 100kb; tracking cookies; missing `</body>`; no `object-src` , no `Referrer-Policy` |
-| m.facebook.com     | **0/100** | 96 % JS; three large cookies ; one inline is scrip > 100kb; nonce value entropy is low ; editing cookie in JS despite non accessible js cookie ; `unsafe-eval` present |
+| m.facebook.com     | **0/100** | 96 % JS; three large cookies ; one inline is scrip > 100kb; nonce value entropy is low ; editing cookie in JS despite non accessible JS cookie ; `unsafe-eval` present |
 | amazon.com         | **20/100** | Inline `document.write`; CSP header missing, no `X-Content-Type`, no `Referrer-Policy` |
 
 > These aren’t scams - but if we didn’t already trust them, **nothing in their technical behavior would give trust signal.**  
