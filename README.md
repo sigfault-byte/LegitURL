@@ -83,6 +83,7 @@ Full spec and details examples lives in [`TECHNICAL_OVERVIEW.md`](TECHNICAL_OVER
 - [ ] HTML `<meta refresh>` detection  
 - [ ] Subresource-Integrity (SRI) hash checks  
 - [ ] Consolidated CSP generator
+- [ ] Implement OpenSSL probe to retrieve certificate chain and reason for failed TLS handshake
 
 ## License
 
