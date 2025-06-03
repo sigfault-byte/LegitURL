@@ -96,7 +96,7 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
                 "01_inputUrl" : inputURL,
                 "02_finalUrl" : finalURL,
                 "03_encouteredUrls" : warnings["idMap"] ?? NSNull(),
-                "04_numberOfRedirect" : hopCount, //This needs to be prime that its the number of urls report
+                "04_numberOfRedirect" : hopCount, //This needs to be prime that its the number of urls report ?
                 "05_lastURLTlsDetails" : tlsInfo,
                 "06_findings" : warnings["findingsByUrls"] ?? NSNull()
             ]]
