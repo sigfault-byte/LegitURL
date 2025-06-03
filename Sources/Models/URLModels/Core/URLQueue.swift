@@ -21,6 +21,7 @@ class URLQueue: ObservableObject {
     var jsonDataForUserLLModelBrief: String? = nil // primed prompt for llms brief mode
     var jsonLenTokenEstimateLLModelBrief: (Int, Int)? = nil
     
+    var bitFlagInt: UInt128 = 0
     
     //    seen cookies set to not double penalyze same cookie keys because we have a fresh get each time
     var cookiesSeenByRedirectChain: [UUID: Set<String>] = [:]

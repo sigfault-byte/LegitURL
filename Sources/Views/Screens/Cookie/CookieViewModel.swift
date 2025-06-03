@@ -71,7 +71,7 @@ struct CookieViewModel: Identifiable {
     }
     
     var readableFlags: [String] {
-        flags.descriptiveReasons(entropyScore: entropy)
+        flags.descriptiveReasons(entropyScore: entropy).human
     }
 
     private static func humanizeExpiry(_ date: Date?) -> String {

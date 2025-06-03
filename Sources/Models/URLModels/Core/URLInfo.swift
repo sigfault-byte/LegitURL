@@ -23,18 +23,3 @@ struct URLInfo: Identifiable {
         get { URLQueue.shared.onlineQueue.first { $0.id == self.id } }
     }
 }
-
-extension URLInfo {
-    var domain: String? { components.extractedDomain }
-    var tld: String? { components.extractedTLD }
-    var host: String? { components.host }
-}
-
-extension URLInfo {
-    static var placeholder: URLInfo {
-        URLInfo(
-            components: URLComponentsInfo(fullURL: "https://placeholder.url"),
-            warnings: []
-        )
-    }
-}

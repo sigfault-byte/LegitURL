@@ -13,18 +13,35 @@ public struct LLMPriming {
         var block = [String: Any]()
         if !brief {
             block = [
-                "00_priming": "You are assessing a URL’s trustworthiness by analyzing its technical behavior, not its reputation. Do not return yes/no answers. Instead, explain observed signals (good or bad) and how they influenced trust. Be clear, neutral, and helpful.",
-                "01_user_locale": locale,
-                "02_expected_output": "Use clear, accessible language. Avoid excessive jargon. Think like you are helping a cautious user understand why the behavior matters."
+                "00_description": """
+                  You will receive a JSON object with:
+                    • meta { priming, instructions },  
+                    • reports: [ { url, domain, tld, subdomain, path, script, findings } ],  
+                    • scriptPreviews.  
+                  Inside each report’s findings array are objects { "signal": string, "source": string }.  
+                  Explain what each signal means in context: connect headers, TLS, scripts, cookies, and redirect behavior into a coherent security‐analysis narrative.  
+                  Do not just repeat the findings; show how multiple signals combine into a pattern (e.g., “missing HSTS + new certificate + high script density → potential phishing kit”).
+                """,
+                "01_userLocale": locale,
+                "02_expectedOutput": "Use plain, accessible language. Avoid unexplained acronyms. Think like you’re coaching a cautious user who wants to know, “Can I trust this link?”",
+                "03_outputStyle": "Be clear and neutral—if you see suspicious behavior, say so; if you see valid reasons (e.g., a known CDN cookie), explain why it may be acceptable."
                 
             ]
             return block
         } else {
             block = [
-                "00_priming": "Summarize how the URL behaved based only on the technical findings. Focus on what was observed, not assumptions. Keep it concise and easy to understand. Avoid technical jargon, and explain in plain language how the behavior relates to trust. If the site belongs to a known legitimate entity, you may still describe behavioral concerns clearly — explain why those behaviors could impact trust, even if they likely serve valid purposes.",
-                "01_user_locale": locale,
-                "02_expected_output": "Give only the final assessment in plain language. No technical details, no findings list - just whether the behavior seems trustworthy and why in 4-5 sentences maximum.",
-                "03_output_style": "Use plain language for the user's locale. Avoid acronyms or technical terms unless clearly explained.",
+                "00_description": """
+                  You will receive a JSON object with:
+                    • “Summary” { inputUrl, finalUrl, numberOfRedirect, findings }  
+                    • each entry in findings is { “signal”: string, “source”: string }.  
+                  Describe only the observed technical behavior in 4–5 sentences. Do not echo the findings list; instead, weave them together into a clear, plain-language assessment of trust/risk (e.g., “the certificate is brand new, scripts lack integrity checks, and cookies look like tracking…”).  
+                  Avoid technical jargon. If the site is a known brand, still point out any behaviors that could confuse a cautious visitor.
+                """,
+                "01_userLocale": locale,
+                "02_expectedOutput": """
+                  Write a short, plain-language verdict: “Overall, this site looks [trustworthy/risky] because ….” No bullet points, no raw findings list.
+                """,
+                "03_outputStyle": "Use very simple language (e.g., “new certificate,” “missing security header,” “tracking cookie”)."
             ]
             return block
         }
@@ -33,21 +50,31 @@ public struct LLMPriming {
     public static func instructions(brief: Bool) -> [String: Any] {
         if !brief {
             return [
-                "01_request_model": "Each HTTP GET was a clean first-time visit from a mobile phone UA: no cookies, query parameters, fragments, local storage, or referrer are sent. This avoids user info leakage and ensures consistent testing.",
-                "02_data_purpose": "The model receives a full set of observed technical behaviors from the target website, including headers, cookies, TLS details, scripts, and redirect chains. These findings are real, not hypothetical.",
-                "03_model_behavior": "Use security reasoning to connect multiple findings. You are expected to assess patterns — not just list them. If the site uses known scam tactics, say so clearly. Do not sugarcoat risk when the signals are consistent and obvious",
-                "04a_script_inline_reasoning": "If inline JavaScript snippets are present, evaluate whether they contain common UI or analytics logic versus suspicious constructs (e.g., obfuscated code, dynamic script injection, access to cookies, etc.). Inline scripts lacking proper CSP protections (like a nonce) may pose higher risk.",
-                "04b_script_external_reasoning": "For external JavaScript, consider indicators like generic or suspicious filenames (e.g., payload.js), hidden or misleading path structures, or unversioned files. These are often signs of phishing kits or cloaking behavior, particularly when paired with weak headers or sketchy domains. Also look for the absence of Subresource Integrity (SRI), especially in third-party or protocol-relative URLs",
-                "05_tracking_nuance": "Explain when cookies exhibit fingerprint-style tracking behaviors (e.g. high entropy, persistent values, overly broad scope). Recognize known infrastructure cookies from services like Akamai or Cloudflare as widely used — but still note their potential for profiling.",
-                "06_behavioral_context": "This tool evaluates a site's behavior as if it were visited by a cautious, first-time user. Observations are turned into trust heuristics by analyzing structural hygiene and intent. Trust should be earned, not assumed.",
-                "07_reasoning_expectation": "Explain combinations of signals: e.g., high-entropy cookies + missing headers + excessive redirects suggest aggressive tracking or poor hygiene. Clarify when technically risky behavior might serve valid purposes — but state the risk plainly. Think critically.",
-                "08_consumer_protection_lens": "Frame findings in terms of what would help a non-technical user decide whether to trust the link. Focus on whether the observed behavior aligns with expected patterns for secure, well-maintained sites",
+                "01_requestContext": "Each HTTP GET is a clean mobile visit: no cookies, no referrer, no local storage. This ensures you see only the site’s true behavior.",
+                "02_dataPurpose": "The model receives real observed behaviors—headers, cookies, TLS details, scripts, redirects. They are not hypothetical; they reflect exactly what the server sent.",
+                "03_behavioralContext": "Frame every finding from the perspective of a cautious first-time visitor: what does this signal tell them about trust or risk?",
+                "04_modelBehavior": "Connect multiple findings into patterns. If you see “high entropy cookie” + “no CSP” + “Redirect loop,” call out why they matter together.",
+                "05_scriptInlineReasoning": "For inline scripts: look for obfuscated code, eval/atob, or missing nonces. Explain if inline JS might hide malicious logic.",
+                "06_scriptExternalReasoning": "For external scripts: note missing SRI, generic file names (payload.js), or protocol-relative URLs. These often signal phishing/cloaking.",
+                "07_trackingNuance": "When cookies have high entropy or SameSite=None, identify them as potential fingerprinting/tracking. Acknowledge legitimate CDN cookies but still note profiling risk.",
+                "08_tlsContext": "Check certificate age—very new certificates can signal throwaway phishing sites. Note if the CA is trustworthy or potentially malicious.",
+                "09_headerNuance": "If HSTS is missing on a 200 response, flag it unless the domain is preloaded. Missing X-Content-Type-Options or Referrer-Policy always merit mention.",
+                "10_reasoningExpectation": "Go beyond listing. For example: “Although the certificate is domain-validated, it’s only 4 days old; combined with missing security headers, that suggests poor hygiene or a phishing kit.”",
+                "11_consumerProtection_lens": "Summarize each section in a way that a non-technical user can understand: explain why each risky behavior (or each safe behavior) matters for everyday browsing."
             ]
         } else {
             return [
-                "01_request_model": "Each request is an HTTP GET that simulates a clean first-time visit from a mobile phone UA: no cookies, query parameters, fragments, storage, or referrer are sent.",
-                "02_reasoning": "This avoids leaking user data and allows the report to reflect the site’s true behavior.",
-                "03_model_behavior": "Use security reasoning to connect multiple findings. You are expected to assess patterns — not just list them. If the site uses known scam tactics, say so clearly. Avoid technical jargon — explain clearly how the observed behavior relates to trust. Even if the domain is a known brand, you should still describe behaviors that could impact trust and explain why they appear concerning or acceptable.",
+                "01_requestContext": """
+                  Each request simulates a clean, first-time mobile GET: no cookies, no storage, no referrer. That ensures you see only the site’s true behavior.
+                """,
+                "02_behavioralContext": """
+                  Interpret every finding through a consumer lens: “Would a non-technical visitor be surprised or put off by this?”  
+                  Translate technical signals (“HSTS missing,” “eval in JS”) into “why it matters for someone’s trust.”
+                """,
+                "03_modelBehavior": """
+                  Connect multiple signals. If you see both “high script density” and “missing CSP,” say why that combination is bad.  
+                  Don’t simply list what you found.
+                """
             ]
         }
     }

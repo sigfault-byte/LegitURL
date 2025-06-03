@@ -4,6 +4,8 @@
 //
 //  Created by Chief Hakka on 22/04/2025.
 //
+
+//TODO: Clean this mess
 import Foundation
 
 extension Data {
@@ -81,3 +83,11 @@ extension UInt8 {
 }
 
 
+extension Data {
+    func toJSONDict() throws -> [String: Any] {
+        guard let obj = try JSONSerialization.jsonObject(with: self) as? [String: Any] else {
+            throw NSError(domain: "toJSONDict", code: 1)
+        }
+        return obj
+    }
+}

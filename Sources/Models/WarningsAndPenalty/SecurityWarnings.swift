@@ -4,7 +4,9 @@
 //  Created by Chief Hakka on 14/03/2025.
 //
 // represents a security warning associated with a URL
-
+// TODO: Map LLM-friendly string signals to codes like C01_, C02_ etc.
+// For now, use raw string identifiers:  "cookie_set_on_non_200"
+// This avoids complexity while still helping the model parse meaning.
 
 
 import Foundation
@@ -18,8 +20,9 @@ struct SecurityWarning: Identifiable{
     var url: String
     var source: SourceType
     var bitFlags: WarningFlags
+    var machineMessage: String
     
-    init(message: String, severity: SeverityLevel, penalty: Int, url: String, source: SourceType, bitFlags: WarningFlags? = nil) {
+    init(message: String, severity: SeverityLevel, penalty: Int, url: String, source: SourceType, bitFlags: WarningFlags? = nil, machineMessage: String = "") {
         self.id = UUID()
         self.message = message
         self.severity = severity
@@ -27,6 +30,7 @@ struct SecurityWarning: Identifiable{
         self.url = url
         self.source = source
         self.bitFlags = bitFlags ?? []
+        self.machineMessage = machineMessage
         }
 
     //Represents severity levels for warnings
@@ -61,12 +65,18 @@ struct SecurityWarning: Identifiable{
         case pathSub(label: String)
         case query
         case fragment
-        case cookie
-        case header
-        case body
-        case tls
-        case getError
+
         case redirect
+        
+        case cookie
+        
+        case header
+        
+        case body
+        
+        case tls
+        
+        case getError
         case responseCode
     }
 }

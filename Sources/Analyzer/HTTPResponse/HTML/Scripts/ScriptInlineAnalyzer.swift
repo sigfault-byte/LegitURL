@@ -123,7 +123,8 @@ struct ScriptInlineAnalyzer {
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.inlineMore100kB * countOverThreshold,
                 url: origin,
-                source: .body
+                source: .body,
+                machineMessage: "\(countOverThreshold)_inline_script_exceeds_100kB"
             ))
         }
     }
@@ -220,7 +221,8 @@ struct ScriptInlineAnalyzer {
                                 penalty: PenaltySystem.Penalty.atobJSONparserCombo,
                                 url: origin,
                                 source: .body,
-                                bitFlags: WarningFlags.BODY_JS_JSON_ATOB_CHAIN
+                                bitFlags: WarningFlags.BODY_JS_JSON_ATOB_CHAIN,
+                                machineMessage: "inline_json_atob_combo"
                             ))
                         }
                     }
@@ -242,7 +244,8 @@ struct ScriptInlineAnalyzer {
                                 severity: .critical,
                                 penalty: PenaltySystem.Penalty.critical,
                                 url: origin,
-                                source: .body
+                                source: .body,
+                                machineMessage: "auto_submit_form_inline"
                             ))
                         }
                         continue
@@ -266,7 +269,6 @@ struct ScriptInlineAnalyzer {
         }
         
         for (name, count) in matchCounts {
-            
             let (penalty, severity) = PenaltySystem.getPenaltyAndSeverity(name: name)
             if name == "document.write" && jsHTMLRatio > 70 {
                 warnings.append(SecurityWarning(
@@ -274,16 +276,20 @@ struct ScriptInlineAnalyzer {
                     severity: .critical,
                     penalty: PenaltySystem.Penalty.critical,
                     url: origin,
-                    source: .body
+                    source: .body,
+                    machineMessage: "document_write_high_density_in_small_html_document"
                 ))
                 continue
             }
+            // Try to detect if this is a setter (for future extensibility, currently only some functions trigger setterDetected)
+            let isSetter = ["setItem"].contains(name)
             warnings.append(SecurityWarning(
                 message: "Suspicious JS function: \(name)(...) detected inline \(count) time(s).",
                 severity: severity,
                 penalty: penalty,
                 url: origin,
-                source: .body
+                source: .body,
+                machineMessage: "inline_function_\(name)\(isSetter ? "_setter" : "")"
             ))
         }
     }
@@ -346,7 +352,8 @@ struct ScriptInlineAnalyzer {
                                 penalty: PenaltySystem.Penalty.jsSetEditCookie,
                                 url: origin,
                                 source: .body,
-                                bitFlags: WarningFlags.BODY_JS_SET_EDIT_COOKIE
+                                bitFlags: WarningFlags.BODY_JS_SET_EDIT_COOKIE,
+                                machineMessage: "cookie_set_inline"
                             ))
                             // TODO: Extract full JS block `{}` surrounding this write for context display in body view.
                             // This could help users understand the surrounding logic — e.g., fingerprinting, reload, cookie clearing.
@@ -361,7 +368,8 @@ struct ScriptInlineAnalyzer {
                                 penalty: PenaltySystem.Penalty.informational,
                                 url: origin,
                                 source: .body,
-                                bitFlags: WarningFlags.BODY_JS_READ_COOKIE
+                                bitFlags: WarningFlags.BODY_JS_READ_COOKIE,
+                                machineMessage: "cookie_read_inline"
                             ))
                         }
                         
@@ -409,7 +417,8 @@ struct ScriptInlineAnalyzer {
                     severity: adjustedSeverity,
                     penalty: /*count * */adjustedPenalty, // cant multiply, several signal in the same spot doesnt make a bigger signal!
                     url: origin,
-                    source: .body
+                    source: .body,
+                    machineMessage: "inline_accessor_\(baseName.replacingOccurrences(of: ".", with: ""))"
                 ))
             }
         }

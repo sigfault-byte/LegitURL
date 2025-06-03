@@ -95,6 +95,9 @@ func analyzeCookie(_ cookie: CookieMetadata, httpResponseCode: Int, seenCookie: 
     if httpResponseCode != 200 {
         bitFlags.insert(.setOnRedirect)
         severity = .suspicious
+
+    }else if bitFlags.contains(.verySmall){
+        severity = .info
     }else if valueSize > 100 && (cookie.httpOnly == false || cookie.secure == false ){
         severity = .dangerous
     }else if !cookie.httpOnly && valueSize > 16 && isHighEntropyValue {

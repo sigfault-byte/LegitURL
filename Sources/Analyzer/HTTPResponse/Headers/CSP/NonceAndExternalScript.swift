@@ -47,7 +47,8 @@ struct NonceAndExternalScript {
                 severity: .info,
                 penalty: 0,
                 url: urlOrigin,
-                source: .header
+                source: .header,
+                machineMessage: "missing_nonce_and_external_script"
             ))
             return warnings
         }
@@ -85,7 +86,8 @@ struct NonceAndExternalScript {
                 severity: .info,
                 penalty: -2,
                 url: urlOrigin,
-                source: .body
+                source: .body,
+                machineMessage: "duplicate_external_script_urls"
             ))
         }
         
@@ -115,7 +117,8 @@ struct NonceAndExternalScript {
                     severity: .suspicious,
                     penalty: -10,
                     url: urlOrigin,
-                    source: .header
+                    source: .header,
+                    machineMessage: "csp_decode_failed"
                 ))
                 continue
             }
@@ -154,7 +157,8 @@ struct NonceAndExternalScript {
                         severity: .info,
                         penalty: 0,
                         url: urlOrigin,
-                        source: .header
+                        source: .header,
+                        machineMessage: "csp_path_in_source"
                     ))
                 }
                 
@@ -206,7 +210,8 @@ struct NonceAndExternalScript {
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.nonceInCSPNoInline,
                 url: urlOrigin,
-                source: .header
+                source: .header,
+                machineMessage: "missing_nonce_with_csp_present"
             ))
         }
         
@@ -222,7 +227,8 @@ struct NonceAndExternalScript {
                     severity: .suspicious,
                     penalty: -10,
                     url: urlOrigin,
-                    source: .header
+                    source: .header,
+                    machineMessage: "nonce_mismatch_scripts_csp"
                 ))
             }
             else if nonceValueFromScript == cleanedNonceFromDirective && !nonceValueFromScript.isEmpty {
@@ -232,6 +238,7 @@ struct NonceAndExternalScript {
                     penalty: 15,
                     url: urlOrigin,
                     source: .header,
+                    machineMessage: "nonce_all_matched"
                 ))
             } else if cleanedNonceFromDirective != [] || nonceValueFromScript != [] {
                 warnings.append(SecurityWarning(
@@ -239,7 +246,8 @@ struct NonceAndExternalScript {
                     severity: .suspicious,
                     penalty: -10,
                     url: urlOrigin,
-                    source: .header
+                    source: .header,
+                    machineMessage: "nonce_values_missatch"
                 ))
             }
         }
@@ -296,7 +304,8 @@ struct NonceAndExternalScript {
                         severity: .suspicious,
                         penalty: -10,
                         url: urlOrigin,
-                        source: .header
+                        source: .header,
+                        machineMessage: "external_script_not_in_csp"
                     ))
                 } else {
                     usedScriptCount += 1
@@ -338,7 +347,8 @@ struct NonceAndExternalScript {
                     penalty: -5,
                     url: urlOrigin,
                     source: .header,
-                    bitFlags: [.HEADERS_CSP_TOO_MANY_URL_SOURCES]
+                    bitFlags: [.HEADERS_CSP_TOO_MANY_URL_SOURCES],
+                    machineMessage: "csp_\(matchedSources.count)_script_sources_unused"
                 ))
             }
         }
@@ -428,7 +438,8 @@ struct NonceAndExternalScript {
                 penalty: PenaltySystem.Penalty.nonceValueIsWeak,
                 url: urlOrigin,
                 source: .header,
-                bitFlags: [.HEADERS_CSP_TOO_MANY_URL_SOURCES]
+                bitFlags: [.HEADERS_CSP_TOO_MANY_URL_SOURCES],
+                machineMessage: "nonce_entropy_low"
             ))
         } else {
             isValid = true

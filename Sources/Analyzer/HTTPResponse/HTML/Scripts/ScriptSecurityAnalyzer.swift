@@ -72,7 +72,8 @@ struct ScriptSecurityAnalyzer {
                     severity: .critical,
                     penalty: PenaltySystem.Penalty.critical,
                     url: originURL,
-                    source: .body
+                    source: .body,
+                    machineMessage: "script_loaded_over_http"
                 ))
             case .protocolRelative:
                     
@@ -92,12 +93,12 @@ struct ScriptSecurityAnalyzer {
             case .unknown:
                 scripts.scripts[index].findings4UI = [("Script origin unknown", SecurityWarning.SeverityLevel.dangerous, 0)]
                 warnings.append(SecurityWarning(
-                    message: "Script origin could not be determined. This may indicate cloaking or malformed attributes.",
+                    message: "Script origin could not be determined. This may be cloaking or malformed attributes.",
                     severity: .dangerous,
                     penalty: PenaltySystem.Penalty.scriptUnknownOrigin,
                     url: originURL,
                     source: .body,
-                    bitFlags: WarningFlags.BODY_SCRIPT_UNKNOWN_ORIGIN
+                    bitFlags: WarningFlags.BODY_SCRIPT_UNKNOWN_ORIGIN,
                 ))
             case .malformed:
                 scripts.scripts[index].findings4UI = [("Script is malformed", SecurityWarning.SeverityLevel.suspicious, 0)]
@@ -107,7 +108,7 @@ struct ScriptSecurityAnalyzer {
                     penalty: PenaltySystem.Penalty.scriptMalformed,
                     url: originURL,
                     source: .body,
-                    bitFlags: WarningFlags.BODY_SCRIPT_UNKNOWN_ORIGIN
+                    bitFlags: WarningFlags.BODY_SCRIPT_UNKNOWN_ORIGIN,
                 ))
             default:
                 break
@@ -152,6 +153,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.scriptIs70Percent + 15,
                 url: originURL,
                 source: .body,
+                machineMessage: "inline_js_dominates_tiny_page"
             ))
             return percent
         }
@@ -167,7 +169,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.informational + smallHTMLBonus,
                 url: originURL,
                 source: .body,
-                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO
+                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO,
             ))
         case 50..<70:
             warnings.append(SecurityWarning(
@@ -176,7 +178,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.scriptIs5070Percent + smallHTMLBonus,
                 url: originURL,
                 source: .body,
-                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO
+                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO,
             ))
         case 70...:
             warnings.append(SecurityWarning(
@@ -185,7 +187,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.scriptIs70Percent + smallHTMLBonus,
                 url: originURL,
                 source: .body,
-                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO
+                bitFlags: WarningFlags.BODY_HIGH_JS_RATIO,
             ))
         default:
             break
@@ -211,7 +213,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.bomboclotScript,
                 url: originURL,
                 source: .body,
-                bitFlags: WarningFlags.BODY_HIGH_SCRIPT_COUNT_LARGE_PAGE
+                bitFlags: WarningFlags.BODY_HIGH_SCRIPT_COUNT_LARGE_PAGE,
             ))
         }
 
@@ -219,6 +221,7 @@ struct ScriptSecurityAnalyzer {
         case 0..<0.05:
             break
         case 0.05..<0.1:
+            // No machineMessage for low density per instruction
             warnings.append(SecurityWarning(
                 message: "Script density is \(rounded) script per 1000 bytes. This may be typical of apps using moderate scripting.",
                 severity: .info,
@@ -233,7 +236,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.mediumScritpDensity,
                 url: originURL,
                 source: .body,
-                bitFlags: WarningFlags.BODY_HIGH_SCRIPT_DENSITY
+                bitFlags: WarningFlags.BODY_HIGH_SCRIPT_DENSITY,
             ))
         case 0.2...:
             warnings.append(SecurityWarning(
@@ -242,7 +245,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.highScriptDensity,
                 url: originURL,
                 source: .body,
-                bitFlags: WarningFlags.BODY_HIGH_SCRIPT_DENSITY
+                bitFlags: WarningFlags.BODY_HIGH_SCRIPT_DENSITY,
             ))
         default:
             break
@@ -280,7 +283,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.scriptDataURI,
                 url: origin,
                 source: .body,
-                bitFlags: WarningFlags.BODY_SCRIPT_DATAURI
+                bitFlags: WarningFlags.BODY_SCRIPT_DATAURI,
             ))
         }
         if protocolRelativeCounter > 0 {
@@ -290,7 +293,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.protocolRelativeScriptSrc,
                 url: origin,
                 source: .body,
-                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL
+                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL,
             ))
         }
         if protocolRelativeCounterWithIntegrity > 0 {
@@ -300,7 +303,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.protocolRelativeScriptSRI,
                 url: origin,
                 source: .body,
-                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL
+                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL,
             ))
         }
         if protocolRelativeCounter > 0, protocolRelativeCounterWithIntegrity > 0, protocolRelativeCounter != protocolRelativeCounterWithIntegrity {
@@ -310,7 +313,7 @@ struct ScriptSecurityAnalyzer {
                 penalty: PenaltySystem.Penalty.protocolRelativeScriptSrc,
                 url: origin,
                 source: .body,
-                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL
+                bitFlags: WarningFlags.BODY_JS_SCRIPT_PROTOCOL,
             ))
         }
     }

@@ -13,8 +13,8 @@ struct HTMLAnalyzerFast {
         let bodySize: Int = body.count
         let result = DataSignatures.extractHtmlTagRange(in: body)
         
-        guard bodySize < 4_000_000 else {
-            warnings.append(SecurityWarning(message: "Body too large for fast scan.", severity: .suspicious, penalty: -30 , url: origin, source: .body))
+        guard bodySize < 5_000_000 else {
+            warnings.append(SecurityWarning(message: "Body too large ( more than 5MB) for fast scan.", severity: .suspicious, penalty: -30 , url: origin, source: .body))
             
             return (nil, nil)
         }

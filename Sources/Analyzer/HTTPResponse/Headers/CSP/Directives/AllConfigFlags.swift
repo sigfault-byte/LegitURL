@@ -24,7 +24,8 @@ struct CSPConfigAnalysis {
                     penalty: 0,
                     url: url,
                     source: .header,
-                    bitFlags: [.HEADERS_INCORRECT_LOGIC]
+                    bitFlags: [.HEADERS_INCORRECT_LOGIC],
+                    machineMessage: "\(directive)_wildcard_plus_http_source_nonsense"
                 ))
             }
 
@@ -35,7 +36,8 @@ struct CSPConfigAnalysis {
                     penalty: 0,
                     url: url,
                     source: .header,
-                    bitFlags: [.HEADERS_INCORRECT_LOGIC]
+                    bitFlags: [.HEADERS_INCORRECT_LOGIC],
+                    machineMessage: "\(directive)_self_and_wildcard_source"
                 ))
             }
 
@@ -53,7 +55,8 @@ struct CSPConfigAnalysis {
                     severity: .suspicious,
                     penalty: PenaltySystem.Penalty.malformedIncompleteCSP,
                     url: url,
-                    source: .header
+                    source: .header,
+                    machineMessage: "\(directive)_none_with_other_sources"
                 ))
             }
         }

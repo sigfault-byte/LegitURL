@@ -20,7 +20,8 @@ struct HeadersUtils {
                     penalty: PenaltySystem.Penalty.serverLeakNameAndVersion,
                     url: urlOrigin,
                     source: .header,
-                    bitFlags: [.HEADERS_LEAK_SERVER_VERSION]
+                    bitFlags: [.HEADERS_LEAK_SERVER_VERSION],
+                    machineMessage: "server_leaks_version"
                 ))
             }
 //            Inconsistent and somehow also interesting, but only if the name s relevant...
@@ -56,7 +57,8 @@ struct HeadersUtils {
                         severity: .info,
                         penalty: 0,
                         url: urlOrigin,
-                        source: .header
+                        source: .header,
+                        machineMessage: "hsts_strong_max_age"
                     ))
                 } else {
                     warnings.append(SecurityWarning(
@@ -64,7 +66,8 @@ struct HeadersUtils {
                         severity: .suspicious,
                         penalty: PenaltySystem.Penalty.lowHSTSValue,
                         url: urlOrigin,
-                        source: .header
+                        source: .header,
+                        machineMessage: "hsts_weak_max_age"
                     ))
                 }
             } else {
@@ -74,7 +77,8 @@ struct HeadersUtils {
                     penalty: PenaltySystem.Penalty.missingHSTS,
                     url: urlOrigin,
                     source: .header,
-                    bitFlags: [.HEADERS_MISSING_HSTS]
+                    bitFlags: [.HEADERS_MISSING_HSTS],
+                    machineMessage: "hsts_missing_max_age"
                 ))
             }
             if hsts.lowercased().contains("max-age=") {
@@ -86,7 +90,8 @@ struct HeadersUtils {
                         severity: .info,
                         penalty: PenaltySystem.Penalty.informational, // mb reward for a unfortunalty rare value ?
                         url: urlOrigin,
-                        source: .header
+                        source: .header,
+                        machineMessage: "hsts_includesubdomains_present"
                     ))
 //                    TODO: Need to tinker this, night be a reward. Might be entirely uselee. These keywaords are too rare... So a positive signal  maybe.
 //                } else {
@@ -116,7 +121,8 @@ struct HeadersUtils {
                 penalty: PenaltySystem.Penalty.missingHSTS,
                 url: urlOrigin,
                 source: .header,
-                bitFlags: [.HEADERS_MISSING_HSTS]
+                bitFlags: [.HEADERS_MISSING_HSTS],
+                machineMessage: "hsts_header_missing"
             ))
         }
         
@@ -137,7 +143,8 @@ struct HeadersUtils {
                 penalty: PenaltySystem.Penalty.inccorectLogic,
                 url: urlOrigin,
                 source: .header,
-                bitFlags: [.HEADERS_INCORRECT_LOGIC]
+                bitFlags: [.HEADERS_INCORRECT_LOGIC],
+                machineMessage: "missing_content_type"
             ))
         } else if !contentType!.lowercased().contains("text/html") {
             warnings.append(SecurityWarning(
@@ -146,7 +153,8 @@ struct HeadersUtils {
                 penalty: PenaltySystem.Penalty.inccorectLogic,
                 url: urlOrigin,
                 source: .header,
-                bitFlags: [.HEADERS_INCORRECT_LOGIC]
+                bitFlags: [.HEADERS_INCORRECT_LOGIC],
+                machineMessage: "unexpected_content_type"
             ))
         }
         
@@ -158,7 +166,8 @@ struct HeadersUtils {
                     penalty: PenaltySystem.Penalty.inccorectLogic,
                     url: urlOrigin,
                     source: .header,
-                    bitFlags: [.HEADERS_INCORRECT_LOGIC]
+                    bitFlags: [.HEADERS_INCORRECT_LOGIC],
+                    machineMessage: "xcto_misconfigured"
                 ))
             }
             
@@ -169,7 +178,8 @@ struct HeadersUtils {
                     penalty: PenaltySystem.Penalty.inccorectLogic,
                     url: urlOrigin,
                     source: .header,
-                    bitFlags: [.HEADERS_INCORRECT_LOGIC]
+                    bitFlags: [.HEADERS_INCORRECT_LOGIC],
+                    machineMessage: "xcto_without_content_type"
                 ))
             }
         } else {
@@ -179,7 +189,8 @@ struct HeadersUtils {
                 penalty: PenaltySystem.Penalty.inccorectLogic,
                 url: urlOrigin,
                 source: .header,
-                bitFlags: [.HEADERS_INCORRECT_LOGIC]
+                bitFlags: [.HEADERS_INCORRECT_LOGIC],
+                machineMessage: "xcto_missing"
             ))
         }
         
@@ -199,7 +210,8 @@ struct HeadersUtils {
                     penalty: PenaltySystem.Penalty.inccorectLogic,
                     url: urlOrigin,
                     source: .header,
-                    bitFlags: [.HEADERS_INCORRECT_LOGIC]
+                    bitFlags: [.HEADERS_INCORRECT_LOGIC],
+                    machineMessage: "content_length_too_small_less_than_50B"
                 ))
             } else if contentLengthInt > 10_000_000 {
                 warnings.append(SecurityWarning(
@@ -208,7 +220,8 @@ struct HeadersUtils {
                     penalty: PenaltySystem.Penalty.inccorectLogic,
                     url: urlOrigin,
                     source: .header,
-                    bitFlags: [.HEADERS_INCORRECT_LOGIC]
+                    bitFlags: [.HEADERS_INCORRECT_LOGIC],
+                    machineMessage: "content_length_too_large_more_than_10MB"
                 ))
             }
 //            This does not work and is more of a good practice
@@ -247,6 +260,7 @@ struct HeadersUtils {
                     penalty: PenaltySystem.Penalty.weakReferrerPolicy,
                     url: urlOrigin,
                     source: .header,
+                    machineMessage: "referrer_policy_weak_or_risky"
                 ))
             }
         } else {
@@ -256,6 +270,7 @@ struct HeadersUtils {
                 penalty: PenaltySystem.Penalty.weakReferrerPolicy,
                 url: urlOrigin,
                 source: .header,
+                machineMessage: "referrer_policy_missing"
             ))
         }
         

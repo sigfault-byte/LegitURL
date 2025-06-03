@@ -67,6 +67,7 @@ struct WarningFlags: OptionSet {
     static let TLS_IS_FRESH                         = WarningFlags(rawValue: 1 << 64)
     static let TLS_SANS_FLOOD                       = WarningFlags(rawValue: 1 << 65)
     static let TLS_IS_EV_OR_OV                      = WarningFlags(rawValue: 1 << 66)
+    static let TLS_REUSE_IN_CHAIN                   = WarningFlags(rawValue: 1 << 67)
 
     // Reserved: 67–79
 

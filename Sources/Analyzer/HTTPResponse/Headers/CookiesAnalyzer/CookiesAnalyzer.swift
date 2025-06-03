@@ -65,7 +65,8 @@ struct CookiesAnalyzer {
                 penalty:  0, /*Penalzised on individual cookie*/
                 url: coreURL,
                 source: .cookie,
-                bitFlags: cookieFlags
+                bitFlags: cookieFlags,
+                machineMessage: "set_on_non_200_response"
             ))
         }
         
@@ -78,7 +79,9 @@ struct CookiesAnalyzer {
                                        seenCookie: globalSeenCookies,
                                        host: hostRef)
 
-            let reasons = result.flags.descriptiveReasons().joined(separator: ", ")
+            let (machine, human) = result.flags.descriptiveReasons()
+            let reasons = human.joined(separator: ", ")
+            let machineMessage = machine.joined(separator: "_")
             let penalty = PenaltySystem.penaltyForCookieBitFlags(result.flags)
             var warningFlags: WarningFlags = [cookieFlags]
 
@@ -97,7 +100,8 @@ struct CookiesAnalyzer {
                 penalty: penalty,
                 url: url,
                 source: .cookie,
-                bitFlags: warningFlags
+                bitFlags: warningFlags,
+                machineMessage: machineMessage
             ))
 
             URLQueue.shared.cookiesSeenByRedirectChain[urlInfo.id, default: Set<String>()].insert(metadata.name)

@@ -51,7 +51,7 @@ struct TLSCertificateAnalyzer {
             $0.value.domain == domain &&
             $0.value.fingerprint == certificate.fingerprintSHA256
         }) {
-            addWarning("TLS certificate with the same fingerprint. Skipping TLS checks.", .info, penalty: 0)
+            addWarning("TLS certificate with the same fingerprint. Skipping TLS checks.", .info, penalty: 0, bitFlags: WarningFlags.TLS_REUSE_IN_CHAIN)
             return
         }
         

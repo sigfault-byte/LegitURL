@@ -35,7 +35,8 @@ struct ScriptAndDefaultDirective {
                     : 0,
                 url: url,
                 source: .header,
-                bitFlags: [.HEADERS_CSP_UNSAFE_INLINE]
+                bitFlags: [.HEADERS_CSP_UNSAFE_INLINE],
+                machineMessage: "csp_unsafe_inline_present"
             ))
         } else if (bitFlagCSP.contains(.hasNonce) || bitFlagCSP.contains(.hasHash)) && bitFlagCSP.contains(.strictDynamic) {
             warnings.append(SecurityWarning(
@@ -44,7 +45,8 @@ struct ScriptAndDefaultDirective {
                 penalty: PenaltySystem.Penalty.informational,
                 url: url,
                 source: .header,
-                bitFlags: [.HEADERS_CSP_HAS_NONCE_OR_HASH]
+                bitFlags: [.HEADERS_CSP_HAS_NONCE_OR_HASH],
+                machineMessage: "csp_nonce_or_hash_with_strict_dynamic"
             ))
         }
 
@@ -58,7 +60,8 @@ struct ScriptAndDefaultDirective {
                     : 0,
                 url: url,
                 source: .header,
-                bitFlags: [.HEADERS_CSP_UNSAFE_EVAL]
+                bitFlags: [.HEADERS_CSP_UNSAFE_EVAL],
+                machineMessage: "csp_unsafe_eval_present"
             ))
         }
 
@@ -70,7 +73,8 @@ struct ScriptAndDefaultDirective {
                 penalty: source == "CSP" ? PenaltySystem.Penalty.wildcardScriptSrc : 0,
                 url: url,
                 source: .header,
-                bitFlags: [.HEADERS_CSP_WILDCARD]
+                bitFlags: [.HEADERS_CSP_WILDCARD],
+                machineMessage: "csp_wildcard_present"
             ))
         }
 
@@ -93,7 +97,8 @@ struct ScriptAndDefaultDirective {
                 penalty: PenaltySystem.Penalty.fakeCSP,
                 url: url,
                 source: .header,
-                bitFlags: [.HEADERS_FAKE_CSP]
+                bitFlags: [.HEADERS_FAKE_CSP],
+                machineMessage: "csp_missing_default_and_script_src"
             ))
             
         } else if !hasObjectSrc && !defaultSrcIsNone {
@@ -103,6 +108,7 @@ struct ScriptAndDefaultDirective {
                 penalty: PenaltySystem.Penalty.inccorectLogic,
                 url: url,
                 source: .header,
+                machineMessage: "csp_missing_object_src"
             ))
         } else if hasRequiredTrustedTypeFor {
             if let trustedTypesDirective = structuredCSP["require-trusted-types-for"] {
@@ -118,7 +124,8 @@ struct ScriptAndDefaultDirective {
                         penalty: 5,
                         url: url,
                         source: .header,
-                        bitFlags: [.HEADERS_CSP_TRUSTED_TYPES]
+                        bitFlags: [.HEADERS_CSP_TRUSTED_TYPES],
+                        machineMessage: "csp_trusted_types_script_enforced"
                     ))
                 } else {
                     warnings.append(SecurityWarning(
@@ -127,7 +134,8 @@ struct ScriptAndDefaultDirective {
                         penalty: PenaltySystem.Penalty.fakeCSP,
                         url: url,
                         source: .header,
-                        bitFlags: [.HEADERS_FAKE_CSP]
+                        bitFlags: [.HEADERS_FAKE_CSP],
+                        machineMessage: "csp_trusted_types_script_missing"
                     ))
                 }
             }

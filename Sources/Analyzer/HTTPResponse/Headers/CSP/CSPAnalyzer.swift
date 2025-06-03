@@ -37,7 +37,8 @@ struct CSPAnalyzer {
                     penalty: PenaltySystem.Penalty.CSPReportOnly,
                     url: urlOrigin,
                     source: .header,
-                    bitFlags: [.HEADERS_CSP_MISSING]
+                    bitFlags: [.HEADERS_CSP_MISSING],
+                    machineMessage: "header_only_csp_report_only"
                 ))
                 originCSP = "CSP-RO"
             }
@@ -55,7 +56,8 @@ struct CSPAnalyzer {
                 penalty: PenaltySystem.Penalty.missingCSP,
                 url: urlOrigin,
                 source: .header,
-                bitFlags: [.HEADERS_CSP_MISSING]
+                bitFlags: [.HEADERS_CSP_MISSING],
+                machineMessage: "csp_header_missing"
             ))
             return (
                 warnings,

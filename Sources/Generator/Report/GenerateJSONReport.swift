@@ -5,7 +5,7 @@
 //  Created by Chief Hakka on 27/05/2025.
 //
 //  Created to generate a compact, high-signal structured JSON object from URLQueue analysis results
-
+//TODO: This is a terrible JSON, explore the leads on MetaJSONBuilder etc.
 import Foundation
 
 func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data] {
@@ -39,175 +39,200 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
     
     //priming the model
     let (prime, instruction) = LLMPriming.loadPrimmingInstructions(brief: brief, locale: userLocale)
-    finalOutput.append(prime)
-    finalOutput.append(instruction)
+    let metaBlock: [String: Any] = [
+        "meta": [
+            "01_taskOverview": prime,
+            "02_modelContext": instruction
+        ]
+    ]
+    finalOutput.append(metaBlock)
     
     
     //summary of the following JSON
-    let inputURL = first.components.fullURL ?? "-"
-    let finalURL = last.components.fullURL ?? "-"
+    let inputURL = first.components.fullURL ?? ""
+    let finalURL = last.components.fullURL ?? ""
 //    let score = String(queue.legitScore.score)
     let hopCount = String(queue.offlineQueue.count - 1)
 //    let criticalWarnings = URLQueue.shared.offlineQueue
 //        .flatMap { $0.warnings }
 //        .filter { $0.severity == .critical || $0.severity == .fetchError }
 
-    let warnings = generateWarningJson(urls: queue)
+//    let warnings = generateWarningJson(urls: queue)
     
-    let summary: [String : Any] = ["Summary" : [
-        "01_input_url" : inputURL,
-        "02_final_url" : finalURL,
-//        "03_score" : score,
-        "04_number_of_redirect" : hopCount, //This needs to be prime that its the number of urls report
-//        "05_findings_summary_sorted": "descending by penalty",
-        "06_findings" : warnings
-    ]]
     
-    finalOutput.append(summary)
     
-    //-------------------------------------------------//
+//-------------------------------------------------//
     //-------------------------------------------------//
     //-------------------------------------------------//
     //-------------------------------------------------//
     //MARK: Bail early for "brief" reports.
     
     if brief {
+        var tlsInfo: [String: Any] = [:]
+        if let cert = queue.onlineQueue.last?.parsedCertificate {
+            
+            if let issuerCommonName = cert.issuerCommonName, let subjectCommonName = cert.commonName {
+                tlsInfo["issuerCommonNAme"] = issuerCommonName + " , " + subjectCommonName
+            }
+            if cert.certificatePolicyOIDs != nil {
+                tlsInfo["certificatePolicy"] = cert.inferredValidationLevel.rawValue == "unknown"
+                    ? cert.certificatePolicyOIDs
+                    : cert.inferredValidationLevel.rawValue
+            }
+            if let notBefore = cert.notBefore {
+                tlsInfo["notBefore"] = formatter.string(from: notBefore)
+            }
+            if let notAfter = cert.notAfter {
+                tlsInfo["notAfter"] = formatter.string(from: notAfter)
+            }
+            if let subjectAlternativeNames = cert.subjectAlternativeNames {
+                tlsInfo["numberOfSAN"] = subjectAlternativeNames.count
+            }
+        }
+        
+        let warnings = SecurityWarningTriage.generateWarningJson(urls: queue)
+        
+        let summary: [String : Any] = ["Summary" : [
+                "01_inputUrl" : inputURL,
+                "02_finalUrl" : finalURL,
+                "03_encouteredUrls" : warnings["idMap"] ?? NSNull(),
+                "04_numberOfRedirect" : hopCount, //This needs to be prime that its the number of urls report
+                "05_lastURLTlsDetails" : tlsInfo,
+                "06_findings" : warnings["findingsByUrls"] ?? NSNull()
+            ]]
+
+        finalOutput.append(summary)
         return [try serializeAndClean(finalOutput)]
     }
     
     // Loop URLs
+    var reportArray: [[String: Any]] = []
     var scriptAppendices: [[String: Any]] = []
-    for (index, urlReport) in queue.offlineQueue.enumerated() {
+    for (_, urlReport) in queue.offlineQueue.enumerated() {
         
         //Offline element
         //shorthand
         let components = urlReport.components
         
         //Offline Var
-        let domain = components.extractedDomain ?? "-"
-        let tld = components.extractedTLD ?? "-"
-        let subdomain = components.subdomain ?? "-"
-        let path = components.path ?? "-"
-        let query = components.query ?? "-"
-        let fragment = components.fragment ?? "-"
-        let punycode = components.punycodeHostEncoded ?? "_"
+        let domain: Any = components.extractedDomain ?? NSNull()
+        let tld : Any = components.extractedTLD ?? NSNull()
+        let subdomain: Any = components.subdomain ?? NSNull()
+        let path: Any = components.path ?? NSNull()
+        let query: Any = components.query ?? NSNull()
+        let fragment: Any = components.fragment ?? NSNull()
+        let punycode: Any = components.punycodeHostEncoded ?? NSNull()
         
         var reportContent: [String: Any] = [
-            "01_FullURL" : urlReport.components.fullURL ?? "",
+            "01_url" : urlReport.components.fullURL ?? NSNull(),
             "02_domain" : domain,
             "03_tld" : tld,
             "04_subdomain" : subdomain,
             "05_path" : path,
             "06_query" : query,
             "07_fragment" : fragment,
-            "08_punycoded_host" : punycode,
+            "08_punycodedHost" : punycode,
         ]
         
         // Online Var
         //HTTP response code
         let onlineMap = Dictionary(uniqueKeysWithValues: queue.onlineQueue.map { ($0.id, $0) })
         if let online = onlineMap[urlReport.id] {
-            reportContent["10_requested_URL"] = components.coreURL ?? ""
+            reportContent["10_requestedUrl"] = components.coreURL ?? "error"
             if let code = online.serverResponseCode {
-                reportContent["11_response_code"] = code
+                reportContent["11_responseCode"] = code
             }
             if let status = online.statusText {
-                reportContent["12_status_text"] = status
+                reportContent["12_statusText"] = status
             }
             if let finalRedirect = online.finalRedirectURL {
-                reportContent["13_final_redirect"] = finalRedirect
+                reportContent["13_finalRedirect"] = finalRedirect.isEmpty
             }
             //TLS
             //TODO: Skip when redirect chain is using the same tls
             if let cert = online.parsedCertificate {
+                var tlsInfo: [String: Any] = [:]
                 if let issuerCommonName = cert.issuerCommonName, let subjectCommonName = cert.commonName {
-                    reportContent["14_issuerName_CommonName"] = issuerCommonName + " , " + subjectCommonName
+                    tlsInfo["issuerCommonNAme"] = issuerCommonName + " , " + subjectCommonName
                 }
-                if let certificatePolicyOIDs = cert.certificatePolicyOIDs {
-                    reportContent["15_certificate_policy_oids"] = certificatePolicyOIDs
+                if cert.certificatePolicyOIDs != nil {
+                    tlsInfo["certificatePolicy"] = cert.inferredValidationLevel.rawValue == "unknown"
+                        ? cert.certificatePolicyOIDs
+                        : cert.inferredValidationLevel.rawValue
                 }
                 if let notBefore = cert.notBefore {
-                    reportContent["16_not_before"] = formatter.string(from: notBefore)
+                    tlsInfo["notBefore"] = formatter.string(from: notBefore)
                 }
                 if let notAfter = cert.notAfter {
-                    reportContent["17_not_after"] = formatter.string(from: notAfter)
+                    tlsInfo["notAfter"] = formatter.string(from: notAfter)
                 }
                 if let subjectAlternativeNames = cert.subjectAlternativeNames {
-                    reportContent["18_number_of_san"] = subjectAlternativeNames.count
+                    tlsInfo["numberOfSAN"] = subjectAlternativeNames.count
                 }
-            } // end TLS
+                reportContent["14_tls"] = tlsInfo
+            }
             
             //Cookies
             //TODO: Maybe skip cookies that al ready appeared ?
             let cookies = online.cookiesForUI
-            reportContent["20_number_of_cookies"] = cookies.count
+            reportContent["15_numberOfCookies"] = cookies.count
             if !cookies.isEmpty {
                 var cookieDetail: [Any] = []
                 for (_, cookie) in cookies.enumerated() {
                     
                     let (_, entropyValue) = CommonTools.isHighEntropy(cookie?.cookie.value ?? "")
-                    let entropyValueString = entropyValue.map { String(format: "%.2f", $0) } ?? "nil"
-                    let httponlyDescription = cookie?.cookie.httpOnly != nil ? "YES" : "NO"
+                    let roundedEntropy: Any = entropyValue.map { Double(round($0 * 10) / 10) } ?? NSNull()
+                    let entropyValueFinal: Any = roundedEntropy
+
+                    let httpOnly: Bool = cookie?.cookie.httpOnly ?? false
                     
                     var cookieEntry: [String: Any] = [:]
-                    cookieEntry["01_key"] = cookie?.cookie.name ?? ""
-                    cookieEntry["02_value_entropy"] = entropyValueString
-                    cookieEntry["03_value_len"] = cookie?.cookie.value.count ?? 0
-                    cookieEntry["04_sameSitePolicy"] = cookie?.cookie.sameSite ?? ""
-                    cookieEntry["05_secure_"] = cookie?.cookie.secure ?? false
-                    cookieEntry["06_httpOnly"] = httponlyDescription
-                    // This sucks, should use the UI function that does exactly this
+                    cookieEntry["01_key"] = cookie?.cookie.name ?? NSNull()
+                    cookieEntry["02_valueEntropy"] = entropyValueFinal
+                    cookieEntry["03_valueLen"] = cookie?.cookie.value.count ?? 0
+                    cookieEntry["04_sameSitePolicy"] = cookie?.cookie.sameSite ?? NSNull()
+                    cookieEntry["05_secure"] = cookie?.cookie.secure ?? false
+                    cookieEntry["06_httpOnly"] = httpOnly
+                    // This sucks, should use the UI function that does exactly this Convert to iso machine
                     if let expiry = cookie?.cookie.expire {
-                        let now = Date()
-                        let duration = expiry.timeIntervalSince(now)
-                        
-                        let durationString: String
-                        if duration < 0 {
-                            durationString = "Expired \(-Int(duration) / 3600) hours ago"
-                        } else if duration < 3600 {
-                            durationString = "\(Int(duration / 60)) minutes"
-                        } else if duration < 86400 {
-                            durationString = "\(Int(duration / 3600)) hours"
-                        } else if duration < 86400 * 30 {
-                            durationString = "\(Int(duration / 86400)) days"
-                        } else {
-                            durationString = "\(Int(duration / (86400 * 30))) months"
-                        }
-                        cookieEntry["07_expires_in"] = durationString
+                        let isoFormatter = ISO8601DateFormatter()
+                        isoFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+                        let isoString = isoFormatter.string(from: expiry)
+                        cookieEntry["07_expires"] = ["type": "absolute", "value": isoString]
                     } else {
-                        cookieEntry["07_expires_in"] = "Session"
+                        cookieEntry["07_expires"] = ["type": "session"]
                     }
                     
                     cookieDetail.append(cookieEntry)
                 }
-                reportContent["21_cookie_detail"] = cookieDetail.isEmpty ? "" : cookieDetail
+                reportContent["16_cookieDetail"] = cookieDetail.isEmpty ? NSNull(): cookieDetail
                 
             } // if cookie end
             
             //headers
-            if let headers = online.parsedHeaders {
-                var groupedHeaders: [String: [String: String]] = [:]
-                
-                groupedHeaders["01_Security_headers"] = headers.securityHeaders
-                groupedHeaders["02_Tracking_headers"] = headers.trackingHeaders.filter { $0.key.lowercased() != "set-cookie" }
-                //TODO: think about what matters and what matters less. To assess, the thrust by the model, maybe security header and server is enough?
-                groupedHeaders["03_Server_metadata"] = headers.serverHeaders
-                groupedHeaders["Other_headers"] = headers.otherHeaders
-                
-                reportContent["23_headers"] = groupedHeaders
-                
+            if let headers = online.normalizedHeaders {
+                let mergedHeaders = HeadersTriage.triage(headers, csp: online.cspOfHeader)
+//                var mergedHeaders: [String: String] = [:]
+//                headers.securityHeaders.forEach { mergedHeaders[$0.key] = $0.value }
+//                headers.trackingHeaders.filter { $0.key.lowercased() != "set-cookie" }.forEach { mergedHeaders[$0.key] = $0.value }
+//                headers.serverHeaders.forEach { mergedHeaders[$0.key] = $0.value }
+//                headers.otherHeaders.forEach { mergedHeaders[$0.key] = $0.value }
+                reportContent["17_headers"] = mergedHeaders.isEmpty ? NSNull() : mergedHeaders
             } // if header end
             
             //body / script ...
             let scripts = online.script4daUI
-            let scriptSummary = ScriptSummaryBuilder.makeSummary(from: scripts)
-            reportContent["24_Script"] = scriptSummary
+            let bodySize = online.humanBodySize ?? 0
+            let scriptSummary = ScriptSummaryBuilder.makeSummary(from: scripts, bodySize: bodySize )
+            reportContent["18_scripts"] = scriptSummary.isEmpty ? NSNull(): scriptSummary
+            
+            let warnings = SecurityWarningTriage.getRelevantSecurityWarnings(for: urlReport, with: [.host, .path, .query, .fragment, .redirect, .cookie, .header, .body , .tls , .getError , .responseCode])
+            
+            reportContent["19_findings"] = warnings.isEmpty ? NSNull() : warnings
             
         } // if Online end
         
-        let report: [String: Any] = ["Report_\(index)" : reportContent]
-        finalOutput.append(report)
-        
+        reportArray.append(reportContent)
         
         
         // Generate appendices for inline script focused snippets
@@ -231,10 +256,11 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
             }
         }
     }
+    finalOutput.append(["reports": reportArray])
     
     // After all reports, append script previews if any
     if !scriptAppendices.isEmpty {
-        let appendixWrapper: [String: Any] = ["ScriptPreviews": scriptAppendices]
+        let appendixWrapper: [String: Any] = ["scriptPreviews": scriptAppendices]
         finalOutput.append(appendixWrapper)
     }
     
@@ -244,6 +270,17 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
 
 //MARK: THE END FUNCTION IS HERE
 func serializeAndClean(_ json: [[String: Any]]) throws -> Data {
+    // Check for invalid JSON objects before attempting serialization
+    #if DEBUG
+    for (index, obj) in json.enumerated() {
+        if !JSONSerialization.isValidJSONObject(obj) {
+            print("FAILEDInvalid JSON object at index \(index):")
+            dump(obj)
+            throw NSError(domain: "Invalid JSON object", code: -1)
+        }
+    }
+    #endif
+    
     let jsonData = try JSONSerialization.data(
         withJSONObject: json.map { NSDictionary(dictionary: $0) },
         options: [.withoutEscapingSlashes, .sortedKeys, /*.prettyPrinted*/]
@@ -268,6 +305,148 @@ func serializeAndClean(_ json: [[String: Any]]) throws -> Data {
     }
 
     return cleanedData
+}
+
+struct ScriptSummaryBuilder {
+    static func makeSummary(from scripts: [ScriptPreview], bodySize: Int) -> Dictionary<String, Any> {
+        let inlineScripts = scripts.filter { $0.origin == .inline || $0.origin == .moduleInline }
+        let httpScripts = scripts.filter { $0.origin == .httpExternal || $0.origin == .httpsExternal }
+        let relativeScripts = scripts.filter { $0.origin == .relative || $0.origin == .protocolRelative }
+        let moduleExternalScripts = scripts.filter { $0.origin == .moduleExternal || $0.origin == .moduleRelative }
+
+        let inlineNonceCount = inlineScripts.filter { !($0.nonce?.isEmpty ?? true) }.count
+        let totalInlineSize = inlineScripts.reduce(0) { $0 + $1.size }
+        let largestInlineScriptSize = inlineScripts.map { $0.size }.max() ?? 0
+        let externalScriptsTotal = httpScripts.count + relativeScripts.count + moduleExternalScripts.count
+        let externalWithSRI = scripts.filter { !($0.integrity?.isEmpty ?? true) }.count
+        let externalWithCrossOrigin = scripts.filter { !($0.crossOriginValue?.isEmpty ?? true) }.count
+
+        let scritpDensityPerKB = scripts.count
+        
+//        scripts per 1000 bytes, a kind of “density per KB"
+        let rawDensity = bodySize > 0 ? (Double(scritpDensityPerKB) / Double(bodySize)) * 1000 : 0.0
+        let normalized = Double(round(rawDensity * 10) / 10)
+        
+//        let rounded = String(format: "%.3f", normalized)
+
+        
+        let averageInline = inlineScripts.count > 0 ? totalInlineSize / inlineScripts.count : 0
+        
+        var scriptsPreviews: [Int] = []
+        
+        for (index, script) in scripts.enumerated() {
+            if script.isInline {
+                let previewNeeded = script.findings?.contains(where: { $0.pos != nil && $0.pos != 0 }) ?? false
+                if previewNeeded {
+                    scriptsPreviews.append(index)
+                }
+            }
+        }
+
+        var suspiciousSnippets: [[String: Any]] = []
+        for idx in scriptsPreviews {
+            let matching = scripts[idx]
+            //nasty
+            suspiciousSnippets.append([
+                "size": matching.size,
+                "nonce": !(matching.nonce?.isEmpty ?? true),
+                "isModule": matching.isModule ?? false,
+                "findings": matching.findings?.compactMap { $0.message } ?? [],
+                "snippet_ref": "inlineScript_\(idx)"
+            ])
+        }
+        let externalDetail = generate_externalSrc(scripts: scripts)
+        // TODO: Group external scripts by path prefix and detect known third-party services
+        return [
+                "01_summary": [
+                    "01_count": [
+                        "01_inline": inlineScripts.count,
+                        "02_external": externalScriptsTotal
+                    ],
+                    "02_size": [
+                        "04_totalInlineBytes": totalInlineSize,
+                        "05_largestInline": largestInlineScriptSize,
+                        "06_averageInline": averageInline
+                    ],
+                    "03_flags": [
+                        "07_inlineWithNonce": inlineNonceCount,
+                        "08_inlineSuspicious": scriptsPreviews.count,
+                        "09_externalWithSri": externalWithSRI,
+                        "10_externalWithCrossorigin": externalWithCrossOrigin
+                    ],
+                    "04_densityPerKilobyte": normalized
+                ],
+                "02_inlineScripts": suspiciousSnippets.map { snippet in
+                    return [
+                        "01_size": snippet["size"] ?? 0,
+                        "02_hasNonce": snippet["nonce"] ?? false,
+                        "03_isModule": snippet["is_module"] ?? false,
+                        "04_findings": snippet["findings"] ?? NSNull(),
+                        "05_focusedSnippets": (snippet["snippet_ref"].map { [String(describing: $0)] } ?? [])
+                    ]
+                },
+                "03_externalScriptGroups": externalDetail
+        ]
+    }
+    private static func generate_externalSrc(scripts: [ScriptPreview]) -> [Any] {
+        // Categorize scripts into absolute/protocol-relative, relative, and ignore others
+        var absoluteScripts: [ScriptPreview] = []
+        var relativeScripts: [ScriptPreview] = []
+
+        for script in scripts {
+            guard let src = script.extractedSrc else { continue }
+            if src.hasPrefix("http") || src.hasPrefix("//") {
+                absoluteScripts.append(script)
+            } else if src.hasPrefix("/") || (!src.contains("://") && !src.hasPrefix("data:")) {
+                relativeScripts.append(script)
+            }
+            // Others are ignored
+        }
+
+        func groupScripts(_ scripts: [ScriptPreview]) -> [[String: Any]] {
+            var grouped: [String: [ScriptPreview]] = [:]
+            for script in scripts {
+                guard let src = script.extractedSrc else { continue }
+                var prefix = src.components(separatedBy: "/").prefix(4).joined(separator: "/")
+                if src.hasPrefix("http://") {
+                    prefix = "http://" + prefix.dropFirst(5)
+                } else if src.hasPrefix("https://") {
+                    prefix = "https://" + prefix.dropFirst(8)
+                } else if src.hasPrefix("//") {
+                    prefix = "//" + prefix.dropFirst(2)
+                }
+                grouped[prefix, default: []].append(script)
+            }
+            return grouped.map { (prefix, scripts) in
+                let sri_present = scripts.contains { !($0.integrity?.isEmpty ?? true) }
+                let crossorigin_present = scripts.contains { !($0.crossOriginValue?.isEmpty ?? true) }
+                let trimmedSamples = scripts.compactMap { $0.extractedSrc }.map {
+                    $0.replacingOccurrences(of: prefix, with: "")
+                }
+                return [
+                    "01_pathPrefix": prefix,
+                    "02_count": scripts.count,
+                    "03_suffixes": trimmedSamples,
+                    "04_sriPresent": sri_present,
+                    "05_crossoriginPresent": crossorigin_present
+                ]
+            }
+        }
+
+        let absoluteGroups = groupScripts(absoluteScripts).map {
+            var copy = $0
+            copy["groupType"] = "absoluteOrProtocolRelative"
+            return copy
+        }
+
+        let relativeGroups = groupScripts(relativeScripts).map {
+            var copy = $0
+            copy["groupType"] = "relativePath"
+            return copy
+        }
+
+        return absoluteGroups + relativeGroups
+    }
 }
 
 func generateWarningJson(urls: URLQueue) -> [Any] {
@@ -295,129 +474,4 @@ func generateWarningJson(urls: URLQueue) -> [Any] {
     }
 
     return listOfWarnings
-}
-
-struct ScriptSummaryBuilder {
-    static func makeSummary(from scripts: [ScriptPreview]) -> Dictionary<String, Any> {
-        let inlineScripts = scripts.filter { $0.origin == .inline || $0.origin == .moduleInline }
-        let httpScripts = scripts.filter { $0.origin == .httpExternal || $0.origin == .httpsExternal }
-        let relativeScripts = scripts.filter { $0.origin == .relative || $0.origin == .protocolRelative }
-        let moduleExternalScripts = scripts.filter { $0.origin == .moduleExternal || $0.origin == .moduleRelative }
-        let protocolRelativeScripts = scripts.filter {$0.origin == .protocolRelative}
-
-        let inlineNonceCount = inlineScripts.filter { !($0.nonce?.isEmpty ?? true) }.count
-        let totalInlineSize = inlineScripts.reduce(0) { $0 + $1.size }
-        let largestInlineScriptSize = inlineScripts.map { $0.size }.max() ?? 0
-        let externalScriptsTotal = httpScripts.count + relativeScripts.count + moduleExternalScripts.count
-        let externalWithSRI = scripts.filter { !($0.integrity?.isEmpty ?? true) }.count
-        let externalWithCrossOrigin = scripts.filter { !($0.crossOriginValue?.isEmpty ?? true) }.count
-
-        let averageInline = inlineScripts.count > 0 ? totalInlineSize / inlineScripts.count : 0
-        
-        var scriptsPreviews: [Int] = []
-        
-        for (index, script) in scripts.enumerated() {
-            if script.isInline {
-                let previewNeeded = script.findings?.contains(where: { $0.pos != nil && $0.pos != 0 }) ?? false
-                if previewNeeded {
-                    scriptsPreviews.append(index)
-                }
-            }
-        }
-
-        var suspiciousSnippets: [[String: Any]] = []
-        for idx in scriptsPreviews {
-            let matching = scripts[idx]
-            //nasty
-            suspiciousSnippets.append([
-                "size": matching.size,
-                "nonce": !(matching.nonce?.isEmpty ?? true),
-                "is_module": matching.isModule ?? false,
-                "findings": matching.findings?.compactMap { $0.message } ?? [],
-                "snippet_ref": "ScriptPreviews → inlineScript_\(idx)"
-            ])
-        }
-        let externalDetail = generate_externalSrc(scripts: scripts)
-        // TODO: Group external scripts by path prefix and detect known third-party services
-        return [
-                "01_summary": [
-                    "01_total": scripts.count,
-                    "02_inline": inlineScripts.count,
-                    "03_external": externalScriptsTotal,
-                    "04_protocol_relative": protocolRelativeScripts.count,
-                    "05_total_inline_bytes": totalInlineSize,
-                    "06_largest_inline_script": largestInlineScriptSize,
-                    "07_average_inline_script": averageInline,
-                    "08_inline_with_nonce": inlineNonceCount,
-                    "09_inline_with_suspicious_calls": scriptsPreviews.count,
-                    "10_external_with_sri": externalWithSRI,
-                    "11_module_cross_origin": externalWithCrossOrigin,
-                    "12_external_from_known_third_parties": 0, // placeholder to compute separately
-                    "13_script_density_per_kb": 0.0 // placeholder to compute externally if needed
-                ],
-                "02_inline_scripts": suspiciousSnippets.map { snippet in
-                    return [
-                        "01_size": snippet["size"] ?? 0,
-                        "02_has_nonce": snippet["nonce"] ?? false,
-                        "03_is_module": snippet["is_module"] ?? false,
-                        "04_findings": snippet["findings"] ?? [],
-                        "05_focused_snippets": (snippet["snippet_ref"].map { [String(describing: $0)] } ?? [])
-                    ]
-                },
-                "03_external_script_groups": externalDetail
-        ]
-    }
-    private static func generate_externalSrc(scripts: [ScriptPreview]) -> [Any] {
-        // Categorize scripts into absolute/protocol-relative, relative, and ignore others
-        var absoluteScripts: [ScriptPreview] = []
-        var relativeScripts: [ScriptPreview] = []
-
-        for script in scripts {
-            guard let src = script.extractedSrc else { continue }
-            if src.hasPrefix("http") || src.hasPrefix("//") {
-                absoluteScripts.append(script)
-            } else if src.hasPrefix("/") || (!src.contains("://") && !src.hasPrefix("data:")) {
-                relativeScripts.append(script)
-            }
-            // Others are ignored
-        }
-
-        func groupScripts(_ scripts: [ScriptPreview]) -> [[String: Any]] {
-            var grouped: [String: [ScriptPreview]] = [:]
-            for script in scripts {
-                guard let src = script.extractedSrc else { continue }
-                //chatGPT <3
-                var prefix = src.components(separatedBy: "/").prefix(4).joined(separator: "/")
-                if src.hasPrefix("http://") {
-                    prefix = "http://" + prefix.dropFirst(5)
-                } else if src.hasPrefix("https://") {
-                    prefix = "https://" + prefix.dropFirst(8)
-                } else if src.hasPrefix("//") {
-                    prefix = "//" + prefix.dropFirst(2)
-                }
-                grouped[prefix, default: []].append(script)
-            }
-            return grouped.map { (prefix, scripts) in
-                let sri_present = scripts.contains { !($0.integrity?.isEmpty ?? true) }
-                let crossorigin_present = scripts.contains { !($0.crossOriginValue?.isEmpty ?? true) }
-
-                let trimmedSamples = scripts.compactMap { $0.extractedSrc }.map {
-                    $0.replacingOccurrences(of: prefix, with: "")
-                }
-
-                return [
-                    "01_path_prefix": prefix,
-                    "02_count": scripts.count,
-                    "03_suffixes": trimmedSamples,
-                    "04_sri_present": sri_present,
-                    "05_crossorigin_present": crossorigin_present
-                ]
-            }
-        }
-
-        return [
-            ["01_group_type": "absolute_or_protocol_relative", "groups": groupScripts(absoluteScripts)],
-            ["02_group_type": "relative_path", "groups": groupScripts(relativeScripts)]
-        ]
-    }
 }

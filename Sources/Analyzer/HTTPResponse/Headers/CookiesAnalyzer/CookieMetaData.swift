@@ -110,61 +110,94 @@ struct CookieAnalysisResult: Identifiable, Hashable {
 }
 
 extension CookieFlagBits {
-    func descriptiveReasons(entropyScore: Float? = nil) -> [String] {
-        var reasons: [String] = []
+    func descriptiveReasons(entropyScore: Float? = nil) -> (machine: [String], human: [String]) {
+        var human: [String] = []
+        var machine: [String] = []
 
+        if contains(.reusedAcrossRedirect) {
+            return (["reused_across_redirect"], ["Same Cookie reused across redirects"])
+        }
         
-        // Size (0–2)
-        if contains(.reusedAcrossRedirect)  { return [("Same Cookie reused across redirects")] }
-        if contains(.smallValue)            { reasons.append("Small value (≤16 bytes)") }
-        if contains(.mediumValue)           { reasons.append("Medium value (16–64 bytes)") }
+        if contains(.verySmall) {
+            return (["very_small"], ["Very small value (≤8 bytes)"])
+        }
+        
+        if contains(.smallValue) {
+            machine.append("small_value")
+            human.append("Small value (≤16 bytes)")
+        }
+        if contains(.mediumValue) {
+            machine.append("medium_value")
+            human.append("Medium value (16–64 bytes)")
+        }
         if contains(.largeValue) && contains(.persistent) {
-            reasons.append("Fingerprint-style tracking (large persistent value too big to be random)")
+            machine.append("large_persistent_value")
+            human.append("Fingerprint-style tracking (large persistent value too big to be random)")
         } else if contains(.largeValue) {
-            reasons.append("Large value (>64 bytes) — too big to be random")
+            machine.append("large_value")
+            human.append("Large value (>64 bytes) — too big to be random")
         }
-        if contains(.wayTooLarge) {reasons.append("The value is more than 100bytes")}
-        // Lifespan (3–6)
-        if contains(.expired)               { reasons.append("Expired cookie") }
+        if contains(.wayTooLarge) {
+            machine.append("way_too_large")
+            human.append("The value is more than 100bytes")
+        }
+
+        if contains(.expired) {
+            machine.append("expired_cookie")
+            human.append("Expired cookie")
+        }
         if contains(.shortLivedPersistent) && contains(.persistent) {
-            reasons.append("Conflicting lifespan — both short-lived and persistent set (likely misconfiguration or cloaking)")
+            machine.append("conflicting_lifespan")
+            human.append("Conflicting lifespan — both short-lived and persistent set (likely misconfiguration or cloaking)")
         } else if contains(.shortLivedPersistent) {
-            reasons.append("Short-lived persistent cookie — mimics session but persists (likely tracking)")
+            machine.append("short_lived_persistent")
+            human.append("Short-lived persistent cookie — mimics session but persists (likely tracking)")
         } else if contains(.persistent) {
-            reasons.append("Persistent cookie")
+            machine.append("persistent_cookie")
+            human.append("Persistent cookie")
         }
-        
-        // Access Control (7–9)
-        if contains(.samesiteLax)           { reasons.append("SameSite=Lax, correclty set") }
-        if contains(.sameSiteNone)          { reasons.append("SameSite=None — could be unset. Browsers default to Lax, but it should be declare explicitly.") }
-        //First need to find how to differentiate nil fron a real none
-        
-//        if contains(.sameSiteNone) && contains(.session) {
-//            reasons.append("Session cookie with SameSite=None")
-//        }
-//        if contains(.sameSiteNone) && !contains(.secure) {
-//            reasons.append("SameSite=None used without Secure (modern browsers should reject this)")
-//        }
 
-        // Security Attributes (10–11)
-        if contains(.secure) == false       { reasons.append("Secure flag missing (can be sent over HTTP)") }
-        if contains(.httpOnly) == false     { reasons.append("HttpOnly flag missing (accessible by JavaScript)") }
+        if contains(.samesiteLax) {
+            machine.append("samesite_lax")
+            human.append("SameSite=Lax, correclty set")
+        }
+        if contains(.sameSiteNone) {
+            machine.append("samesite_none")
+            human.append("SameSite=None — could be unset. Browsers default to Lax, but it should be declare explicitly.")
+        }
 
-        // Context (12–13)
-        if contains(.setOnRedirect)         { reasons.append("Cookie was set during redirect") }
-        
-        
-        // Content Signature (14)
+        if contains(.secure) == false {
+            machine.append("secure_missing")
+            human.append("Secure flag missing (can be sent over HTTP)")
+        }
+        if contains(.httpOnly) == false {
+            machine.append("httponly_missing")
+            human.append("HttpOnly flag missing (accessible by JavaScript)")
+        }
+
+        if contains(.setOnRedirect) {
+            machine.append("set_on_redirect")
+            human.append("Cookie was set during redirect")
+        }
+
         if contains(.highEntropyValue) {
+            machine.append("high_entropy_value")
             if let score = entropyScore {
-                reasons.append("High-entropy value (H ≈ \(String(format: "%.2f", score)))")
+                human.append("High-entropy value (H ≈ \(String(format: "%.2f", score)))")
             } else {
-                reasons.append("High-entropy value")
+                human.append("High-entropy value")
             }
         }
-        if contains(.pathOverlyBroad)        { reasons.append("Path is overly broad (applies site-wide)") }
-        if contains(.domainOverlyBroad)      { reasons.append("Domain is overly broad (shared with subdomains and site-wide)") }
 
-        return reasons
+        if contains(.pathOverlyBroad) {
+            machine.append("path_overly_broad")
+            human.append("Path is overly broad (applies site-wide)")
+        }
+        if contains(.domainOverlyBroad) {
+            machine.append("domain_overly_broad")
+            human.append("Domain is overly broad (shared with subdomains and site-wide)")
+        }
+
+        return (machine, human)
     }
 }

@@ -83,6 +83,11 @@
 			path = AppPreview;
 			sourceTree = "<group>";
 		};
+		2417C6BC2DEF6B3700564F09 /* Examples */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Examples;
+			sourceTree = "<group>";
+		};
 		241C2DAA2DE9BAE80038B6CE /* LegitURLTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = LegitURLTests;
@@ -160,6 +165,7 @@
 		249557072D86D6EC0094E1D8 = {
 			isa = PBXGroup;
 			children = (
+				2417C6BC2DEF6B3700564F09 /* Examples */,
 				2481AD342DDF32CB0069ADB8 /* LegitURL.entitlements */,
 				2481AD322DDF101B0069ADB8 /* Info.plist */,
 				2481AD1D2DDEF0510069ADB8 /* Notes.TXT */,
@@ -420,7 +426,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LegitURLShare/LegitURLShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250530.1;
+				CURRENT_PROJECT_VERSION = 20250603.0;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LegitURLShare/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LegitURLShare;
@@ -432,7 +438,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL.LegitURLShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -448,7 +454,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LegitURLShare/LegitURLShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250530.1;
+				CURRENT_PROJECT_VERSION = 20250603.0;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LegitURLShare/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LegitURLShare;
@@ -460,7 +466,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL.LegitURLShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -601,7 +607,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = LegitURL.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250530.1;
+				CURRENT_PROJECT_VERSION = 20250603.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -623,7 +629,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -644,7 +650,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = LegitURL.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250530.1;
+				CURRENT_PROJECT_VERSION = 20250603.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -666,7 +672,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

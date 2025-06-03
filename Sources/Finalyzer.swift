@@ -49,7 +49,9 @@ struct Finalyzer {
         //generate HTML report
         URLQueue.shared.generateAndStoreHTMLReport()
         
+        
         do {
+            //change logic !
             let jsonDataBrief = try generateLLMJson(from: URLQueue.shared, brief: true)
             // jason
             let jsdonFullReport = try generateLLMJson(from: URLQueue.shared, brief: false)

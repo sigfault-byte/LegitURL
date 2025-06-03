@@ -42,6 +42,9 @@ struct ComboAlert {
                 combinedFlags |= warning.bitFlags.rawValue  // Merge
             }
         }
+        
+        URLQueue.shared.bitFlagInt = combinedFlags
+        
         return combinedFlags
     }
     

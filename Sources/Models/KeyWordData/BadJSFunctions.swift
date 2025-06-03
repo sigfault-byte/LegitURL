@@ -25,7 +25,7 @@ struct BadJSFunctions {
         "escape",
         "sendbeacon",
         "fetch",
-        "xmlhttprequest",
+        "XMLHttpRequest",
         "websocket",
         "import",
         "window[\"eval\"]",
@@ -49,14 +49,15 @@ struct BadJSFunctions {
     static let escape: [UInt8] = Array("escape".utf8)
     static let sendbeacon: [UInt8] = Array("sendbeacon".utf8)
     static let fetch: [UInt8] = Array("fetch".utf8)
-    static let xmlhttprequest: [UInt8] = Array("xmlhttprequest".utf8)
+    static let xmlhttprequest: [UInt8] = Array("XMLHttpRequest".utf8)
     static let websocket: [UInt8] = Array("websocket".utf8)
     static let jsimport: [UInt8] = Array("import".utf8)
     static let windowEval: [UInt8] = Array("window[\"eval\"]".utf8)
     static let documentWriteTrick: [UInt8] = Array("document[\"write\"]".utf8)
-    static let consoleLog: [UInt8] = Array("console[\"log\"]".utf8)
+    static let consoleLogObfuscated: [UInt8] = Array("console[\"log\"]".utf8)
     static let getELementById: [UInt8] = Array("getElementById".utf8)
     static let submit: [UInt8] = Array("submit(".utf8)
+    static let consoleLog: [UInt8] = Array("console.log".utf8)
     
     static var suspiciousLastBytes: Set<UInt8> {
         return [
@@ -82,6 +83,7 @@ struct BadJSFunctions {
             documentWriteTrick,
             consoleLog,
             getELementById,
+            consoleLogObfuscated,
         ].compactMap { $0.last }.reduce(into: Set<UInt8>()) { $0.insert($1) }
     }
     /// Pre‑computed ttuples
@@ -118,6 +120,7 @@ struct BadJSFunctions {
             documentWriteTrick,
             consoleLog,
             getELementById,
+            consoleLogObfuscated,
         ].compactMap { $0.dropLast().last }.reduce(into: Set<UInt8>()) { $0.insert($1) }
     }
 }

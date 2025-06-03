@@ -640,7 +640,6 @@ func generateHTML(from queue: URLQueue) -> String {
             <tr><th>Key Usage</th><td>\(cert.keyUsage ?? "-")</td></tr>
             <tr><th>Extended Key Usage</th><td>\(cert.formattedEKU ?? "-")</td></tr>
             <tr><th>Certificate Policies</th><td>\(cert.certificatePolicyOIDs ?? "-")</td></tr>
-            <tr><th>Self Signed</th><td>\(cert.isSelfSigned ? "Yes" : "No")</td></tr>
             <tr><th>Subject Alternative Names</th><td>\(cert.subjectAlternativeNames?.joined(separator: ", ") ?? "-")</td></tr>
         </table>
         """
