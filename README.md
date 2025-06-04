@@ -2,7 +2,7 @@
 
 > **A nutrition label for links** — on-device scanner that scores any URL in ≈2 s using 100 + deterministic heuristics.
 
-[![Release](https://img.shields.io/badge/release-1.1.0-blue.svg)](#)
+[![Release](https://img.shields.io/badge/release-1.1.3-blue.svg)](#)
 [![iOS](https://img.shields.io/badge/iOS-18%2B-brightgreen.svg)](#)
 [![App Store](https://img.shields.io/badge/download-App%20Store-blue)](https://apps.apple.com/fr/app/legiturl/id6745583794)
 [![License](https://img.shields.io/badge/license-AGPL--v3-green)](LICENSE)

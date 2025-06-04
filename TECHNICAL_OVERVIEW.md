@@ -7,7 +7,7 @@
 > **LegitURL is a 100 % on-device link scanner.**  
 > It rates trust purely from technical behaviour and finishes in < 2 s—no cloud, no sign-ups, no tracking.
 
-![Schema 2025-05-30](https://img.shields.io/badge/schema-2025--05--30-blue)
+![Schema 2025-05-30](https://img.shields.io/badge/schema-2025--06--04-blue)
 
 ## Performance benchmarks — iPhone 16 (-A18/ iOS 18.4)
 
