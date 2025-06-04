@@ -41,8 +41,8 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
     let (prime, instruction) = LLMPriming.loadPrimmingInstructions(brief: brief, locale: userLocale)
     let metaBlock: [String: Any] = [
         "meta": [
-            "01_taskOverview": prime,
-            "02_modelContext": instruction
+            "01_task_overview": prime,
+            "02_model_context": instruction
         ]
     ]
     finalOutput.append(metaBlock)
@@ -72,33 +72,33 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
         if let cert = queue.onlineQueue.last?.parsedCertificate {
             
             if let issuerCommonName = cert.issuerCommonName, let subjectCommonName = cert.commonName {
-                tlsInfo["issuerCommonNAme"] = issuerCommonName + " , " + subjectCommonName
+                tlsInfo["issuer_common_name"] = issuerCommonName + " , " + subjectCommonName
             }
             if cert.certificatePolicyOIDs != nil {
-                tlsInfo["certificatePolicy"] = cert.inferredValidationLevel.rawValue == "unknown"
+                tlsInfo["certificate_policy"] = cert.inferredValidationLevel.rawValue == "unknown"
                     ? cert.certificatePolicyOIDs
                     : cert.inferredValidationLevel.rawValue
             }
             if let notBefore = cert.notBefore {
-                tlsInfo["notBefore"] = formatter.string(from: notBefore)
+                tlsInfo["not_before"] = formatter.string(from: notBefore)
             }
             if let notAfter = cert.notAfter {
-                tlsInfo["notAfter"] = formatter.string(from: notAfter)
+                tlsInfo["not_after"] = formatter.string(from: notAfter)
             }
             if let subjectAlternativeNames = cert.subjectAlternativeNames {
-                tlsInfo["numberOfSAN"] = subjectAlternativeNames.count
+                tlsInfo["number_of_san"] = subjectAlternativeNames.count
             }
         }
         
         let warnings = SecurityWarningTriage.generateWarningJson(urls: queue)
         
-        let summary: [String : Any] = ["Summary" : [
-                "01_inputUrl" : inputURL,
-                "02_finalUrl" : finalURL,
-                "03_encouteredUrls" : warnings["idMap"] ?? NSNull(),
-                "04_numberOfRedirect" : hopCount, //This needs to be prime that its the number of urls report ?
-                "05_lastURLTlsDetails" : tlsInfo,
-                "06_findings" : warnings["findingsByUrls"] ?? NSNull()
+        let summary: [String : Any] = ["summary" : [
+                "01_input_url" : inputURL,
+                "02_final_url" : finalURL,
+                "03_encoutered_urls" : warnings["idMap"] ?? NSNull(),
+                "04_number_of_redirect" : hopCount, //This needs to be prime that its the number of urls report ?
+                "05_last_url_tls_details" : tlsInfo,
+                "06_findings" : warnings["findings_by_urls"] ?? NSNull()
             ]]
 
         finalOutput.append(summary)
@@ -131,43 +131,43 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
             "05_path" : path,
             "06_query" : query,
             "07_fragment" : fragment,
-            "08_punycodedHost" : punycode,
+            "08_punycoded_host" : punycode,
         ]
         
         // Online Var
         //HTTP response code
         let onlineMap = Dictionary(uniqueKeysWithValues: queue.onlineQueue.map { ($0.id, $0) })
         if let online = onlineMap[urlReport.id] {
-            reportContent["10_requestedUrl"] = components.coreURL ?? "error"
+            reportContent["10_requested_url"] = components.coreURL ?? "error"
             if let code = online.serverResponseCode {
-                reportContent["11_responseCode"] = code
+                reportContent["11_response_code"] = code
             }
             if let status = online.statusText {
-                reportContent["12_statusText"] = status
+                reportContent["12_status_text"] = status
             }
             if let finalRedirect = online.finalRedirectURL {
-                reportContent["13_finalRedirect"] = finalRedirect.isEmpty
+                reportContent["13_final_redirect"] = finalRedirect.isEmpty
             }
             //TLS
             //TODO: Skip when redirect chain is using the same tls
             if let cert = online.parsedCertificate {
                 var tlsInfo: [String: Any] = [:]
                 if let issuerCommonName = cert.issuerCommonName, let subjectCommonName = cert.commonName {
-                    tlsInfo["issuerCommonNAme"] = issuerCommonName + " , " + subjectCommonName
+                    tlsInfo["issuer_common_name"] = issuerCommonName + " , " + subjectCommonName
                 }
                 if cert.certificatePolicyOIDs != nil {
-                    tlsInfo["certificatePolicy"] = cert.inferredValidationLevel.rawValue == "unknown"
+                    tlsInfo["certificate_policy"] = cert.inferredValidationLevel.rawValue == "unknown"
                         ? cert.certificatePolicyOIDs
                         : cert.inferredValidationLevel.rawValue
                 }
                 if let notBefore = cert.notBefore {
-                    tlsInfo["notBefore"] = formatter.string(from: notBefore)
+                    tlsInfo["not_before"] = formatter.string(from: notBefore)
                 }
                 if let notAfter = cert.notAfter {
-                    tlsInfo["notAfter"] = formatter.string(from: notAfter)
+                    tlsInfo["not_after"] = formatter.string(from: notAfter)
                 }
                 if let subjectAlternativeNames = cert.subjectAlternativeNames {
-                    tlsInfo["numberOfSAN"] = subjectAlternativeNames.count
+                    tlsInfo["number_of_san"] = subjectAlternativeNames.count
                 }
                 reportContent["14_tls"] = tlsInfo
             }
@@ -175,7 +175,7 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
             //Cookies
             //TODO: Maybe skip cookies that al ready appeared ?
             let cookies = online.cookiesForUI
-            reportContent["15_numberOfCookies"] = cookies.count
+            reportContent["15_number_of_cookies"] = cookies.count
             if !cookies.isEmpty {
                 var cookieDetail: [Any] = []
                 for (_, cookie) in cookies.enumerated() {
@@ -188,11 +188,11 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
                     
                     var cookieEntry: [String: Any] = [:]
                     cookieEntry["01_key"] = cookie?.cookie.name ?? NSNull()
-                    cookieEntry["02_valueEntropy"] = entropyValueFinal
-                    cookieEntry["03_valueLen"] = cookie?.cookie.value.count ?? 0
-                    cookieEntry["04_sameSitePolicy"] = cookie?.cookie.sameSite ?? NSNull()
+                    cookieEntry["02_value_entropy"] = entropyValueFinal
+                    cookieEntry["03_value_length"] = cookie?.cookie.value.count ?? 0
+                    cookieEntry["04_same_site_policy"] = cookie?.cookie.sameSite ?? NSNull()
                     cookieEntry["05_secure"] = cookie?.cookie.secure ?? false
-                    cookieEntry["06_httpOnly"] = httpOnly
+                    cookieEntry["06_http_only"] = httpOnly
                     // This sucks, should use the UI function that does exactly this Convert to iso machine
                     if let expiry = cookie?.cookie.expire {
                         let isoFormatter = ISO8601DateFormatter()
@@ -205,7 +205,7 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
                     
                     cookieDetail.append(cookieEntry)
                 }
-                reportContent["16_cookieDetail"] = cookieDetail.isEmpty ? NSNull(): cookieDetail
+                reportContent["16_cookie_detail"] = cookieDetail.isEmpty ? NSNull(): cookieDetail
                 
             } // if cookie end
             
@@ -246,7 +246,7 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
                                                             snippets.enumerated().map { ("snippet_\($0.offset)", $0.element) }
                         )
                         let scriptEntry: [String: Any] = [
-                            "inlineScript_\(scriptIdx)": labeledSnippets
+                            "inline_script_\(scriptIdx)": labeledSnippets
                         ]
                         scriptAppendices.append(scriptEntry)
                     } else {
@@ -260,7 +260,7 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
     
     // After all reports, append script previews if any
     if !scriptAppendices.isEmpty {
-        let appendixWrapper: [String: Any] = ["scriptPreviews": scriptAppendices]
+        let appendixWrapper: [String: Any] = ["script_previews": scriptAppendices]
         finalOutput.append(appendixWrapper)
     }
     
@@ -350,9 +350,9 @@ struct ScriptSummaryBuilder {
             suspiciousSnippets.append([
                 "size": matching.size,
                 "nonce": !(matching.nonce?.isEmpty ?? true),
-                "isModule": matching.isModule ?? false,
+                "is_module": matching.isModule ?? false,
                 "findings": matching.findings?.compactMap { $0.message } ?? [],
-                "snippet_ref": "inlineScript_\(idx)"
+                "snippet_ref": "inline_script_\(idx)"
             ])
         }
         let externalDetail = generate_externalSrc(scripts: scripts)
@@ -364,28 +364,28 @@ struct ScriptSummaryBuilder {
                         "02_external": externalScriptsTotal
                     ],
                     "02_size": [
-                        "04_totalInlineBytes": totalInlineSize,
-                        "05_largestInline": largestInlineScriptSize,
-                        "06_averageInline": averageInline
+                        "04_total_inline_bytes": totalInlineSize,
+                        "05_largest_inline": largestInlineScriptSize,
+                        "06_average_inline": averageInline
                     ],
                     "03_flags": [
-                        "07_inlineWithNonce": inlineNonceCount,
-                        "08_inlineSuspicious": scriptsPreviews.count,
-                        "09_externalWithSri": externalWithSRI,
-                        "10_externalWithCrossorigin": externalWithCrossOrigin
+                        "07_inline_with_nonce": inlineNonceCount,
+                        "08_inline_suspicious": scriptsPreviews.count,
+                        "09_external_with_sri": externalWithSRI,
+                        "10_external_with_crossorigin": externalWithCrossOrigin
                     ],
-                    "04_densityPerKilobyte": normalized
+                    "04_density_of_scripts_per_kilobyte": normalized
                 ],
-                "02_inlineScripts": suspiciousSnippets.map { snippet in
+                "02_inline_scripts": suspiciousSnippets.map { snippet in
                     return [
                         "01_size": snippet["size"] ?? 0,
-                        "02_hasNonce": snippet["nonce"] ?? false,
-                        "03_isModule": snippet["is_module"] ?? false,
+                        "02_has_nonce": snippet["nonce"] ?? false,
+                        "03_is_module": snippet["is_module"] ?? false,
                         "04_findings": snippet["findings"] ?? NSNull(),
-                        "05_focusedSnippets": (snippet["snippet_ref"].map { [String(describing: $0)] } ?? [])
+                        "05_snippets_findings": (snippet["snippet_ref"].map { [String(describing: $0)] } ?? [])
                     ]
                 },
-                "03_externalScriptGroups": externalDetail
+                "03_external_script_groups": externalDetail
         ]
     }
     private static func generate_externalSrc(scripts: [ScriptPreview]) -> [Any] {
@@ -424,24 +424,24 @@ struct ScriptSummaryBuilder {
                     $0.replacingOccurrences(of: prefix, with: "")
                 }
                 return [
-                    "01_pathPrefix": prefix,
+                    "01_path_prefix": prefix,
                     "02_count": scripts.count,
                     "03_suffixes": trimmedSamples,
-                    "04_sriPresent": sri_present,
-                    "05_crossoriginPresent": crossorigin_present
+                    "04_sri_present": sri_present,
+                    "05_crossorigin_present": crossorigin_present
                 ]
             }
         }
 
         let absoluteGroups = groupScripts(absoluteScripts).map {
             var copy = $0
-            copy["groupType"] = "absoluteOrProtocolRelative"
+            copy["group_type"] = "absolute_or_protocol_relative"
             return copy
         }
 
         let relativeGroups = groupScripts(relativeScripts).map {
             var copy = $0
-            copy["groupType"] = "relativePath"
+            copy["group_type"] = "relative_path"
             return copy
         }
 

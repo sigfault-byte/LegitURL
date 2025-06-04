@@ -13,9 +13,8 @@ struct HeadersTriage {
             if key.lowercased() == "set-cookie" {
                 continue
             }
-            if (key.lowercased() == "content-security-policy" || key == "content-security-Policy-report-only"), let csp = csp {
-                
-                //flatten to strict key value
+            if (key.lowercased() == "content-security-policy" || key == "content-security-policy-report-only"), let csp = csp {
+                // flatten to strict key-value
                 var cspFlat: [String: [String]] = [:]
                 for (directive, values) in csp.structuredCSP {
                     var stringValues: [String] = []
@@ -26,11 +25,15 @@ struct HeadersTriage {
                     }
                     cspFlat[directive] = stringValues
                 }
-                structuredheader["contentSecurityPolicy"] = cspFlat
+                if key == "content-security-policy-report-only" {
+                    structuredheader["content_security_policy_report_only"] = cspFlat
+                } else {
+                    structuredheader["content_security_policy"] = cspFlat
+                }
                 continue
             } else {
-                let camelCaseKey = convertToCamelCase(key)
-                structuredheader[camelCaseKey] = value
+                let snakeCaseKey = convertToSnakeCase(key)
+                structuredheader[snakeCaseKey] = value
             }
         }
 
@@ -38,11 +41,8 @@ struct HeadersTriage {
     }
 }
 
-func convertToCamelCase(_ key: String) -> String {
-    let delimiters = CharacterSet(charactersIn: "-_")
+func convertToSnakeCase(_ key: String) -> String {
+    let delimiters = CharacterSet(charactersIn: "-")
     let parts = key.lowercased().components(separatedBy: delimiters)
-    guard let first = parts.first else { return key }
-
-    let capitalizedRest = parts.dropFirst().map { $0.capitalized }
-    return ([first] + capitalizedRest).joined()
+    return parts.joined(separator: "_")
 }
