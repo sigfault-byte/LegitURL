@@ -96,7 +96,7 @@ struct NonceAndExternalScript {
         
         
         // Only count inline scripts (not data URI) for nonceScriptCount
-        let inlineOrDataURICount = script?.scripts.compactMap {
+        let inlineCount = script?.scripts.compactMap {
             ($0.origin == .inline /*|| $0.origin == .dataURI*/) ? $0 : nil
         }.count
         let nonceScriptCount = script?.scripts.compactMap {
@@ -191,7 +191,7 @@ struct NonceAndExternalScript {
         //        print("inlineOrDataURICount:", inlineOrDataURICount ?? -1)
         //        print("nonceScriptCount:", nonceScriptCount ?? -1)
         //        print("nonceValueFromDirective:", nonceValueFromDirective)
-        if let inlineOrDataCount = inlineOrDataURICount,
+        if let inlineOrDataCount = inlineCount,
            inlineOrDataCount > 0,
            nonceScriptCount == 0,
            !nonceValueFromDirective.isEmpty

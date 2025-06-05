@@ -172,10 +172,22 @@ struct ScriptAndMetaExtractor {
         #endif
         
         //find nonce script and value, data URI is useless nonce doesnt work on it, but many do the error?
+        //leave it for now?
         if confirmedScripts.contains(where: {
             $0.origin == .inline || $0.origin == .dataURI
         }) {
             ScriptHelperFunction.findNonceScript(in: body, scripts: &confirmedScripts)
+            //Wrong usage of nonce
+            if confirmedScripts.contains(where: { $0.origin == .dataURI && $0.nonceValue != nil }) {
+                warnings.append(SecurityWarning(
+                    message: "Nonce attribute on a dataURI script is invalid. Nonces only secure inline scripts.",
+                    severity: .info,
+                    penalty: PenaltySystem.Penalty.informational,
+                    url: origin,
+                    source: .body,
+                    bitFlags: [.SLOPPY_DEVELOPMENT]
+                ))
+            }
         }
         
         //get integrityValue
