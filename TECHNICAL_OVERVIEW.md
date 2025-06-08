@@ -220,7 +220,6 @@ Rules fire in this order:
 | `Strict-Transport-Security` | Present + `max-age` ≥ 31536000 + `includeSubDomains` | Missing or short age ⇒ penalty |
 | `X-Content-Type-Options` | Value | Must be `nosniff` |
 | `Referrer-Policy` | Value | `strict-origin` or stricter |
-| `Permissions-Policy` | Scans for dangerous features (`camera`, `microphone`, `geolocation`…) | Wildcards ⇒ warning |
 | `Server` / `X-Powered-By` | Version leakage (`apache/2.4`, `php/8.2`) | **INFO** if header present but no version • **Suspicious** if version leaks |
 
 ### 3.4 Cookies
@@ -662,7 +661,7 @@ This combination of signals - domain impersonation of a major crypto exchange, s
 
 A cautious user should avoid this site entirely. The technical behavior suggests it was hastily constructed to impersonate Binance, likely for fraudulent purposes. The risks far outweigh any potential legitimate use case.​​​​​​​​​​​​​​​​
 ```
-
+</details>
 ## 7 · Architecture & Dependencies
 
 LegitURL is built almost entirely on **Swift Foundation**.  

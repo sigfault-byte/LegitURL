@@ -50,7 +50,7 @@ struct CopyJSONInfoView: View {
                             }
                             Text("\(byteBrief) bytes ≈ \(tokenBrief) tokens")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(tokenBrief > 7000 ? .red : .secondary)
                         }
 
                         VStack {
@@ -67,7 +67,7 @@ struct CopyJSONInfoView: View {
                             }
                             Text("\(byte) bytes ≈ \(token) tokens")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(tokenBrief > 7000 ? .red : .secondary)
                         }
                     }
 
