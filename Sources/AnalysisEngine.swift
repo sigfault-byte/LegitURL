@@ -6,7 +6,9 @@
 
 import Foundation
 
+
 struct AnalysisEngine {
+    private static let MAX_HOP = 7
     private static var analysisStartTime: Date?
     
     public static var hasManuallyStopped = false
@@ -43,7 +45,11 @@ struct AnalysisEngine {
         }
         
         // Check if the offline queue limit is reached
-        guard URLQueue.shared.offlineQueue.count < 5 else {
+        guard URLQueue.shared.offlineQueue.count < MAX_HOP else {
+            if URLQueue.shared.onlineQueue.last?.serverResponseCode != 200 {
+                URLQueue.shared.legitScore.score -= 100
+                URLQueue.shared.internalErrorMessages.append("Last is not a 200 code, after \(MAX_HOP) redirects")
+            }
             return
         }
         
@@ -279,7 +285,7 @@ struct AnalysisEngine {
         let alreadyQueued = URLQueue.shared.offlineQueue.contains {
             $0.components.coreURL?.lowercased() == finalRedirect.lowercased()
         }
-        guard !alreadyQueued, URLQueue.shared.offlineQueue.count < 5 else { return }
+        guard !alreadyQueued, URLQueue.shared.offlineQueue.count < MAX_HOP else { return }
         
         var dummy: String? = ""
         let (cleanedRedirectURL, _) = sanitizeAndValidate(finalRedirect, &dummy)

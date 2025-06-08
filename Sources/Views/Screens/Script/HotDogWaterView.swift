@@ -95,13 +95,15 @@ struct HotDogWaterView: View {
                         }
                         if let nonce = preview.nonce, !nonce.isEmpty {
                             Divider()
-                            Text("Secured by nonce:\n'\(nonce)'")
+                            Text("Whitelisted by nonce:\n'\(nonce)'")
                                 .font(.subheadline)
+                                .foregroundColor(.green)
                         }
                         if let sha = preview.integrity, !sha.isEmpty {
                             Divider()
-                            Text("Protected by a hash ( not yet verified by LegitURL ):\n'\(sha)'")
+                            Text("Secured by a hash ( not yet verified by LegitURL ):\n'\(sha)'")
                                 .font(.subheadline)
+                                .foregroundColor(.green)
                         }
                         if let findings = preview.findings, !findings.isEmpty {
                             let summarized = summarizeFindings(findings)

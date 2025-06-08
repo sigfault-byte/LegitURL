@@ -11,7 +11,7 @@
 
 ## Performance benchmarks — iPhone 16 (-A18/ iOS 18.4)
 
-| Site | HTML | JS | Cookies | Findings | HTML parse | Total ⏱ | GET ⏱ |
+| Site | HTML | JS | Cookies | Findings | HTML parse | Total | GET |
 |------|------|----|---------|----------|------------|----------|--------|
 | stripe.com/ae | 2.05 MB | 8 | 1 | 10 | 26 ms | **1.76 s** | 1.71 s |
 | store.steampowered.com | 0.78 MB | 25 | 3 | 18 | 22 ms | **0.86 s** | 0.72 s |
@@ -23,7 +23,7 @@
 ### Notes
 
 * **Total analysis** = network latency + HTML parse + script/cookie/CSP checks + scoring + **human-report formatting & JSON export**.
-* **GET ⏱** shows network latency only, not internal logic.  
+* **GET** shows network latency only, not internal logic.  
 * Inline scripts are fully parsed in memory; external scripts are analysed via their `src` attribute (no extra fetch yet).
 
 > **Reproduce it:** run `` `testAnalysisEngine_PerformanceForSimpleURL()` `` in **LegitURLTests.swift** (Xcode Debug). Each run performs an actual HTTPS GET and full pipeline analysis—no mocks.

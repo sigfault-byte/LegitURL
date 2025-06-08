@@ -5,8 +5,8 @@
 //  Created by Chief Hakka on 27/04/2025.
 //
 struct HeadersUtils {
-//    This needs a lot of more thinkerign, likely needs a list or find a heuristic to detect patterns.
-//    A leaky server is a tell
+    //    This needs a lot of more thinkerign, likely needs a list or find a heuristic to detect patterns.
+    //    A leaky server is a tell
     static func checkServerLeak(responseHeaders: [String: String], urlOrigin: String) -> [SecurityWarning] {
         var warnings: [SecurityWarning] = []
         
@@ -24,27 +24,28 @@ struct HeadersUtils {
                     machineMessage: "server_leaks_version"
                 ))
             }
-//            Inconsistent and somehow also interesting, but only if the name s relevant...
-//            else {
-//                // Only server name leaked
-//                warnings.append(SecurityWarning(
-//                    message: "Server leaks its name: \(serverHeader).",
-//                    severity: .info,
-//                    penalty: PenaltySystem.Penalty.informational,
-//                    url: urlOrigin,
-//                    source: .header,
-//                ))
-//            }
+            //            Inconsistent and somehow also interesting, but only if the name s relevant...
+            //            else {
+            //                // Only server name leaked
+            //                warnings.append(SecurityWarning(
+            //                    message: "Server leaks its name: \(serverHeader).",
+            //                    severity: .info,
+            //                    penalty: PenaltySystem.Penalty.informational,
+            //                    url: urlOrigin,
+            //                    source: .header,
+            //                ))
+            //            }
         }
         
         return warnings
     }
     
     
-//    HSTS checks, its basic. There migh be some way to give rewards. But this is infently easy to implement.
+    //    HSTS checks, its basic. There migh be some way to give rewards. But this is infently easy to implement.
     public static func checkStrictTransportSecurity(responseHeaders: [String: String], urlOrigin: String) -> [SecurityWarning] {
         // Check HSTS (Strict-Transport-Security)
         var warnings: [SecurityWarning] = []
+        var strongMaxAge: Bool = false
         if let hsts = responseHeaders.first(where: { $0.key.lowercased() == "strict-transport-security" })?.value {
             if hsts.lowercased().contains("max-age=") {
                 // Check if the max-age value is sufficiently long (at least 6 months)
@@ -52,10 +53,11 @@ struct HeadersUtils {
                 if let match = maxAgeMatch,
                    let maxAgeValue = Int(hsts[match].split(separator: "=").last ?? ""),
                    maxAgeValue >= 10886400 {
+                    strongMaxAge = true
                     warnings.append(SecurityWarning(
                         message: "HSTS header is present with a strong max-age.",
-                        severity: .info,
-                        penalty: 0,
+                        severity: .good,
+                        penalty: 5,
                         url: urlOrigin,
                         source: .header,
                         machineMessage: "hsts_strong_max_age"
@@ -81,37 +83,37 @@ struct HeadersUtils {
                     machineMessage: "hsts_missing_max_age"
                 ))
             }
-            if hsts.lowercased().contains("max-age=") {
-                // Already checked, good.
+            // Already checked, good. Only give bonus if it is max age strong ?
+            if hsts.lowercased().contains("max-age=") && strongMaxAge {
                 
                 if hsts.lowercased().contains("includesubdomains") {
                     warnings.append(SecurityWarning(
                         message: "HSTS includeSubDomains directive is present.",
-                        severity: .info,
-                        penalty: PenaltySystem.Penalty.informational, // mb reward for a unfortunalty rare value ?
+                        severity: .good,
+                        penalty: 5, // mb reward for a unfortunalty rare value ? TODO: double check penalty logic, and make a static
                         url: urlOrigin,
                         source: .header,
                         machineMessage: "hsts_includesubdomains_present"
                     ))
-//                    TODO: Need to tinker this, night be a reward. Might be entirely uselee. These keywaords are too rare... So a positive signal  maybe.
-//                } else {
-//                    warnings.append(SecurityWarning(
-//                        message: "HSTS is missing includeSubDomains directive. Subdomains are not protected against downgrade attacks.",
-//                        severity: .suspicious,
-//                        penalty: PenaltySystem.Penalty.lowHSTSValue, // or a slightly lower penalty
-//                        url: urlOrigin,
-//                        source: .header
-//                    ))
-//                }
+                    //                    TODO: Need to tinker this, night be a reward. Might be entirely uselee. These keywaords are too rare... So a positive signal  maybe.
+                    //                } else {
+                    //                    warnings.append(SecurityWarning(
+                    //                        message: "HSTS is missing includeSubDomains directive. Subdomains are not protected against downgrade attacks.",
+                    //                        severity: .suspicious,
+                    //                        penalty: PenaltySystem.Penalty.lowHSTSValue, // or a slightly lower penalty
+                    //                        url: urlOrigin,
+                    //                        source: .header
+                    //                    ))
+                }
                 
-//                if hsts.lowercased().contains("preload") {
-//                    warnings.append(SecurityWarning(
-//                        message: "HSTS preload directive detected. Site is eligible for HSTS preload list.",
-//                        severity: .info,
-//                        penalty: 0,
-//                        url: urlOrigin,
-//                        source: .header
-//                    ))
+                if hsts.lowercased().contains("preload") {
+                    warnings.append(SecurityWarning(
+                        message: "HSTS preload directive detected. Site is eligible for HSTS preload list.",
+                        severity: .info,
+                        penalty: 5,
+                        url: urlOrigin,
+                        source: .header
+                    ))
                 }
             }
         } else {
@@ -224,16 +226,16 @@ struct HeadersUtils {
                     machineMessage: "content_length_too_large_more_than_10MB"
                 ))
             }
-//            This does not work and is more of a good practice
-//        } else {
-//            warnings.append(SecurityWarning(
-//                message: "Missing Content-Length header. Transfer size integrity not guaranteed.",
-//                severity: .suspicious,
-//                penalty: PenaltySystem.Penalty.inccorectLogic,
-//                url: urlOrigin,
-//                source: .header,
-//                bitFlags: [.HEADERS_INCORRECT_LOGIC]
-//            ))
+            //            This does not work and is more of a good practice
+            //        } else {
+            //            warnings.append(SecurityWarning(
+            //                message: "Missing Content-Length header. Transfer size integrity not guaranteed.",
+            //                severity: .suspicious,
+            //                penalty: PenaltySystem.Penalty.inccorectLogic,
+            //                url: urlOrigin,
+            //                source: .header,
+            //                bitFlags: [.HEADERS_INCORRECT_LOGIC]
+            //            ))
         }
         
         return warnings

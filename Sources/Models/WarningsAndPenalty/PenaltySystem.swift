@@ -20,6 +20,10 @@ import Foundation
 
 struct PenaltySystem {
     public enum Penalty {
+        //POSITIVE SIGNAL
+        static let inlineScriptNonceMatched            = 15
+        
+        
         // CRITICAL ISSUES
         static let critical                            = -100
         
@@ -122,6 +126,8 @@ struct PenaltySystem {
         static let smallhtmllessthan1408               = -5
         static let protocolRelativeScriptSRI           = -5
         
+        
+        
         //InlineSpecific & JS penalty
         static let hightPenaltyForInlineJS             = -20
         static let jsSetEditCookie                     = -15
@@ -166,6 +172,7 @@ struct PenaltySystem {
         static let wildcardScriptSrcStrictDyn          = -10
         static let nonceInCSPNoInline                  = -5
         static let nonceValueIsWeak                    = -5
+        static let nonceMissMatch                      = -5 // very unsure because this is harmless, but there is a problem. This does not point to a scam, or a pretty bad one. Still a signal ?
         
         //unsafe not "contained"
         static let unsafeEvalScriptSrc                 = -25 // higher than inlinescript used to be 30 and 20 ? make no sense between volontary unsafe and missing, max penalty cap at 40 when both are present

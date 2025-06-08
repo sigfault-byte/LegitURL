@@ -86,9 +86,9 @@ struct ScriptSecurityAnalyzer {
                     }
                 case .dataURI:
                     var findings: [(String, SecurityWarning.SeverityLevel, Int)] = []
-                    if let nonce = script.nonceValue, !nonce.isEmpty {
-                        findings.append(("Nonce attribute on a dataURI script is invalid. Nonces only secure inline scripts.", .info, 0))
-                    }
+//                    if let nonce = script.nonceValue, !nonce.isEmpty {
+//                        findings.append(("Nonce attribute on a dataURI script is invalid. Nonces only secure inline scripts.", .info, 0))
+//                    }
                     findings.append(("Data URI script", .dangerous, 0))
                     scripts.scripts[index].findings4UI = findings
                     dataUriCounter += 1

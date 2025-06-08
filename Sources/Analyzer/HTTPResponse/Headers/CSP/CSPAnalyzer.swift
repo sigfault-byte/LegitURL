@@ -147,19 +147,21 @@ struct CSPAnalyzer {
             for (_, valueType) in scriptDirective {
                 if valueType == .nonce {
                     hasNonce = true
+                    break;
                 }
                 if valueType == .source {
                     hasExternalURL = true
+                    break;
                 }
             }
 
             if hasNonce || hasExternalURL {
-                let extraWarnings = NonceAndExternalScript.analyze(
-                    scriptValueToCheck: scriptValueToCheckUnwrapped,
-                    scriptDirective: scriptDirective,
-                    urlOrigin: urlOrigin,
-                    script: &script
-                )
+                //MARK: REFACTOR
+                let extraWarnings = ExternalAndNonceCheck.analyze(
+                    scriptSrcFromCSP: scriptDirective,
+                    scriptUsedNonce: scriptValueToCheckUnwrapped,
+                    scripts: &script,
+                    coreURL: urlOrigin)
                 warnings.append(contentsOf: extraWarnings)
             }
             //TODO: check if sha then check is the count match, and compute sha

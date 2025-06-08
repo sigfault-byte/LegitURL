@@ -34,6 +34,7 @@ struct URLOfflineDetailComponent: View {
             userPasswordRow,
             hostRow,
             punycodeHostRow,
+            domainRow,
             tldRow,
             portRow,
             pathRow,
@@ -64,6 +65,10 @@ struct URLOfflineDetailComponent: View {
             return urlInfo.components.punycodeHostEncoded.map { AnyView(URLDetailRow(label: "Punycode Host", value: $0)) }
         }
         return nil
+    }
+
+    private var domainRow: AnyView? {
+        urlInfo.components.extractedDomain.map { AnyView(URLDetailRow(label: "Domain", value: $0)) }
     }
     
     private var tldRow: AnyView? {
@@ -102,6 +107,6 @@ struct URLOfflineDetailComponent: View {
     }
     
     private var coreURLRow: AnyView? {
-        urlInfo.components.coreURL.map { AnyView(URLDetailRow(label: "Ressource Target", value: $0)) }
+        urlInfo.components.coreURL.map { AnyView(URLDetailRow(label: "Get request target", value: $0)) }
     }
 }

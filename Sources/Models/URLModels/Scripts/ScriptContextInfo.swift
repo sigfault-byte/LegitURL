@@ -4,6 +4,7 @@
 //
 //  Created by Chief Hakka on 14/04/2025.
 //
+import Foundation
 enum ScriptOrigin: String, Hashable {
     case relative = "Relative"
     case protocolRelative = "Protocol Relative"
@@ -19,7 +20,8 @@ enum ScriptOrigin: String, Hashable {
     case moduleRelative = "Module Relative"
 }
 
-struct ScriptScanTarget {
+struct ScriptScanTarget: Identifiable {
+    let id: UUID = UUID()
     let start: Int
     var end: Int?   /*End like <scritp content here>*/
     var endTagPos: Int? // End of the like <script>content here</script>
