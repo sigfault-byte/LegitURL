@@ -662,6 +662,8 @@ This combination of signals - domain impersonation of a major crypto exchange, s
 A cautious user should avoid this site entirely. The technical behavior suggests it was hastily constructed to impersonate Binance, likely for fraudulent purposes. The risks far outweigh any potential legitimate use case.​​​​​​​​​​​​​​​​
 ```
 </details>
+
+
 ## 7 · Architecture & Dependencies
 
 LegitURL is built almost entirely on **Swift Foundation**.  
