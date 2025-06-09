@@ -2,12 +2,12 @@
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| 1.1.0   | *stable* | Current public release |
+| 1.1.4   | *stable* | Current public release |
 
 > **LegitURL is a 100 % on-device link scanner.**  
 > It rates trust purely from technical behaviour and finishes in < 2 s—no cloud, no sign-ups, no tracking.
 
-![Schema 2025-05-30](https://img.shields.io/badge/schema-2025--06--04-blue)
+![Schema 2025-06-09](https://img.shields.io/badge/schema-2025--06--09-blue)
 
 ## Performance benchmarks — iPhone 16 (-A18/ iOS 18.4)
 
@@ -18,7 +18,7 @@
 | societegenerale.com/fr | 0.08 MB | 68 | 3 | 16 | 15 ms | **1.52 s** | 0.88 s |
 | x.com | 0.26 MB | 41 | 6 | 43 | 36 ms | **0.72 s** | 0.63 s |
 
-<sup>⏱ Times are wall-clock averages of three runs.</sup>
+<sup>Times are wall-clock averages of three runs.</sup>
 
 ### Notes
 

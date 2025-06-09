@@ -2,13 +2,13 @@
 
 > **A nutrition label for links** — on-device scanner that scores any URL in ≈2 s using 100 + deterministic heuristics.
 
-[![Release](https://img.shields.io/badge/release-1.1.3-blue.svg)](#)
+[![Release](https://img.shields.io/badge/release-1.1.4-blue.svg)](#)
 [![iOS](https://img.shields.io/badge/iOS-18%2B-brightgreen.svg)](#)
 [![App Store](https://img.shields.io/badge/download-App%20Store-blue)](https://apps.apple.com/fr/app/legiturl/id6745583794)
 [![License](https://img.shields.io/badge/license-AGPL--v3-green)](LICENSE)
 
 <div align="center">
-  <img src="AppPreview/LegitURL_demo.gif" width="500" alt="Quick 8-second demo: paste link → score → drill-in"/>
+  <img src="AppPreview/LegitURL_demo.gif" width="500" alt="Quick 8-second demo: paste link → score → examples"/>
 </div>
 
 ---
@@ -41,7 +41,7 @@
 
 ---
 
-## Feature postcards
+## Screenshots
 
 | | |
 |---|---|
@@ -62,7 +62,7 @@
 
 ---
 
-## Under the hood
+## How does it work
 
 1. **Offline parsing** – look-alikes, encodings, scam words, entropy tests.  
 2. **Sandboxed HTTPS fetch** – reads cert, headers, cookies, HTML, inline JS.  
