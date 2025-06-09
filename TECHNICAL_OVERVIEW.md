@@ -56,10 +56,10 @@ Reputation is ignored—only concrete signals matter.
 The result: a transparent 🟩/🟧/🟥 verdict and a fully-traceable findings log.
 
 > The pipeline ends by rendering two outputs:  
-> • a human-readable HTML/PDF report (one page per hop), and  
-> • a compact JSON blob primed for LLM analysis.  
-> See [§ 3.6 Export & LLM Integration](#3.6-export-llm-integration-and-prompt-strategy) for format details.  
-> See [Examples](./Examples/README.md) for various test using various LLM.
+> • a human-readable HTML/PDF report,  
+> • a compact JSON blob optimized for LLMs (machine-readable)  
+> For format details see [§ 3.6 Export & LLM Integration](#3.6-export-llm-integration-and-prompt-strategy) for format details.  
+> For real-world phishing and redirect examples, see [Examples](./Examples/README.md) including PDF, JSON, and LLM responses from multiple models.
 
 ```mermaid
 flowchart TD
