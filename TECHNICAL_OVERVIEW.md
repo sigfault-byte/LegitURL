@@ -58,7 +58,8 @@ The result: a transparent 🟩/🟧/🟥 verdict and a fully-traceable findings 
 > The pipeline ends by rendering two outputs:  
 > • a human-readable HTML/PDF report (one page per hop), and  
 > • a compact JSON blob primed for LLM analysis.  
-> See [§ 3.6 Export & LLM Integration](#3.6-export-llm-integration-and-prompt-strategy) for format details.
+> See [§ 3.6 Export & LLM Integration](#3.6-export-llm-integration-and-prompt-strategy) for format details.  
+> See [Examples](./Examples/README.md) for various test using various LLM.
 
 ```mermaid
 flowchart TD
@@ -662,7 +663,6 @@ This combination of signals - domain impersonation of a major crypto exchange, s
 A cautious user should avoid this site entirely. The technical behavior suggests it was hastily constructed to impersonate Binance, likely for fraudulent purposes. The risks far outweigh any potential legitimate use case.​​​​​​​​​​​​​​​​
 ```
 </details>
-
 
 ## 7 · Architecture & Dependencies
 

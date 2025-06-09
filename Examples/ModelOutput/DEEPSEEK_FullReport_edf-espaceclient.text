@@ -1,0 +1,29 @@
+### Security Analysis Narrative: **"Can I trust this link?"**
+
+#### **Domain & TLS Context**
+- **Suspicious TLD**: The domain uses `.site`, a top-level domain (TLD) often associated with low-quality or malicious sites. This doesn’t guarantee harm, but it’s a red flag when combined with other signals.
+- **Very New Certificate**: The TLS certificate was issued **0 days ago** (on the same day as this analysis). Legitimate sites typically have older certificates, while newly created ones can indicate throwaway phishing infrastructure.
+- **Basic Validation**: The certificate uses "Domain Validation" (the lowest level of trust), which is common but offers no organizational identity checks.
+
+#### **Security Headers (Missing Protections)**
+- **No HSTS**: Missing HTTP Strict Transport Security (HSTS) means the site doesn’t enforce HTTPS for future visits, leaving users vulnerable to downgrade attacks.
+- **No CSP**: Missing Content Security Policy (CSP) allows unsafe inline scripts (like the one observed) and increases risk of code injection.
+- **No X-Content-Type-Options**: Without this, browsers may "sniff" content types, risking misinterpretation of malicious files.
+- **No Referrer Policy**: Referrer headers may leak sensitive data to third parties.
+- **Server Version Leak**: The server exposes `Microsoft-IIS/10.0` and `PleskWin`, helping attackers target known vulnerabilities.
+
+#### **Script Behavior (High Risk)**
+- **Suspicious Inline Script**: The script uses `document.write(location.hostname)`, a DOM manipulation technique often abused in phishing kits to dynamically alter page content (e.g., hiding malicious elements).
+- **High Script Density**: With 2.188 scripts per 1000 bytes, the page is unusually script-heavy for its size, suggesting potential cloaking or obfuscation.
+- **External Script from Unverified Source**: The external script (`default-website-index.js`) lacks Subresource Integrity (SRI) checks, meaning it could be modified without detection.
+
+#### **Patterns & Conclusion**
+**Combined Signals → High Risk of Phishing/Malware**:
+- `.site` TLD + brand-like name (`edf-espaceclient`) mimics legitimate services (EDF is a known French energy company).
+- New certificate + missing security headers suggests hastily setup infrastructure.
+- `document.write` + high script density points to dynamic content manipulation, common in phishing.
+
+**Advice for a Cautious User**:
+Avoid interacting with this link. The combination of signals strongly suggests a deceptive or malicious site. Legitimate companies rarely use `.site` domains or lack basic security headers. If you expected an EDF service, navigate directly to their official domain instead.
+
+*(Analysis based on observed server behavior; no prior cookies/storage assumed.)*

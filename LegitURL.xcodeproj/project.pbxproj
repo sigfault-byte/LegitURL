@@ -101,11 +101,6 @@
 			path = LegitURLShare;
 			sourceTree = "<group>";
 		};
-		24B892132DEC9E5A00157408 /* New Folder */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "New Folder";
-			sourceTree = "<group>";
-		};
 		24E29A0B2DB7DC9C0036E457 /* Archive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Archive;
@@ -178,7 +173,6 @@
 				24E29A9F2DB7DCA20036E457 /* Sources */,
 				24E29B0E2DB7DCA70036E457 /* Tools */,
 				24039BF52DDB49F900BB93CB /* PRIVACY.md */,
-				24B892132DEC9E5A00157408 /* New Folder */,
 				24B892082DEA083800157408 /* README.md */,
 				24B892062DEA056A00157408 /* TECHNICAL_OVERVIEW.md */,
 				24FA8B542DCF80D10037DAAC /* LICENSE.md */,
