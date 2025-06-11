@@ -44,7 +44,7 @@ struct InterestingPrefix {
     static let ldJsonKeyword: [UInt8] = Array("application/ld+json".utf8)
 }
 
-struct byteLetters {
+struct uniqueByte {
     static let s: UInt8 = 115
     static let S: UInt8 = 83
     static let r: UInt8 = 114
@@ -53,6 +53,8 @@ struct byteLetters {
     static let t: UInt8 = 116
     static let m: UInt8 = 109
     static let equalSign: UInt8 = 61
+    static let exclamationMark: UInt8 = UInt8(ascii: "!")
+    static let dash: UInt8 = UInt8(ascii: "-")
 }
 
 // Helper function to convert a string to Data (bytes)

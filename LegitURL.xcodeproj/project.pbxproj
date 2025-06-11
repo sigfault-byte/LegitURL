@@ -420,7 +420,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LegitURLShare/LegitURLShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250608;
+				CURRENT_PROJECT_VERSION = 20250611;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LegitURLShare/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LegitURLShare;
@@ -432,7 +432,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.4;
+				MARKETING_VERSION = 1.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL.LegitURLShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -448,7 +448,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LegitURLShare/LegitURLShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250608;
+				CURRENT_PROJECT_VERSION = 20250611;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LegitURLShare/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = LegitURLShare;
@@ -460,7 +460,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.4;
+				MARKETING_VERSION = 1.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL.LegitURLShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -601,7 +601,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = LegitURL.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250608;
+				CURRENT_PROJECT_VERSION = 20250611;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -623,7 +623,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.4;
+				MARKETING_VERSION = 1.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -644,7 +644,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = LegitURL.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20250608;
+				CURRENT_PROJECT_VERSION = 20250611;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
@@ -666,7 +666,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.4;
+				MARKETING_VERSION = 1.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = IJTWTML.LegitURL;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

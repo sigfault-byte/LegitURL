@@ -318,7 +318,7 @@ struct ScriptInlineAnalyzer {
                     
                     if slice.elementsEqual(bytes) {
                         let equalSignPos = accessorEnd - 1
-                        let isAssignment = DataSignatures.fastScriptByteHint(at: equalSignPos, in: soupData, hint: [byteLetters.equalSign])
+                        let isAssignment = DataSignatures.fastScriptByteHint(at: equalSignPos, in: soupData, hint: [uniqueByte.equalSign])
                         //Debug
                         //                    if let preview = String(data: soupData[max(0, pos - 40)..<min(soupData.count, pos + 60)], encoding: .utf8) {
                         //                        print(" Detected document.cookie context:\n\(preview)\n")

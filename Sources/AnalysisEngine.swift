@@ -11,8 +11,8 @@ struct AnalysisEngine {
     private static let MAX_HOP = 7
     private static var analysisStartTime: Date?
     
-    public static var hasManuallyStopped = false
-    public static var hasFinalized = false
+    public static var hasManuallyStopped: Bool = false
+    public static var hasFinalized: Bool = false
     
     // MARK: - Public Entry Point
     public static func analyze(urlString: String) async {

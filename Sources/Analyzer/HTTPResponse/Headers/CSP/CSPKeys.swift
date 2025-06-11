@@ -10,8 +10,8 @@
 //directive-name [source-expression] [source-expression] ... ;
 
 import Foundation
-struct contentDirective {
-    static let requireTrustedTypes: Data = "require-trusted-types-for".data(using: .utf8) ?? Data() // New (? prototype?? ) to prevent xss. Didnt see much on m.youtube.com for exemple
+struct contentDirective { // aka fetch directive
+    static let requireTrustedTypes: Data = "require-trusted-types-for".data(using: .utf8) ?? Data() // New (? prototype?? ) to prevent xss. Didnt see many,  on m.youtube.com for exemple
     static let defaultSrc: Data = "default-src".data(using: .utf8) ?? Data() // Default policy for fetching any content (fallback if others aren't defined)
     static let scriptSrc: Data = "script-src".data(using: .utf8) ?? Data() // Governs the sources of JavaScript
     static let styleSrc: Data = "style-src".data(using: .utf8) ?? Data() // Governs the sources of CSS styles
@@ -42,7 +42,6 @@ struct behaviorDirective {
 struct reportingDirective {
     static let reportUri: Data = "report-uri".data(using: .utf8) ?? Data() // Legacy way to send CSP violation reports
     static let reportTo: Data = "report-to".data(using: .utf8) ?? Data() // Modern reporting mechanism via Reporting API
-    static let requireTrustedTypesFor: Data = "require-trusted-types-for".data(using: .utf8) ?? Data() // Restricts DOM sinks to accept only Trusted Types
 }
 
 // MARK: - Dangerous CSP Values

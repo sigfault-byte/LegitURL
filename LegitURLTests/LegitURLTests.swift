@@ -57,7 +57,7 @@ final class LegitURLTests: XCTestCase {
     func testAnalysisEngine_PerformanceForSimpleURL() async {
         let testURL1 = "https://stripe.com/ae"
         let testURL2 = "https://store.steampowered.com/"
-        let testURL3 = "https://societegenerale.com/fr"
+        let testURL3 = "https://www.societegenerale.com/fr"
         let testURL4 = "https://x.com"
         
         AnalysisEngine.hasManuallyStopped = false
@@ -68,7 +68,7 @@ final class LegitURLTests: XCTestCase {
 //        logPeakMemory(label: "Peak RAM (Before)")
 
         let start = Date()
-        await AnalysisEngine.analyze(urlString: testURL1)
+        await AnalysisEngine.analyze(urlString: testURL4)
         let duration = Date().timeIntervalSince(start) * 1000 // ms
         
         let findingsCount = URLQueue.shared.offlineQueue.flatMap { $0.warnings }.count

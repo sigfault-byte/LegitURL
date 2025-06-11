@@ -8,15 +8,39 @@ struct DataSignatures {
 
     public static func extractAllTagMarkers(in body: Data, within range: Range<Int>, tag: UInt8 = 60) -> [Int] {
         var tagPositions: [Int] = []
-        var currentIndex = range.lowerBound
 
-        while currentIndex < range.upperBound {
-            if body[currentIndex] == tag {
-                tagPositions.append(currentIndex)
+        // Access the raw bytes of the Data buffer
+        // 'withUnsafeBytes' gives direct access to memory
+        // The closure takes a single argument: UnsafeRawBufferPointer
+        // 'in indicates a "lambda / anonymous function "
+        body.withUnsafeBytes { (rawBuffer: UnsafeRawBufferPointer) -> Void in
+            // Safely get the base pointer from the buffer
+            guard let rawBase = rawBuffer.baseAddress else { return }
+
+            // Assume the raw memory is composed of UInt8 bytes ...
+            let base = rawBase.assumingMemoryBound(to: UInt8.self)
+            let start = base + range.lowerBound
+            let end = base + range.upperBound
+
+            // Scan from the beginning of the range using a ptr
+            var ptr = UnsafeRawPointer(start)
+
+            // While not at the end
+            while ptr < UnsafeRawPointer(end) {
+                // Search for byte matching 'tag' using memchr
+                // Only the lowest 8 bits of 'Int32(tag)' are used <--- thanks AI
+                if let match = memchr(ptr, Int32(tag), end - ptr.assumingMemoryBound(to: UInt8.self)) {
+                    // Calculate the offset from the base pointer
+                    let offset = UnsafeRawPointer(match) - UnsafeRawPointer(base)
+                    tagPositions.append(offset)
+
+                    // Move the pointer forward to continue scanning
+                    ptr = UnsafeRawPointer(match).advanced(by: 1)
+                } else {
+                    break
+                }
             }
-            currentIndex += 1
         }
-
         return tagPositions
     }
 

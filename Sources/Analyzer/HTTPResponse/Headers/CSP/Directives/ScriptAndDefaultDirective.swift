@@ -24,23 +24,30 @@ struct ScriptAndDefaultDirective {
         // Unsafe Inline
         if bitFlagCSP.contains(.unsafeInline) && !bitFlagCSP.contains(.strictDynamic) {
             var specialWarning = ""
+            var penalty = 0
+            var severity = SecurityWarning.SeverityLevel.dangerous
+            var bitFlag = WarningFlags.HEADERS_CSP_UNSAFE_INLINE
+            if source == "CSP" {
+                penalty = PenaltySystem.Penalty.unsafeInlineScriptSrc
+            }
             if bitFlagCSP.contains(.hasNonce) || bitFlagCSP.contains(.hasHash) {
-                specialWarning = " It nullifies Nonce or SHA."
+                specialWarning = " Nullified by nonce / Hash."
+                penalty = 0
+                severity = .info
+                bitFlag = []
             }
             warnings.append(SecurityWarning(
                 message: "'unsafe-inline' present in \(directiveName).\(specialWarning)",
-                severity: .dangerous,
-                penalty: source == "CSP"
-                    ? PenaltySystem.Penalty.unsafeInlineScriptSrc
-                    : 0,
+                severity: severity,
+                penalty: penalty,
                 url: url,
                 source: .header,
-                bitFlags: [.HEADERS_CSP_UNSAFE_INLINE],
+                bitFlags: bitFlag,
                 machineMessage: "csp_unsafe_inline_present"
             ))
         } else if (bitFlagCSP.contains(.hasNonce) || bitFlagCSP.contains(.hasHash)) && bitFlagCSP.contains(.strictDynamic) {
             warnings.append(SecurityWarning(
-                message: "Inline script protection via nonce or hash detected in \(directiveName), alongside strict-dynamic.",
+                message: "Inline script protection via nonce or hash \(directiveName), alongside strict-dynamic.",
                 severity: .info,
                 penalty: PenaltySystem.Penalty.informational,
                 url: url,

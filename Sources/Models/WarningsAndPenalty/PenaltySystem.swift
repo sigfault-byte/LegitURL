@@ -21,7 +21,7 @@ import Foundation
 struct PenaltySystem {
     public enum Penalty {
         //POSITIVE SIGNAL
-        static let inlineScriptNonceMatched            = 15
+        static let allScripttNonced                    = 15
         
         
         // CRITICAL ISSUES

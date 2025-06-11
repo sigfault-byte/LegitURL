@@ -12,12 +12,19 @@ struct ExternalAndNonceCheck {
     static func analyze(scriptSrcFromCSP: [Data: CSPValueType],
                         scriptUsedNonce: ScriptSourceToMatchCSP?, // TODO: change the type name
                         scripts: inout ScriptExtractionResult?,
-                        coreURL: String)
+                        coreURL: String, CSPType: String)
     -> [SecurityWarning] {
-        #if DEBUG
+#if DEBUG
         print("---------------------------START-----ExternalAndNonceCheck.swift --------------------------------")
-        #endif
+        //        for (data, cspValue) in scriptSrcFromCSP {
+        //            if cspValue == .keyword {
+        //                print((String(data: data, encoding: .utf8) ?? ""))
+        //            }
+        //        }
+#endif
         //MARK: ALL the variable needed
+        //CSPType to not have double penalty
+        let CSPRO = CSPType == "CSP" ? false : true
         //warning obj
         var warnings: [SecurityWarning] = []
         // copy of scripts to pop
@@ -34,6 +41,7 @@ struct ExternalAndNonceCheck {
             if key == .nonce {
                 nonceValuefromCSP.append(String(data: value, encoding: .utf8) ?? "")
             }
+            //TODO:  if key == .hasHash
         }
         let CSPhasNonce = !nonceValuefromCSP.isEmpty
         
@@ -49,27 +57,34 @@ struct ExternalAndNonceCheck {
         //'self' in bytes ...
         let selfData: Data = "'self'".data(using: .utf8)!
         let dataData: Data = "'data:'".data(using: .utf8)!
-//        let blobData: Data = "'blob:'".data(using: .utf8)!
+        let strictDynData: Data = "'strict-dynamic'".data(using: .utf8)!
+        //        let blobData: Data = "'blob:'".data(using: .utf8)!
         var CSPHasSelf: Bool = false
         var CSPHasData: Bool = false
-//        var CSPHasBlob: Bool = false
+        var CSPHasStrictDynamic: Bool = false
+        //        var CSPHasBlob: Bool = false
         // bool to check if * or https: is inside -> they were al ready flag no need for a new warning
         var openBar: Bool = false
         
+        
         var srcValuefromCSP: [String] = []
         for (value, key) in scriptSrcFromCSP {
-            if key == .source || value == selfData {
-                if value == selfData {
-                    let  selfValue = "https://" + hostOnly
-                    CSPHasSelf = true
-                    srcValuefromCSP.append(selfValue)
-                }else if value == dataData {
+            if key == .source {
+                if value == dataData {
                     CSPHasData = true
                 } else {
                     srcValuefromCSP.append(String(data: value, encoding: .utf8) ?? "")
                 }
             } else if key == .wildcard {
                 openBar = true
+            } else if key == .keyword {
+                if value == selfData {
+                    let  selfValue = "https://" + hostOnly
+                    CSPHasSelf = true
+                    srcValuefromCSP.append(selfValue)
+                } else if value == strictDynData {
+                    CSPHasStrictDynamic = true
+                }
             }
         }
         var srcValuefromCSPSet = Set(srcValuefromCSP.map {
@@ -86,12 +101,12 @@ struct ExternalAndNonceCheck {
         }
         //flag http
         let insecureSources = srcValuefromCSPSet.filter { $0.hasPrefix("http://") }
-
+        
         for badSource in insecureSources {
             addWarning(warningsArray: &warnings,
                        m: "CSP source uses insecure scheme: \(badSource)",
                        s: .suspicious,
-                       p: -10,
+                       p: CSPRO ? 0 : -10,
                        url: coreURL,
                        source: .header,
                        machineMessage: "csp_http_source")
@@ -100,13 +115,9 @@ struct ExternalAndNonceCheck {
         
         // check nonce count
         if nonceCSPValueSet.count > 1 {
-            addWarning(warningsArray: &warnings, m: "Too many nonce values in script-src", s: .suspicious, p: -10, url: coreURL, source: .header)
+            addWarning(warningsArray: &warnings, m: "Too many nonce values in script-src", s: .suspicious, p: CSPRO ? 0 : -10, url: coreURL, source: .header)
         }
         
-        #if DEBUG
-
-        
-        #endif
         
         //MARK: SCRIPs VALUES
         // nonce and source from scripts
@@ -119,7 +130,7 @@ struct ExternalAndNonceCheck {
         if let scripts = scripts {
             for script in scripts.scripts {
                 if let _ = script.origin, let nonceValue = script.nonceValue {
-                        nonceValueFromScripts.append(nonceValue)
+                    nonceValueFromScripts.append(nonceValue)
                 }
                 if let source = script.extractedSrc {
                     if (script.origin == .relative ||
@@ -129,7 +140,7 @@ struct ExternalAndNonceCheck {
                     } else if (script.origin == .httpExternal ||
                                script.origin == .httpsExternal ||
                                script.origin == .moduleExternal
-                           ) {
+                    ) {
                         srcValueFromScripts.append(source)
                     }
                 }
@@ -148,12 +159,12 @@ struct ExternalAndNonceCheck {
         
         //flag http
         let insecureSourcesScript = srcValueFromScriptsSet.filter { $0.hasPrefix("http://") }
-
+        
         for badSource in insecureSourcesScript {
             addWarning(warningsArray: &warnings,
                        m: "Script source uses insecure scheme: \(badSource)",
                        s: .suspicious,
-                       p: -10,
+                       p: CSPRO ? 0 : -10,
                        url: coreURL,
                        source: .header,
                        machineMessage: "script_http_source")
@@ -176,12 +187,46 @@ struct ExternalAndNonceCheck {
         }
         //nonce match
         let allNoncesValid = nonceValueFromScriptsSet.isSubset(of: nonceCSPValueSet)
-//        filter out nonce script that where whitelisted by nonce ... or hash in the future !
+        //        filter out nonce script that where whitelisted by nonce ... or hash in the future !
         if allNoncesValid {
             scriptsUnwrapped = scriptsUnwrapped.filter {
                 guard let nonce = $0.nonceValue else { return true }  // keep if no nonce
                 return !nonceCSPValueSet.contains(nonce)              // keep if nonce is not in CSP (invalid nonce)
             }
+        }
+        // if strict-dyn, no need to go further only protected source are executed
+        if CSPHasStrictDynamic {
+            if !scriptsUnwrapped.isEmpty {
+                var scriptIDRemaining = Set<UUID>()
+                for scriptpb in scriptsUnwrapped {
+                    scriptIDRemaining.insert(scriptpb.id)
+                }
+                for id in scriptIDRemaining {
+                    if let scriptToMatch = scripts?.scripts, !scriptToMatch.isEmpty {
+                        for i in 0..<scripts!.scripts.count {
+                            if scripts!.scripts[i].id == id {
+                                if scripts!.scripts[i].findings4UI == nil {
+                                    scripts!.scripts[i].findings4UI = []
+                                }
+                                scripts!.scripts[i].findings4UI?.append((
+                                    message: "Strict-Dynamic CSP but non-protected script",
+                                    severity: .suspicious,
+                                    pos: nil
+                                ))
+                            }
+                        }
+                    }
+                }
+            } else if scriptsUnwrapped.isEmpty {
+                addWarning(warningsArray: &warnings, m: "All script whitelisted by nonce in CSP", s: .good, p: CSPRO ? 0 : PenaltySystem.Penalty.allScripttNonced, url: coreURL, source: .header)
+                return warnings
+            }
+            return warnings
+        }
+        // if scriptUnwrapped is empty, all script were cleaned by the nonce.
+        if scriptsUnwrapped.isEmpty {
+            addWarning(warningsArray: &warnings, m: "All script whitelisted by nonce in CSP", s: .good, p: CSPRO ? 0 : PenaltySystem.Penalty.allScripttNonced, url: coreURL, source: .header)
+            return warnings
         }
         
         //MARK: Src check
@@ -192,7 +237,12 @@ struct ExternalAndNonceCheck {
                 return origin != .relative && origin != .moduleRelative
             }
         } else if scriptHasRelative {
-                addWarning(warningsArray: &warnings, m: "self missing from CSP but relative script are present", s: .suspicious, p: -10, url: coreURL, source: .header)
+            addWarning(warningsArray: &warnings,
+                       m: "self missing from CSP but relative script are present",
+                       s: .suspicious,
+                       p: CSPRO ? 0 : -10,
+                       url: coreURL,
+                       source: .header)
         }
         // filter out datauri if csp has data:
         let scriptHasURILeft: Bool = scriptsUnwrapped.map { $0.origin == .dataURI }.contains(true)
@@ -208,8 +258,8 @@ struct ExternalAndNonceCheck {
             allowedSources.append(extractHostAndPath(from :src))
         }
         
-        print("Allowed SRC------------------------------------")
-        print(allowedSources)
+        //        print("Allowed SRC------------------------------------")
+        //        print(allowedSources)
         
         var idToPop = Set<UUID>()
         for remainingScript in scriptsUnwrapped {
@@ -229,13 +279,13 @@ struct ExternalAndNonceCheck {
         for id in idToPop {
             scriptsUnwrapped.removeAll { $0.id == id }
         }
-//        pop out self "fake" value hostOnly. Either it s been marked as used if the full host was used in script or there was relative. other wise it is ununsed.
+        //        pop out self "fake" value hostOnly. Either it s been marked as used if the full host was used in script or there was relative. other wise it is ununsed.
         if CSPHasSelf && scriptHasRelative {
             allowedSources = allowedSources.filter { $0.host != hostOnly }
         }
         
         let unusedSources = allowedSources.filter { !$0.wasUsed }
-
+        
         if !unusedSources.isEmpty {
             let count = unusedSources.count
             let preview = unusedSources.map { $0.host + ($0.path ?? "") }
@@ -244,9 +294,9 @@ struct ExternalAndNonceCheck {
             
             //TODO: Once enought test are done, this should give real penalties
             let message = count > 3
-                ? "CSP defines \(count) script sources that were never used: \(previewList)"
-                : "CSP defines unused script sources: \(previewList)"
-
+            ? "CSP defines \(count) script sources that were never used: \(previewList)"
+            : "CSP defines unused script sources: \(previewList)"
+            
             addWarning(
                 warningsArray: &warnings,
                 m: message,
@@ -277,13 +327,13 @@ struct ExternalAndNonceCheck {
         }
         
         
-        #if DEBUG
+#if DEBUG
         print("REMAINING: ", scriptsUnwrapped.map {print($0.extractedSrc ?? "NOTHING", $0.origin?.rawValue ?? "NOTHING") } )
         print("--------------------------------END---ExternalAndNonceCheck.swift --------------------------------")
-        #endif
+#endif
         return warnings
     }
-        
+    
     
     private static func isScriptAllowedByCSP(scriptSrc: String, allowedSources: inout [AllowedSrc]) -> Bool {
         for index in allowedSources.indices {
@@ -348,12 +398,12 @@ struct ExternalAndNonceCheck {
     
     // useless warning  helper
     private static func addWarning(warningsArray: inout [SecurityWarning],
-                                      m: String, s: SecurityWarning.SeverityLevel,
-                                      p: Int,
-                                      url: String,
-                                      source: SecurityWarning.SourceType,
-                                      bitFlags: WarningFlags = [],
-                                      machineMessage: String = "") {
+                                   m: String, s: SecurityWarning.SeverityLevel,
+                                   p: Int,
+                                   url: String,
+                                   source: SecurityWarning.SourceType,
+                                   bitFlags: WarningFlags = [],
+                                   machineMessage: String = "") {
         
         warningsArray.append(SecurityWarning(
             message: m,
@@ -376,7 +426,7 @@ struct ExternalAndNonceCheck {
             return AllowedSrc(host: source, path: nil)
         }
     }
-
+    
     struct AllowedSrc {
         let host: String
         let path: String?

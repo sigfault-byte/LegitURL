@@ -7,7 +7,7 @@
 		<key>Entropy (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>6</integer>
+			<integer>5</integer>
 		</dict>
 		<key>LegitURL.xcscheme_^#shared#^_</key>
 		<dict>
@@ -19,6 +19,11 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>LegitURLTests.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>12</integer>
+		</dict>
 		<key>URLChecker.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
@@ -27,14 +32,24 @@
 		<key>URLSEssionFunkyUnicode (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>7</integer>
+			<integer>8</integer>
 		</dict>
 		<key>__CF_BOT (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>0</integer>
+			<integer>9</integer>
 		</dict>
 		<key>base64 (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>mergeAndClusterURL (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>6</integer>
+		</dict>
+		<key>nGramJaccarMergeURL (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>4</integer>
@@ -42,21 +57,31 @@
 		<key>ngramvslevenshtein (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>5</integer>
+			<integer>10</integer>
+		</dict>
+		<key>setHAckURLMerge (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>7</integer>
 		</dict>
 		<key>shaSum (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>3</integer>
+			<integer>11</integer>
 		</dict>
 		<key>testSAn (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>2</integer>
+			<integer>3</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>241C2DA82DE9BAE80038B6CE</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>2481AD212DDEFE820069ADB8</key>
 		<dict>
 			<key>primary</key>

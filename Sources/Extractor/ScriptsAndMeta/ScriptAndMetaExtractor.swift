@@ -17,6 +17,8 @@ struct ScriptAndMetaExtractor {
 //        let startTime = Date()
         #endif
         let tagPositions = DataSignatures.extractAllTagMarkers(in: body, within: htmlRange)
+        let tagPositionsNoComment = CommentsExtractor.extract(from: body, tagPos: tagPositions, withing: htmlRange)
+        
         var headPos = 0
         var bodyPos = 0
         var headEndPos: Int? = nil
@@ -24,7 +26,7 @@ struct ScriptAndMetaExtractor {
         var closingScriptPositions: [Int] = []
         var scriptCandidates: [ScriptScanTarget] = []
         //populate the array of candidates
-        ScriptHelperFunction.populateScriptTarget(&scriptCandidates, tagPositions: tagPositions)
+        ScriptHelperFunction.populateScriptTarget(&scriptCandidates, tagPositions: tagPositionsNoComment)
         #if DEBUG
 //        let t1 = Date()
         #endif
@@ -84,7 +86,7 @@ struct ScriptAndMetaExtractor {
 //        print("Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
         #endif
         // MARK: Look if some meta are injecting meta equiv CSP
-        let metaCSP = CSPMetaExtractor.extract(from: body, tags:tagPositions, range: headPos..<headEndPos!)
+        let metaCSP = CSPMetaExtractor.extract(from: body, tags:tagPositionsNoComment, range: headPos..<headEndPos!)
 //            var confirmedScripts = checkForScriptTags(body, scriptCandidates: &scriptCandidates, asciiToCompare: interestingPrefix.script, lookAhead: 8)
 //        Can safely force unwrap there is a guard !
 //        collect all start var from each scriptCandidate and store them in the [Int]
@@ -92,7 +94,7 @@ struct ScriptAndMetaExtractor {
         var initialScripts = scriptCandidates.filter { $0.flag == true }
 //        let tagToDismiss: [Int] = initialScripts.map { $0.start }
 //        Todo: Finish the function, the goal is to retrive meta-http that override CSP to match again the CSP. And compare title to the domain
-//        let headFindings = HTMLHeadAnalyzer.analyze(headContent: body[headRange], tagPos: tagPositions, tagPosToDismiss: tagToDismiss, warnings: &warnings, origin: origin)
+//        let headFindings = HTMLHeadAnalyzer.analyze(headContent: body[headRange], tagPos: tagPositionsNoComment / tagPositions, tagPosToDismiss: tagToDismiss, warnings: &warnings, origin: origin)
         // guard if there are no script to analyze
         guard !initialScripts.isEmpty else { return (nil, nil) }
         #if DEBUG
@@ -111,7 +113,7 @@ struct ScriptAndMetaExtractor {
             ))
             return (nil, nil)
         }
-        ScriptHelperFunction.lookForScriptTagEnd(in: body, confirmedScripts: &initialScripts, asciiToCompare: byteLetters.endTag, lookAhead: 3072)
+        ScriptHelperFunction.lookForScriptTagEnd(in: body, confirmedScripts: &initialScripts, asciiToCompare: uniqueByte.endTag, lookAhead: 3072)
 //         Step 2.5 - Match confirmed scripts with closing </script> tags
 //            Ensure the pair are correct! If the closing tag is not found in 512 byt the dev is hotdogwater or a scam
 //        instgram closing tag is farther than 1024 fucking bytes

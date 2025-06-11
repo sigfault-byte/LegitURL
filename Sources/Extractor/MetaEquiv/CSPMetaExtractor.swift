@@ -41,12 +41,12 @@ struct CSPMetaExtractor {
                DataSignatures.matchesAsciiTag(at: candidate + 5, in: html, asciiToCompare: InterestingPrefix.httpEquivCSP, lookAheadWindow: 55) {
                 
                 //Useless fun optimization
-                let start = DataSignatures.extractAllTagMarkers(in: html, within: candidate+40..<candidate+100, tag: byteLetters.equalSign)
+                let start = DataSignatures.extractAllTagMarkers(in: html, within: candidate+40..<candidate+100, tag: uniqueByte.equalSign)
                 if candidate == candidates.first { maxEnd = candidates.count > 1 ? candidates[1] : range.upperBound }
                 else if candidate == candidates.dropFirst().first { maxEnd = candidates.count > 2 ? candidates[2] : range.upperBound }
                 else if candidate == candidates.dropFirst(2).first { maxEnd = range.upperBound }
                 
-                let end = DataSignatures.extractAllTagMarkers(in: html, within: start[0] + 1..<maxEnd, tag: byteLetters.endTag)
+                let end = DataSignatures.extractAllTagMarkers(in: html, within: start[0] + 1..<maxEnd, tag: uniqueByte.endTag)
                 metaDataSCP = html[start[0] + 1..<end[0]]
                 
             }

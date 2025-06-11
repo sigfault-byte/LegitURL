@@ -13,10 +13,10 @@
 
 | Site | HTML | JS | Cookies | Findings | HTML parse | Total | GET |
 |------|------|----|---------|----------|------------|----------|--------|
-| stripe.com/ae | 2.05 MB | 8 | 1 | 10 | 26 ms | **1.76 s** | 1.71 s |
-| store.steampowered.com | 0.78 MB | 25 | 3 | 18 | 22 ms | **0.86 s** | 0.72 s |
-| societegenerale.com/fr | 0.08 MB | 68 | 3 | 16 | 15 ms | **1.52 s** | 0.88 s |
-| x.com | 0.26 MB | 41 | 6 | 43 | 36 ms | **0.72 s** | 0.63 s |
+| stripe.com/ae           | 2.05 MB | 8  | 1 | 10 | 32 ms | **42.77 ms** | 1.49 s | 1.43 s |
+| store.steampowered.com  | 0.78 MB | 25 | 3 | 18 | 38 ms | **37.99 ms** | 0.81 s | 0.63 s |
+| societegenerale.com/fr  | 0.08 MB | 68 | 3 | 16 | 18 ms | **14.50 ms** | 0.83 s | 0.79 s |
+| x.com                   | 0.26 MB | 41 | 7 | 43 | 19 ms | **16.31 ms** | 0.69 s | 0.64 s |
 
 <sup>Times are wall-clock averages of three runs.</sup>
 
