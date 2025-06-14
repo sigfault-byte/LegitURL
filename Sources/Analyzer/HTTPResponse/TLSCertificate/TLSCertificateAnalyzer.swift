@@ -26,6 +26,15 @@ struct TLSCertificateAnalyzer {
         hasIssuedEVorOVBonus = false
     }
     
+    private static func sanBelongsToCurrentDomain(san: String, legitDomain: String) -> Bool {
+        let sanParts = san.lowercased().split(separator: ".")
+        let legitParts = legitDomain.lowercased().split(separator: ".")
+
+        guard sanParts.count >= legitParts.count else { return false }
+
+        return sanParts.suffix(legitParts.count) == legitParts
+    }
+    
     static func analyze(certificate: ParsedCertificate,
                         host: String,
                         domain: String,
@@ -183,15 +192,12 @@ struct TLSCertificateAnalyzer {
         //        Could parsed SANs for typosquatting in LegitURL V658642.1
         let hasWildcard = sans.contains { $0.hasPrefix("*.")}
         if !hasWildcard {
-            let normalizedHost = host.lowercased()
-            let normalizedDomain = domain.lowercased()
+//            let normalizedHost = host.lowercased()
+//            let normalizedDomain = domain.lowercased()
             
-            let matchedSANs = sans.filter { san in
-                let normalizedSAN = san.lowercased()
-                return normalizedSAN == normalizedHost || normalizedSAN == normalizedDomain
-            }
+            let matchedSANCount = sans.filter { sanBelongsToCurrentDomain(san: $0, legitDomain: domainIdna) }.count
             
-            if matchedSANs.count == 1 && sans.count > 20 && !hasWildcard {
+            if matchedSANCount == 1 && sans.count > 20 && !hasWildcard {
                 addWarning("TLS Certificate includes \(sans.count) SANs, but only 1 matches the current domain — likely reused across unrelated infrastructure", .suspicious, penalty: PenaltySystem.Penalty.reusedTLS1FDQN, bitFlags: WarningFlags.TLS_SANS_FLOOD)
                 if let fingerprint = certificate.fingerprintSHA256 {
                     //                    “Capture once. Store locally. Never trust global memory for retroactive judgment.”

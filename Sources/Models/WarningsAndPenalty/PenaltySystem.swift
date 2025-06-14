@@ -154,13 +154,13 @@ struct PenaltySystem {
         //RESPONSE HEADER ISSUE
         static let blockedByFirewall                   = -100
         static let serverError                         = -100
-        static let missConfiguredOrScam                = -35
+        static let missConfiguredOrScam                = -40
         static let suspiciousStatusCode                = -35
         static let hidden200Redirect                   = -20
         
         //HEADERS
-        static let missingHSTS                         = -50
-        static let fakeCSP                             = -45
+        static let missingHSTS                         = -30
+        static let fakeCSP                             = -40
         static let inccorectLogic                      = -5
         static let lowHSTSValue                        = -5
         static let weakReferrerPolicy                  = -5

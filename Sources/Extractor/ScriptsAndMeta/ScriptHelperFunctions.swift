@@ -67,17 +67,17 @@ struct ScriptHelperFunction {
         var bodyFound = false
         var headEndFound = false
         var bodyEndFound = false
-        
-        
+
         for i in 0..<scriptCandidates.count {
             let pos = scriptCandidates[i].start
             guard pos + 1 < body.count else { continue }
-            
+
             if body[pos + 1] == UInt8(ascii: "/") {
                 //                 It's a closing tag
                 if DataSignatures.matchesAsciiTag(at: pos + 1, in: body, asciiToCompare: InterestingPrefix.script, lookAheadWindow: 8) {
                     closingScriptPositions.append(pos - 1)
                 } else if !headEndFound && closingHeadPos == nil && DataSignatures.matchesAsciiTag(at: pos + 1, in: body, asciiToCompare: InterestingPrefix.head, lookAheadWindow: 8) {
+                    
                     headEndFound = true
                     closingHeadPos = pos - 1
                 } else if !bodyEndFound && closingBodyPos == nil && DataSignatures.matchesAsciiTag(at: pos + 1, in: body, asciiToCompare: InterestingPrefix.body, lookAheadWindow: 8) {
@@ -87,6 +87,7 @@ struct ScriptHelperFunction {
             } else {
                 // It's an opening tag
                 if !headFound && DataSignatures.matchesAsciiTag(at: pos, in: body, asciiToCompare: InterestingPrefix.head, lookAheadWindow: 8) {
+                    
                     headerPos = pos
                     headFound = true
                 } else if !bodyFound && DataSignatures.matchesAsciiTag(at: pos, in: body, asciiToCompare: InterestingPrefix.body, lookAheadWindow: 8) {
@@ -101,6 +102,7 @@ struct ScriptHelperFunction {
                 }
             }
         }
+        
     }
     
     // TODO: Double check if this is not a duplicate

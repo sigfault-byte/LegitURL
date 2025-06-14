@@ -100,7 +100,7 @@ struct ScriptAndDefaultDirective {
         if !hasDefaultSrc && !hasScriptSrc && !hasRequiredTrustedTypeFor{
             warnings.append(SecurityWarning(
                 message: "CSP is missing both 'default-src' and 'script-src' or 'require-trusted-types-for'\n. This CSP offers no meaningful script protection.",
-                severity: .critical,
+                severity: .dangerous,
                 penalty: PenaltySystem.Penalty.fakeCSP,
                 url: url,
                 source: .header,
