@@ -29,7 +29,7 @@ struct TLSCertificateAnalyzer {
     private static func sanBelongsToCurrentDomain(san: String, legitDomain: String) -> Bool {
         let sanParts = san.lowercased().split(separator: ".")
         let legitParts = legitDomain.lowercased().split(separator: ".")
-
+        
         guard sanParts.count >= legitParts.count else { return false }
 
         return sanParts.suffix(legitParts.count) == legitParts
@@ -192,16 +192,42 @@ struct TLSCertificateAnalyzer {
         //        Could parsed SANs for typosquatting in LegitURL V658642.1
         let hasWildcard = sans.contains { $0.hasPrefix("*.")}
         if !hasWildcard {
-//            let normalizedHost = host.lowercased()
-//            let normalizedDomain = domain.lowercased()
-            
-            let matchedSANCount = sans.filter { sanBelongsToCurrentDomain(san: $0, legitDomain: domainIdna) }.count
-            
-            if matchedSANCount == 1 && sans.count > 20 && !hasWildcard {
-                addWarning("TLS Certificate includes \(sans.count) SANs, but only 1 matches the current domain — likely reused across unrelated infrastructure", .suspicious, penalty: PenaltySystem.Penalty.reusedTLS1FDQN, bitFlags: WarningFlags.TLS_SANS_FLOOD)
-                if let fingerprint = certificate.fingerprintSHA256 {
-                    //                    “Capture once. Store locally. Never trust global memory for retroactive judgment.”
-                    tlsSANReusedMemory[hostIdna] = (domain: domainIdna, fingerprint: fingerprint, wasFlooded: true)
+            var matchedSANCount = 0
+            var totalSANCount = 0
+
+            for san in sans {
+                if san.contains(":") { continue } // skip IP
+                totalSANCount += 1
+                if sanBelongsToCurrentDomain(san: san, legitDomain: domainIdna) {
+                    matchedSANCount += 1
+                }
+            }
+            print("------------SANS CHECK")
+            print("Number of san: ", totalSANCount , "matched:" , matchedSANCount)
+            if totalSANCount > 20 {
+                let ratio = Double(matchedSANCount) / Double(totalSANCount)
+
+                switch ratio {
+                case 1.0:
+                    addWarning("All \(totalSANCount) SANs match the current domain", .info, penalty: 0)
+
+                case 0.5..<1.0:
+                    addWarning("\(matchedSANCount)/\(totalSANCount) SANs match the current domain", .info, penalty: 0)
+                        
+                case 0.1..<0.5:
+                    addWarning("Only \(matchedSANCount) of \(totalSANCount) SANs match the current domain — certificate may be reused", .suspicious, penalty: PenaltySystem.Penalty.reusedTLS1FDQN / 2, bitFlags: WarningFlags.TLS_SANS_FLOOD)
+                        if let fingerprint = certificate.fingerprintSHA256 {
+                            tlsSANReusedMemory[hostIdna] = (domain: domainIdna, fingerprint: fingerprint, wasFlooded: true)
+                        }
+                        
+                case ..<0.1:
+                    addWarning("Less than 10% of SANs match the current domain — likely reused across unrelated infrastructure", .dangerous, penalty: PenaltySystem.Penalty.reusedTLS1FDQN, bitFlags: WarningFlags.TLS_SANS_FLOOD)
+                    if let fingerprint = certificate.fingerprintSHA256 {
+                        tlsSANReusedMemory[hostIdna] = (domain: domainIdna, fingerprint: fingerprint, wasFlooded: true)
+                    }
+
+                default:
+                    break
                 }
             }
         }
@@ -214,7 +240,7 @@ struct TLSCertificateAnalyzer {
                $0.value.fingerprint != certificate.fingerprintSHA256 &&
                $0.value.wasFlooded
            }) {
-            addWarning("Previously flagged TLS certificate on this domain appeared suspicious, but was followed by a clean certificate (EV or OV). Penalty waived.", .info, penalty: 20)
+            addWarning("Previously flagged TLS certificate on this domain appeared suspicious, but was followed by a clean certificate (EV or OV). Penalty waived.", .good, penalty: 25)
             tlsSANReusedMemory.removeValue(forKey: previousEntry.key)
         }
     }
