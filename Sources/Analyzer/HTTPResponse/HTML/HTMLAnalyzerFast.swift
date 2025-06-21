@@ -8,15 +8,15 @@
 import Foundation
 
 struct HTMLAnalyzerFast {
-    static func analyze(body: Data, contentType: String, responseCode: Int, origin: String, domainAndTLD: String, into warnings: inout [SecurityWarning]) -> (ScriptExtractionResult?, Data?) {
-        guard responseCode == 200, contentType.contains("text/html") else { return (nil, nil) }
+    static func analyze(body: Data, contentType: String, responseCode: Int, origin: String, domainAndTLD: String, into warnings: inout [SecurityWarning]) -> (ScriptExtractionResult?, Data?, String?) {
+        guard responseCode == 200, contentType.contains("text/html") else { return (nil, nil, nil) }
         let bodySize: Int = body.count
         let result = DataSignatures.extractHtmlTagRange(in: body)
         
         guard bodySize < 5_000_000 else {
             warnings.append(SecurityWarning(message: "Body too large ( more than 5MB) for fast scan.", severity: .suspicious, penalty: -30 , url: origin, source: .body))
             
-            return (nil, nil)
+            return (nil, nil, nil)
         }
         
         guard let (htmlRange, htmlClosed) = result else {
@@ -30,15 +30,14 @@ struct HTMLAnalyzerFast {
             ))
             
             // ASSUME entire document is head content and extract early scripts
-            let (scripts, metaSCP) = ScriptAndMetaExtractor.extract(
+            let (scripts, metaSCP, url) = ScriptAndMetaExtractor.extract(
                 body: body,
                 origin: origin,
                 domainAndTLD: domainAndTLD,
                 htmlRange: body.startIndex ..< body.endIndex, // assume whole doc
                 warnings: &warnings
             )
-            
-            return (scripts, metaSCP)
+            return (scripts, metaSCP, url)
         }
         if htmlClosed == false {
 //            warnings.append(SecurityWarning(message: "HTML appears malformed (missing </html> closing tag). This is common in scam kits or broken pages from hotdogwater devs.",
@@ -51,12 +50,12 @@ struct HTMLAnalyzerFast {
                                            ))
         }
         
-        let (scripts, metaSCP) = ScriptAndMetaExtractor.extract(body: body,
+        let (scripts, metaSCP, url) = ScriptAndMetaExtractor.extract(body: body,
                                               origin: origin,
                                               domainAndTLD: domainAndTLD,
                                               htmlRange: htmlRange,
                                               warnings: &warnings)
-        return (scripts, metaSCP)
+        return (scripts, metaSCP, url)
     }
 }
 

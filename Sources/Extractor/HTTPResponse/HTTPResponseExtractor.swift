@@ -207,6 +207,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
     // URLSessionTaskDelegate method:
     // This method is called when a redirect response is received.
     // By calling completionHandler(nil), we cancel the redirect so that the URLSession returns the original response.
+    //MARK: Added non-isolated function. Still have no clue how to silent the warning
     @objc func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @Sendable @escaping (URLRequest?) -> Void) {
 //        print("Redirect cancelled !!!.")
         completionHandler(nil)
@@ -214,6 +215,7 @@ class HTTPResponseExtractor: NSObject, URLSessionDelegate, URLSessionTaskDelegat
     
     /// Delegate to save the TLS and check its content
     //MARK: OLD WORKING WITH WARNING FROM XCODE SNIPPET
+    //MARK: Added non-isolated function. Still have no clue how to silent the warning
     @objc func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @Sendable @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         TLSExtractor().extract(session, didReceive: challenge, completionHandler: completionHandler)
     }

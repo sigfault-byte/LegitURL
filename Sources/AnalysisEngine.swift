@@ -82,19 +82,20 @@ struct AnalysisEngine {
         //        if shouldStopAnalysis(atIndex: index) { return false }
         
         // Run PQF analysis and capture any new URL generated
-        let newURL = PQFAnalyzer.analyze(urlInfo: &urlInfo)
+        let _ = PQFAnalyzer.analyze(urlInfo: &urlInfo)
         URLQueue.shared.offlineQueue[index] = urlInfo
         if shouldStopAnalysis(atIndex: index) { return false }
         
+        //TODO: Logic should be somehting like, store it, then compare to a redirect from the onlineInfo. If they're the same -> analyze. Otherwise, warn user, and bail this one ? It is hard to tell from offline, what the server reaction will be...
         // Handle loopback/redirect URLs
-        if let newURL = newURL {
-            var infoMessage: String? = ""
-            let (cleanURL, _) = sanitizeAndValidate(newURL, &infoMessage)
-            if let cleanedURL = cleanURL {
-                let newExtractedInfo = extractComponents(from: cleanedURL)
-                URLQueue.shared.offlineQueue.append(newExtractedInfo)
-            }
-        }
+//        if let newURL = newURL {
+//            var infoMessage: String? = ""
+//            let (cleanURL, _) = sanitizeAndValidate(newURL, &infoMessage)
+//            if let cleanedURL = cleanURL {
+//                let newExtractedInfo = extractComponents(from: cleanedURL)
+//                URLQueue.shared.offlineQueue.append(newExtractedInfo)
+//            }
+//        }
         
         // Mark this URLInfo as processed
         URLQueue.shared.offlineQueue[index].processed = true
@@ -179,7 +180,7 @@ struct AnalysisEngine {
             
             
             
-            let OnlineAnalysisURLInfo = await HTTPRespAnalyzer.analyze(urlInfo: updatedURLInfo)
+            let (OnlineAnalysisURLInfo, url) = await HTTPRespAnalyzer.analyze(urlInfo: updatedURLInfo)
             URLQueue.shared.offlineQueue[index] = OnlineAnalysisURLInfo
             //            print("Online analysis complete for:", OnlineAnalysisURLInfo.components.fullURL ?? "unknown")
             URLQueue.shared.offlineQueue[index].processedOnline = true
@@ -209,9 +210,11 @@ struct AnalysisEngine {
             if shouldStopAnalysis(atIndex: index) {
                 return
             }
-            
-            if let finalRedirect = OnlineAnalysisURLInfo.onlineInfo?.finalRedirectURL {
-                await handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect, responseCode: currentURLInfo.onlineInfo?.serverResponseCode ?? 0)
+            if let metaRefresh = url {
+                await handleFinalRedirect(from: currentURLInfo, finalRedirect: metaRefresh, responseCode: currentURLInfo.onlineInfo?.serverResponseCode ?? 0, type: 1)
+            }
+            if let finalRedirect = OnlineAnalysisURLInfo.onlineInfo?.finalRedirectURL, url == nil {
+                await handleFinalRedirect(from: currentURLInfo, finalRedirect: finalRedirect, responseCode: currentURLInfo.onlineInfo?.serverResponseCode ?? 0, type: 0)
             }
             
         } catch {
@@ -276,12 +279,15 @@ struct AnalysisEngine {
         return false
     }
     
-    private static func handleFinalRedirect(from currentURLInfo: URLInfo, finalRedirect: String, responseCode: Int) async {
+    private static func handleFinalRedirect(from currentURLInfo: URLInfo, finalRedirect: String, responseCode: Int, type: Int) async {
+        // type 0 : normal
+        // type 1 : metaRefresh
+        // type 2 : "found URL"
+        
+        // guard for race condition
         guard let originalURL = currentURLInfo.components.fullURL else { return }
         if finalRedirect.lowercased() == originalURL.lowercased() {
-            
             return }
-        
         let alreadyQueued = URLQueue.shared.offlineQueue.contains {
             $0.components.coreURL?.lowercased() == finalRedirect.lowercased()
         }

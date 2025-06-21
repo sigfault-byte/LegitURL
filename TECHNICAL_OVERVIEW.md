@@ -2,7 +2,7 @@
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| 1.1.4   | *stable* | Current public release |
+| 1.1.6   | *stable* | Current public release |
 
 > **LegitURL is a 100 % on-device link scanner.**  
 > It rates trust purely from technical behaviour and finishes in < 2 s—no cloud, no sign-ups, no tracking.

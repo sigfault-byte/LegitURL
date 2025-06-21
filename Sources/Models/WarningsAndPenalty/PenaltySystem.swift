@@ -50,6 +50,7 @@ struct PenaltySystem {
         
         // PATH-RELATED PENALTIES
         static let executableInPath                    = -20
+        static let nonalpahaNumericInPath              = -15
         static let pathHasExecutable                   = -10
         static let pathIsEndpointLike                  = -10
         static let highEntropyPathComponent            = -10
@@ -94,6 +95,7 @@ struct PenaltySystem {
         ///Body
         static let extHttpScriptSrc                    = -40
         static let scriptIs80Percent                   = -30
+        static let scriptDataURI                       = -40
         static let jsEvalInBody                        = -30
         static let badJSCallInline                     = -30
         static let jsFingerPrinting                    = -30
@@ -110,7 +112,7 @@ struct PenaltySystem {
         static let jsWebAssembly                       = -20
         static let extScriptSrc                        = -20
         static let highScriptDensity20                 = -20
-        static let scriptDataURI                       = -40
+        static let missingMalformedHEadTag             = -15
         static let missingMalformedBodyTag             = -5
         static let scriptIs70Percent                   = -10
         static let smallHTMLless896                    = -10

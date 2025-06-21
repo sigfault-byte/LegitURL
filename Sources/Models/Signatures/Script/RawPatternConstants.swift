@@ -42,6 +42,9 @@ struct InterestingPrefix {
     static let moduleKeyword: [UInt8] = Array("module".utf8)
     static let jsonKeyword: [UInt8] = Array("application/json".utf8)
     static let ldJsonKeyword: [UInt8] = Array("application/ld+json".utf8)
+    static                  let refreshPattern = Array("refresh".utf8)
+    static let contentEq = Array("content=".utf8)
+    static let urlEq = Array("url=".utf8)
 }
 
 struct uniqueByte {
@@ -55,6 +58,8 @@ struct uniqueByte {
     static let equalSign: UInt8 = 61
     static let exclamationMark: UInt8 = UInt8(ascii: "!")
     static let dash: UInt8 = UInt8(ascii: "-")
+    static let doubleQuote: UInt8 = 34
+    static let singleQuote: UInt8 = 39
 }
 
 // Helper function to convert a string to Data (bytes)

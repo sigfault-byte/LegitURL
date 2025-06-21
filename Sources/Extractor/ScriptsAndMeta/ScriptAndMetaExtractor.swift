@@ -11,7 +11,7 @@ struct ScriptAndMetaExtractor {
                         origin: String,
                         domainAndTLD: String,
                         htmlRange: Range<Int>,
-                        warnings: inout [SecurityWarning]) -> (ScriptExtractionResult?, metaCSP: Data?)
+                        warnings: inout [SecurityWarning]) -> (ScriptExtractionResult?, metaCSP: Data?, url: String?)
     {
         #if DEBUG
 //        let startTime = Date()
@@ -39,39 +39,47 @@ struct ScriptAndMetaExtractor {
                                  closingScriptPositions: &closingScriptPositions,
                                  scriptCandidates: &scriptCandidates)
         
-        // guarding against malformed html
-        guard headPos != 0, headEndPos != nil else {
+        // sorting malformed html against malformed html
+        if headPos == 0 || headEndPos == nil {
             warnings.append(SecurityWarning(
-                message: "Missing or malformed <head> tag.",
-                severity: .critical,
-                penalty: PenaltySystem.Penalty.critical,
+                message: "Missing or malformed <head> tags, falling back to limited HTML slice for analysis, max head length: 8192 bytes",
+                severity: .dangerous,
+                penalty: PenaltySystem.Penalty.missingMalformedHEadTag,
                 url: origin,
                 source: .body,
                 bitFlags: WarningFlags.SLOPPY_DEVELOPMENT
             ))
-            return (nil, nil)
+            if body.count > 1 {
+                headPos = 1
+            }
+            if let bodyStart = bodyPos > 0 ? Optional(bodyPos) : nil {
+                headEndPos = max(1, bodyStart - 5)
+            } else {
+                headEndPos = body.count
+            }
         }
 
         if bodyPos == 0 || bodyEndPos == nil {
             var missing: String = ""
-            if bodyPos == 0{
+            if bodyPos == 0 {
                 missing = "<body>"
             } else if bodyEndPos == nil {
                 missing = "</body>"
             }
             warnings.append(SecurityWarning(
-                message: "Missing or malformed \(missing) tag .",
+                message: "Missing or malformed \(missing) tag.",
                 severity: .suspicious,
                 penalty: PenaltySystem.Penalty.missingMalformedBodyTag,
                 url: origin,
                 source: .body,
                 bitFlags: WarningFlags.SLOPPY_DEVELOPMENT
             ))
-            // The next guard will safely exit. Still this should be enough to bail
-//            return (nil, nil)
+            if bodyEndPos == nil {
+                bodyEndPos = body.count
+            }
         }
 
-        guard headPos < bodyPos else {
+        if bodyPos != 0, headPos > bodyPos  {
             warnings.append(SecurityWarning(
                 message: "Invalid document structure <head> or <body> tag are not in the correct order or malformed.",
                 severity: .critical,
@@ -79,14 +87,16 @@ struct ScriptAndMetaExtractor {
                 url: origin,
                 source: .body
             ))
-            return (nil, nil)
+//            return (nil, nil)
         }
         #if DEBUG
 //        let t2 = Date()
 //        print("Step 1 - Tag pre-filter took \(Int(t2.timeIntervalSince(t1) * 1000))ms")
         #endif
         // MARK: Look if some meta are injecting meta equiv CSP
+        let size = body.count
         let metaCSP = CSPMetaExtractor.extract(from: body, tags:tagPositionsNoComment, range: headPos..<headEndPos!)
+        let url = RedirectMetaExtractor.extract(from: body, tags: tagPositionsNoComment, range: headPos..<headEndPos!, htmlSize: size)
 //            var confirmedScripts = checkForScriptTags(body, scriptCandidates: &scriptCandidates, asciiToCompare: interestingPrefix.script, lookAhead: 8)
 //        Can safely force unwrap there is a guard !
 //        collect all start var from each scriptCandidate and store them in the [Int]
@@ -96,7 +106,7 @@ struct ScriptAndMetaExtractor {
 //        Todo: Finish the function, the goal is to retrive meta-http that override CSP to match again the CSP. And compare title to the domain
 //        let headFindings = HTMLHeadAnalyzer.analyze(headContent: body[headRange], tagPos: tagPositionsNoComment / tagPositions, tagPosToDismiss: tagToDismiss, warnings: &warnings, origin: origin)
         // guard if there are no script to analyze
-        guard !initialScripts.isEmpty else { return (nil, nil) }
+        guard !initialScripts.isEmpty else { return (nil, nil, url) }
         #if DEBUG
 //        let t3 = Date()
 //        print("Step 2 - Script detection took \(Int(t3.timeIntervalSince(t2) * 1000))ms")
@@ -111,7 +121,7 @@ struct ScriptAndMetaExtractor {
                 url: origin,
                 source: .body
             ))
-            return (nil, nil)
+            return (nil, nil, url)
         }
         ScriptHelperFunction.lookForScriptTagEnd(in: body, confirmedScripts: &initialScripts, asciiToCompare: uniqueByte.endTag, lookAhead: 3072)
 //         Step 2.5 - Match confirmed scripts with closing </script> tags
@@ -138,7 +148,7 @@ struct ScriptAndMetaExtractor {
                 source: .body,
                 bitFlags: WarningFlags.BODY_SCRIPT_END_NOT_FOUND
             ))
-            return (nil, nil)
+            return (nil, nil, url)
         }
         var confirmedScripts = initialScripts
         ScriptHelperFunction.pairScriptsWithClosings(scripts: &confirmedScripts, closingTags: closingScriptPositions, body: body)
@@ -212,8 +222,8 @@ struct ScriptAndMetaExtractor {
         #if DEBUG
 //        let t8 = Date()
 //        print("Step 7 - Script find nonce took \(Int(t8.timeIntervalSince(t7) * 1000))ms")
-//        
-//        
+//
+//
 //        let duration = Date().timeIntervalSince(startTime)
 //        print("Total scan completed in \(Int(duration * 1000))ms")
 //        print("Summary of the \(confirmedScripts.count), with (\(closingScriptPositions.count)) closing position Script Findings:")
@@ -267,7 +277,7 @@ struct ScriptAndMetaExtractor {
 //
 //            print("---")
 //        }
-        return (ScriptExtractionResult(scripts: confirmedScripts, htmlRange: htmlRange), metaCSP)
+        return (ScriptExtractionResult(scripts: confirmedScripts, htmlRange: htmlRange), metaCSP, url)
 
     }
 }

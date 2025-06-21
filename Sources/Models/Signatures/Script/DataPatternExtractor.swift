@@ -44,6 +44,24 @@ struct DataSignatures {
         return tagPositions
     }
 
+    /// Returns the byte offset of the first occurrence of `tag` within `range`, or nil if not found.
+    public static func extractFirstTagMarker(in body: Data,
+                                             within range: Range<Int>,
+                                             tag: UInt8 = 60) -> Int? {
+        var foundOffset: Int?
+        body.withUnsafeBytes { rawBuffer in
+            guard let base = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
+            let startPtr = base + range.lowerBound
+            let length = range.upperBound - range.lowerBound
+            if let match = memchr(startPtr, Int32(tag), length) {
+                // Compute offset from beginning of body
+                let offset = UnsafeRawPointer(match) - UnsafeRawPointer(base)
+                foundOffset = offset
+            }
+        }
+        return foundOffset
+    }
+
     /// Returns the byte range that spans from the first “<html” tag
     public static func extractHtmlTagRange(in body: Data) -> (Range<Int>, htmlClosed: Bool)? {
 

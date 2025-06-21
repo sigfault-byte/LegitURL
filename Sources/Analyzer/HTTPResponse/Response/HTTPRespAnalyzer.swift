@@ -8,14 +8,12 @@ import Foundation
 
 struct HTTPRespAnalyzer {
 
-    
-
-    static func analyze(urlInfo: URLInfo) async -> URLInfo {
+    static func analyze(urlInfo: URLInfo) async -> (URLInfo, String?) {
         #if DEBUG
 //        let start = Date()
         #endif
         var urlInfo = urlInfo
-        
+        var metaRefreshURL: String?
         let originalURL = urlInfo.components.fullURL ?? ""
         let urlOrigin = urlInfo.components.coreURL ?? ""
 //        let domain = urlInfo.domain
@@ -31,7 +29,7 @@ struct HTTPRespAnalyzer {
                 url: urlInfo.components.coreURL ?? "",
                 source: .getError
             ))
-            return modified
+            return (modified, nil)
         }
         
         
@@ -110,13 +108,24 @@ struct HTTPRespAnalyzer {
            let contentType = headers["content-type"]?.lowercased(),
            let responseCode = onlineInfo.serverResponseCode {
             
-            (findings, csp) = HTMLAnalyzerFast.analyze(body: rawbody,
+            (findings, csp, metaRefreshURL) = HTMLAnalyzerFast.analyze(body: rawbody,
                                                 contentType: contentType,
                                                 responseCode: responseCode,
                                                 origin: urlOrigin,
                                                 domainAndTLD: urlInfo.domain! + "." + urlInfo.tld!,
                                                 into: &urlInfo.warnings
             )
+            
+            if metaRefreshURL != nil {
+                urlInfo.warnings.append(SecurityWarning(
+                    message: "HTML meta refresh, redirecting to: \(metaRefreshURL!)",
+                    severity: .suspicious,
+                    penalty: PenaltySystem.Penalty.metaRefreshInBody,
+                    url: urlOrigin,
+                    source: .redirect,
+                    bitFlags: [.SLOPPY_DEVELOPMENT],
+                ))
+            }
         }
         //TODO: Add the found CSP to the CSP analyszer
         if csp?.count ?? 0 > 0 {
@@ -212,7 +221,7 @@ struct HTTPRespAnalyzer {
 //        }
         //  Analyze headers for content security policy
         var cspResult: ClassifiedCSPResult? = nil
-        if responseCode == 200 {
+        if responseCode == 200, metaRefreshURL != nil {
             let (warningsCSP, result) = CSPAnalyzer.analyze(headers,
                                                             httpEquivCSP: csp,
                                                             urlOrigin: urlOrigin,
@@ -241,7 +250,7 @@ struct HTTPRespAnalyzer {
         
         
         //TODO: This could work for the script-src, leeave disclaimer see if some people like it?
-        if let findings = findings, let rawBody = onlineInfo.rawBody {
+        if metaRefreshURL != nil, let findings = findings, let rawBody = onlineInfo.rawBody {
             onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings, rawBody: rawBody)
         }
         
@@ -276,6 +285,6 @@ struct HTTPRespAnalyzer {
 //        print("Number of script extracted and classified :", findings?.scripts.count ?? 0)
 //        print("header analysis done, csp parsed")
         #endif
-        return urlInfo
+        return (urlInfo, metaRefreshURL)
     }
 }

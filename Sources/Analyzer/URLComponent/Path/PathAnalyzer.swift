@@ -50,12 +50,11 @@ struct PathAnalyzer {
             if segment.rangeOfCharacter(from: .alphanumerics) == nil {
                 urlInfo.warnings.append(SecurityWarning(
                     message: "Suspicious path segment contains no alphanumeric characters: '\(segment)'",
-                    severity: .critical,
-                    penalty: PenaltySystem.Penalty.critical,
+                    severity: .suspicious,
+                    penalty: PenaltySystem.Penalty.nonalpahaNumericInPath,
                     url: urlOrigin,
                     source: .path
                 ))
-                return
             }
         }
         

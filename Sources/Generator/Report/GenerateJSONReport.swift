@@ -6,6 +6,7 @@
 //
 //  Created to generate a compact, high-signal structured JSON object from URLQueue analysis results
 //TODO: This is a terrible JSON, explore the leads on MetaJSONBuilder etc.
+// V1.2
 import Foundation
 
 func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data] {
@@ -92,7 +93,7 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
         
         let warnings = SecurityWarningTriage.generateWarningJson(urls: queue)
         
-        let summary: [String : Any] = ["summary" : [
+        let summary: [String : Any] = ["01_summary" : [
                 "01_input_url" : inputURL,
                 "02_final_url" : finalURL,
                 "03_encoutered_urls" : warnings["idMap"] ?? NSNull(),
@@ -181,8 +182,7 @@ func generateLLMJson(from queue: URLQueue, brief: Bool = false) throws -> [Data]
                 for (_, cookie) in cookies.enumerated() {
                     
                     let (_, entropyValue) = CommonTools.isHighEntropy(cookie?.cookie.value ?? "")
-                    let roundedEntropy: Any = entropyValue.map { Double(round($0 * 10) / 10) } ?? NSNull()
-                    let entropyValueFinal: Any = roundedEntropy
+                    let entropyValueFinal: Any = entropyValue.map { String(format: "%.1f", $0) } ?? NSNull()
 
                     let httpOnly: Bool = cookie?.cookie.httpOnly ?? false
                     
@@ -325,7 +325,7 @@ struct ScriptSummaryBuilder {
         
 //        scripts per 1000 bytes, a kind of “density per KB"
         let rawDensity = bodySize > 0 ? (Double(scritpDensityPerKB) / Double(bodySize)) * 1000 : 0.0
-        let normalized = Double(round(rawDensity * 10) / 10)
+        let normalized = String(format: "%.1f", rawDensity)
         
 //        let rounded = String(format: "%.3f", normalized)
 
