@@ -16,7 +16,7 @@ These examples are sanitized for personal info but may include real phishing pat
 |------|-----------|-----|-------|-----|
 | Amazon Phishing | `amazon-link` | [PDF](./PDF/legitURL_Report_2025-06-03T17:43:54Z-amazon-verifcompte.pdf) | [FULLReportJSON](./JSON/FullReport_comsssvnsmrsftp.amazon-verifcompte.com.JSON) | [Gemini](./ModelOutput/GEMINI_FullReport_comsssvnsmrsftp.amazon-verifcompte.com.text)
 |EDF ( French National Energy Company) | `edf-link` |[PDF](./PDF/legitURL_Report_2025-06-09T13:32:39Z-edf-espaceclient.pdf) | [FULLReportJSON](./JSON/FullReport_edf-espaceclient.json) | [DeepSeek](./ModelOutput/DEEPSEEK_FullReport_edf-espaceclient.txt) 
-| ANTAI ( French National agency for automated Offence Processing) | `antai-link` | [PDF]('/PDF/legitURL_Report_2025-06-21T05:21:36Z-sonjajuengling.pdf') | [FullReportJSON] (./JSON/FullReport_antaiScam_v1.2.json) | [GPT4o](./ModelOutput/GTP4o_FullReport_ANTAI.txt)
+| ANTAI ( French National agency for automated Offence Processing) | `antai-link` | [PDF]('/PDF/legitURL_Report_2025-06-21T05:21:36Z-sonjajuengling.pdf') | [FullReportJSON](./JSON/FullReport_antaiScam_v1.2.json) | [GPT4o](./ModelOutput/GTP4o_FullReport_ANTAI.txt)
 
 
 
