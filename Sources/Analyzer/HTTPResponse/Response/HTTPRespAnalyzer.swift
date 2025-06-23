@@ -127,6 +127,10 @@ struct HTTPRespAnalyzer {
                 ))
             }
         }
+        
+        print("==============")
+        print(metaRefreshURL ?? "none")
+        
         //TODO: Add the found CSP to the CSP analyszer
         if csp?.count ?? 0 > 0 {
             urlInfo.warnings.append(SecurityWarning(
@@ -221,7 +225,7 @@ struct HTTPRespAnalyzer {
 //        }
         //  Analyze headers for content security policy
         var cspResult: ClassifiedCSPResult? = nil
-        if responseCode == 200, metaRefreshURL != nil {
+        if responseCode == 200, metaRefreshURL == nil {
             let (warningsCSP, result) = CSPAnalyzer.analyze(headers,
                                                             httpEquivCSP: csp,
                                                             urlOrigin: urlOrigin,
@@ -250,7 +254,7 @@ struct HTTPRespAnalyzer {
         
         
         //TODO: This could work for the script-src, leeave disclaimer see if some people like it?
-        if metaRefreshURL != nil, let findings = findings, let rawBody = onlineInfo.rawBody {
+        if metaRefreshURL == nil, let findings = findings, let rawBody = onlineInfo.rawBody {
             onlineInfo.cspRecommendation = GenerateCSP.generate(from: findings, rawBody: rawBody)
         }
         

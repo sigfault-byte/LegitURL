@@ -10,9 +10,9 @@ struct DataSignatures {
         var tagPositions: [Int] = []
 
         // Access the raw bytes of the Data buffer
-        // 'withUnsafeBytes' gives direct access to memory
-        // The closure takes a single argument: UnsafeRawBufferPointer
-        // 'in indicates a "lambda / anonymous function "
+        // 'withUnsafeBytes' gives direct access to memory ... !!
+        // The closure takes a single argument: UnsafeRawBufferPointer -> buffer over the specified number of contiguous bytes
+        // 'in indicates a "lambda function "
         body.withUnsafeBytes { (rawBuffer: UnsafeRawBufferPointer) -> Void in
             // Safely get the base pointer from the buffer
             guard let rawBase = rawBuffer.baseAddress else { return }
