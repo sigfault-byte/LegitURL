@@ -10,31 +10,32 @@ struct DataSignatures {
         var tagPositions: [Int] = []
 
         // Access the raw bytes of the Data buffer
-        // 'withUnsafeBytes' gives direct access to memory ... !!
-        // The closure takes a single argument: UnsafeRawBufferPointer -> buffer over the specified number of contiguous bytes
-        // 'in indicates a "lambda function "
+        // 'withUnsafeBytes' -> raw pointer, only one working
+        // UnsafeRawBufferPointer -> buffer over the specified number of bytes
+        // 'in' ~ "lambda function "
         body.withUnsafeBytes { (rawBuffer: UnsafeRawBufferPointer) -> Void in
-            // Safely get the base pointer from the buffer
+            // base pointer char * rawbase
             guard let rawBase = rawBuffer.baseAddress else { return }
 
-            // Assume the raw memory is composed of UInt8 bytes ...
+            // assume only UInt8 bytes
+            // void *
             let base = rawBase.assumingMemoryBound(to: UInt8.self)
             let start = base + range.lowerBound
             let end = base + range.upperBound
 
-            // Scan from the beginning of the range using a ptr
+            // char* start // or void* because memchr
             var ptr = UnsafeRawPointer(start)
 
-            // While not at the end
             while ptr < UnsafeRawPointer(end) {
-                // Search for byte matching 'tag' using memchr
-                // Only the lowest 8 bits of 'Int32(tag)' are used <--- thanks AI
+                // only the lowest 8 bits of 'Int32(tag)'
+                // void* memchr( const void *, int, size_t)
+                // ptr -> void*, int -> cast tag, sizet_ len
                 if let match = memchr(ptr, Int32(tag), end - ptr.assumingMemoryBound(to: UInt8.self)) {
-                    // Calculate the offset from the base pointer
+                    // find offset
                     let offset = UnsafeRawPointer(match) - UnsafeRawPointer(base)
                     tagPositions.append(offset)
 
-                    // Move the pointer forward to continue scanning
+                    // (unsigned char*) match + 1
                     ptr = UnsafeRawPointer(match).advanced(by: 1)
                 } else {
                     break
