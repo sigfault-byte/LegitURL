@@ -31,7 +31,6 @@ See the [examples](https://github.com/sigfault-byte/LegitURL/blob/main/Examples/
 ## Media Coverage
 
 ### *Cyberdefense Magazine* (July 2025)
-> **"LegitURL offers a unique approach to link analysis — blending pedagogy and precision in a tool designed for everyone."**
 
 <details><summary>Excerpt from the article</summary>
 
