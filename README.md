@@ -17,6 +17,8 @@
 
 **LegitURL** is a lightweight mobile app that analyzes the trustworthiness of any URL using a transparent, heuristic-driven approach. All scans are conducted locally and completed in ~2 seconds. No cloud analysis, no data leaks. just fast, explainable results.
 
+See the [examples](https://github.com/sigfault-byte/LegitURL/blob/main/Examples/README.md) for sanitized case studies of real-world phishing links, complete with PDF exports, structured JSON, and LLM reasoning outputs.
+
 ### Key features:
 - **Instant risk scoring** – assigns 🟩/🟧/🟥 based on 100+ deterministic checks  
 - **Security-focused** – detects silent redirects, CSP misconfigurations, suspicious TLS certificates, and tracking behavior  
